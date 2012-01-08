@@ -17,7 +17,7 @@ class views_plugin_style_fieldset extends views_plugin_row {
 			'#title' => t('Initial Fieldset State'),
 			'#options' => array('collapsed' => 'Collapsed',
 								'null' => 'Expanded',),
-			'#default_value' => $this->options['title'],
+			'#default_value' => $this->options['initialstate'],
 		);
 	}
 	
