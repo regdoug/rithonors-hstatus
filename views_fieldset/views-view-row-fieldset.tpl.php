@@ -2,7 +2,7 @@
 //Created by Reginald Pierce, RIT Honors Tech Committee
 $first = true;
 ?>
-<fieldset class="collapsible">
+<fieldset class="collapsible <?php print $options['initialstate']; ?>">
 <?php foreach ($fields as $id => $field): ?>
   <?php if($first): //Make the first one a legend
            $first = false; ?>
