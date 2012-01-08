@@ -1,0 +1,5 @@
+name = Views Collapsible Rows (Honors)
+description = A Views plugin that wraps rows in collapsible fieldsets.  Created by the RIT Honors Tech Committee
+package = Views
+core = 6.x
+dependancies[] = views
