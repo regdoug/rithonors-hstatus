@@ -35,7 +35,6 @@
 				</script> 
             </div>
             <?php print $breadcrumb; ?>
-            <?php print $header; ?>
             <div id="banner"><div id="banner-image"> 
                 <div id="logo-floater">
                     <?php
@@ -63,6 +62,7 @@
                     ?>
                 </div>
 			</div></div>
+            <?php print $header; ?>
         </div>
         <div id="bd">
             <div id="sitenav1"><!-- HORIZONTAL Navigation --> </div>
