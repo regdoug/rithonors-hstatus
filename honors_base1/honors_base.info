@@ -1,0 +1,15 @@
+name = 1 Honors Base 
+base theme = rit_base
+description = Extension of the clean, pure CSS table-less RIT base theme.
+core = 6.x
+engine = phptemplate
+
+; Style sheets
+stylesheets[all][] = style.css
+
+; Regions
+regions[header] = Header
+regions[left] = Left
+regions[content] = Content
+regions[right] = Right
+regions[footer] = Footer
