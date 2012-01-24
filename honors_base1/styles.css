@@ -1,1 +1,5 @@
- 
+
+/* Remove bullets on dropdown menus from Nice Menus */
+.block-nice_menus ul {
+  list-style: none;
+} 
