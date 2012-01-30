@@ -2,4 +2,11 @@
 /* Remove bullets on dropdown menus from Nice Menus */
 ul.nice-menu li {
   list-style: none;
-} 
+}
+
+/* Pretty print date on Council Minutes */
+div.field-type-date {
+  font-size: larger;
+  float: right;
+  color: #E87420;
+}
