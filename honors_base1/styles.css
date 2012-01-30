@@ -9,4 +9,8 @@ div.field-type-date {
   font-size: larger;
   float: right;
   color: #E87420;
+  font-weight: bold;
+  padding:0px;
+  margin:0px;
+  margin-left:10px;
 }
