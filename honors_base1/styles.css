@@ -74,9 +74,9 @@ span.roles-council-ntid:after {
 }
 
 span.roles-council-scb:after {
-  content: "SCB Representative"
+  content: "SCB Representative";
 }
 
 span.roles-council-usp:after {
-  content: "USP/CMS Representative"
+  content: "USP/CMS Representative";
 }
