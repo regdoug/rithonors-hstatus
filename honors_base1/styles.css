@@ -35,3 +35,73 @@ h2.pane-title {
   font-size: 12pt;
   margin: .5em 0px;
 }
+
+/* I don't know what this does but it was in the code on playscape */
+ul.tabs{
+	white-space: normal;
+}
+
+/* Display council roles */
+span.roles-council-president:after {
+  content: "President";
+}
+
+span.roles-council-vp:after {
+  content: "Vice President";
+}
+
+span.roles-council-secretary:after {
+  content: "Secretary";
+}
+
+span.roles-council-treasurer:after {
+  content: "Treasurer";
+}
+
+span.roles-council-cast:after {
+  content: "CAST Representative";
+}
+
+span.roles-council-chst:after {
+  content: "CHST Representative";
+}
+
+span.roles-council-cias:after {
+  content: "CIAS Representative";
+}
+
+span.roles-council-cola:after {
+  content: "COLA Representative";
+}
+
+span.roles-council-cos:after {
+  content: "COS Representative";
+}
+
+span.roles-council-first-year:after {
+  content: "First Year Representative";
+}
+
+span.roles-council-gccis:after {
+  content: "GCCIS Representative";
+}
+
+span.roles-council-kgcoe:after {
+  content: "KGCOE Representative";
+}
+
+span.roles-council-late-entry:after {
+  content: "Late Entry Representative";
+}
+
+span.roles-council-ntid:after {
+  content: "NTID Representative";
+}
+
+span.roles-council-scb:after {
+  content: "SCB Representative";
+}
+
+span.roles-council-usp:after {
+  content: "USP/CMS Representative";
+}
