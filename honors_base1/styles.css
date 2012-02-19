@@ -1,3 +1,8 @@
+/* Headings */
+h1, h2, h3 {
+  color: #291d19;
+}
+
 
 /* Remove bullets on dropdown menus from Nice Menus */
 ul.nice-menu li {
@@ -11,6 +16,22 @@ div.field-type-date {
   color: #E87420;
   font-weight: bold;
   padding:0px;
-  margin:0px;
   margin-left:10px;
+  margin:0px;
+}
+
+/* Font styles */
+.font-smaller {
+  font-size: smaller;
+}
+
+.font-small {
+  font-size: small;
+}
+
+/* Panel Titles */
+h2.pane-title {
+  color: #67493f;
+  font-size: 12pt;
+  margin: .5em 0px;
 }
