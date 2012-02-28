@@ -116,7 +116,7 @@ HTML;
 }
 */
 
-template_preprocess_webform_display_moderationstatus(&$variables){
+function template_preprocess_webform_display_moderationstatus(&$variables){
 	$variables['value'] = (is_numeric($variables['element']['#value'])) ? intval($variables['element']['#value']) : 99;
 	$variables['text'] = _webform_moderation_val_to_text($variables['value']);
 	$variables['format'] = $variables['element']['#format'];
@@ -139,12 +139,12 @@ function _webform_analysis_moderationstatus($component, $sids = array()) {
 
   $result = db_query($query, array_merge(array($component['nid'], $component['cid']), $sids));
   while ($data = db_fetch_array($result)) {
-	$data = trim($data['data'])
+	$data = trim($data['data']);
 	$value = is_numeric($data) ? intval($data) : 99;
     switch($value){
-		case 0: pending++; break;
-		case 1: approved++; break;
-		case 2: rejected++; break;
+		case 0: $pending++; break;
+		case 1: $approved++; break;
+		case 2: $rejected++; break;
 	}
     $submissions++;
   }
