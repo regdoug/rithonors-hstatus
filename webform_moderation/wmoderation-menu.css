@@ -1,0 +1,15 @@
+
+/* Approve link */
+.webform-moderation-reject {
+  background-color: transparent;
+  background-color: rgba(51, 214, 51, 0.6);  
+            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#33D63390,endColorstr=#33D63390); 
+            zoom: 1;
+}
+/* Reject link */
+.webform-moderation-reject {
+  background-color: transparent;
+  background-color: rgba(214, 51, 51, 0.6);  
+            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#D6333390,endColorstr=#D6333390); 
+            zoom: 1;
+}

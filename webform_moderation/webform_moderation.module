@@ -1,0 +1,73 @@
+<?php
+
+function webform_moderation_perm(){
+	return array('approve/reject webforms');
+}
+
+/**
+ * Provide actions "approve" and "reject"
+ *
+ * Some actions are displayed in the list of submissions such as edit, view, and
+ * delete. All other actions are displayed only when viewing the submission.
+ * These additional actions may be specified in this hook. Examples included
+ * directly in the Webform module include PDF, print, and resend e-mails. Other
+ * modules may extend this list by using this hook.
+ *
+ * @param $node
+ *   The Webform node on which this submission was made.
+ * @param $submission
+ *   The Webform submission on which the actions may be performed.
+ */
+function webform_moderation_webform_submission_actions($node, $submission) {
+	
+	//TODO: figure out how to add to query string
+	
+  if (webform_results_access($node)) {
+    $actions['moderation_approve'] = array(
+      'title' => t('Approve'),
+      'href' => 'node/' . $node->nid . '/submission/' . $submission->sid . '/moderation',
+      'query' => drupal_get_destination(),
+    );
+    $actions['moderation_reject'] = array(
+      'title' => t('Reject'),
+      'href' => 'node/' . $node->nid . '/submission/' . $submission->sid . '/moderation',
+      'query' => drupal_get_destination(),
+    );
+  }
+
+  return $actions;
+}
+
+/**
+ * Define components to Webform.
+ *
+ * @return
+ *   An array of components, keyed by machine name.
+ * @see webform_components()
+ */
+function webform_moderation_webform_component_info() {
+  $components = array();
+
+  $components['moderationstatus'] = array(
+    'label' => t('Status'),
+    'description' => t('Moderation status (from the module "Webform Moderation").'),
+    'features' => array(
+      'csv' => TRUE,
+      'email' => TRUE,
+      'email_address' => FALSE,
+      'email_name' => FALSE,
+      'required' => FALSE,
+      'title_display' => TRUE,
+      'title_inline' => TRUE,
+      'conditional' => FALSE,
+      'group' => FALSE,
+      'spam_analysis' => FALSE,
+      'attachment' => FALSE,
+    ),
+    'file' => 'components/moderationstatus.inc',
+  );
+
+  return $components;
+}
+
+
