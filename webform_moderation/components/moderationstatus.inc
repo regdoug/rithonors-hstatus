@@ -93,6 +93,7 @@ function _webform_display_moderationstatus($component, $value, $format = 'html')
   return $element;
 }
 
+/*
 function theme_webform_display_moderationstatus($element) {
 	$bgcolor = '';
 	$text = '';
@@ -106,19 +107,19 @@ function theme_webform_display_moderationstatus($element) {
 		//do stuff
 		$html = <<<HTML
 $text
-<style type="text/css">
-.webform_submission_info, .webform_submission {
-	     background-color: $bgcolor;
- -webkit-box-shadow: 0px 0px 4px 1px #ffffff; /* Saf3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
-    -moz-box-shadow: 0px 0px 4px 1px #ffffff; /* FF3.5 - 3.6 */
-         box-shadow: 0px 0px 4px 1px #ffffff; /* Opera 10.5, IE9, FF4+, Chrome 6+, iOS 5 */
-}
-</style>
+
 HTML;
 		return $html;
 	}else{
 		return $text;
 	}
+}
+*/
+
+template_preprocess_webform_display_moderationstatus(&$variables){
+	$variables['value'] = (is_numeric($variables['element']['#value'])) ? intval($variables['element']['#value']) : 99;
+	$variables['text'] = _webform_moderation_val_to_text($variables['value']);
+	$variables['format'] = $variables['element']['#format'];
 }
 
 /**
@@ -159,12 +160,7 @@ function _webform_analysis_moderationstatus($component, $sids = array()) {
  */
 function _webform_table_moderationstatus($component, $value) {
   $val = (is_numeric($value[0]) ? intval($value[0]) : 99);
-  switch($val){
-	case 0: return 'Pending';
-	case 1: return 'Approved';
-	case 2: return 'Rejected';
-	default: return 'Unknown';
-  }
+  return _webform_moderation_val_to_text($val);
 }
 
 /**
@@ -183,4 +179,13 @@ function _webform_csv_headers_moderationstatus($component, $export_options) {
  */
 function _webform_csv_data_moderationstatus($component, $export_options, $value) {
   return (is_numeric($value[0]) ? intval($value[0]) : 99);
+}
+
+function _webform_moderation_val_to_text($intval){
+  switch($intval){
+	case 0: return 'Pending';
+	case 1: return 'Approved';
+	case 2: return 'Rejected';
+	default: return 'Unknown';
+  }
 }
