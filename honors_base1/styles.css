@@ -3,6 +3,10 @@ h1, h2, h3 {
   color: #291d19;
 }
 
+/* Make active menues the same color as headings */
+li a.active {
+  color: #291d19;
+}
 
 /* Remove bullets on dropdown menus from Nice Menus */
 ul.nice-menu li {
