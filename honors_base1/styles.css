@@ -3,6 +3,12 @@ h1, h2, h3 {
   color: #291d19;
 }
 
+/* 
+
+/* Make active menues the same color as headings */
+li a.active {
+  color: #291d19;
+}
 
 /* Remove bullets on dropdown menus from Nice Menus */
 ul.nice-menu li {
@@ -36,7 +42,7 @@ h2.pane-title {
   margin: .5em 0px;
 }
 
-/* I don't know what this does but it was in the code on playscape */
+/* Fixes admin tabs creating horizontal scrollbars */
 ul.tabs{
 	white-space: normal;
 }
