@@ -14,7 +14,7 @@ ul.nice-menu li {
 }
 
 /* Pretty print date on Council Minutes */
-div.field-type-date {
+div.field-field-council-date {
   font-size: larger;
   float: right;
   color: #E87420;
@@ -109,3 +109,8 @@ span.roles-council-scb:after {
 span.roles-council-usp:after {
   content: "USP/CMS Representative";
 }
+
+/* Cheap hack to replace banner image.  This is NOT permanent */
+#banner-image { 
+background: url("https://www-staging.rit.edu/~w-drupal/sites/rit.edu.academicaffairs.honors/themes/honors_base1/banner-sol-and-clock.jpg") no-repeat #EBE9DF;
+ }
