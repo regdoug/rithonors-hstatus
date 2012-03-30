@@ -1,6 +1,11 @@
 /* Headings */
 h1, h2, h3 {
   color: #291d19;
+  font-family: 'Prosto One', 'Arial', sans-serif;
+}
+
+p {
+  font-family: 'Andada', serif;
 }
 
 /* Make active menues the same color as headings */
