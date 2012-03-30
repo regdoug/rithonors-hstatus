@@ -4,8 +4,9 @@ h1, h2, h3 {
   font-family: 'Prosto One', 'Arial', sans-serif;
 }
 
+/* Just a little style */
 p {
-  font-family: 'Andada', serif;
+  font-family: 'Verdana', sans-serif;
 }
 
 /* Make active menues the same color as headings */
@@ -117,5 +118,10 @@ span.roles-council-usp:after {
 
 /* Cheap hack to replace banner image.  This is NOT permanent */
 #banner-image { 
-background: url("https://www-staging.rit.edu/~w-drupal/sites/rit.edu.academicaffairs.honors/themes/honors_base1/banner-sol-and-clock.jpg") no-repeat #EBE9DF;
- }
+  background: url("https://www-staging.rit.edu/~w-drupal/sites/rit.edu.academicaffairs.honors/themes/honors_base1/banner-sol-and-clock.jpg") no-repeat #EBE9DF;
+}
+
+/* Student Activity Styles */
+.field-field-project-participants div.field-item{
+  display:inline;
+}

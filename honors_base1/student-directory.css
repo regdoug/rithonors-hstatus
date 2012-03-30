@@ -1,59 +1,26 @@
-/******* Employee Directory ************/
-#content .view-directory {
+/******* Student Directory ************/
+.view-student-directory {
 	line-height:130%;
 }
-#content .view-directory .views-row-odd {
-	width:50%;
-	border:0px solid blue;
+.view-student-directory .views-row-odd,
+.view-student-directory .views-row-even {
+	width:30%;
+	border: solid #985D3B;
+	border-width: 1px 1px 0px 0px; /* Top and right have borders */
 	float:left;
-	/*
-	clear:left;
-	*/
-	margin-top:5px;
-	margin-bottom:5px;
-}
-#content .view-directory .views-row-even {
-	width:50%;
-	border:0px solid red;
-	float:left;
-	/*
-	float:right;
-	clear:right;
-	*/
-	margin-top:5px;
+	padding-top:10px;
+	margin-top:0px;
 	margin-bottom:5px;
 }
 
-#content .view-directory .views-field-field-headshot-fid {
+.view-student-directory .views-field-picture {
 	float:left;
 }
-#content .view-directory .views-field-field-headshot-fid img {
+#content .view-student-directory .views-field-picture img {
 	border:1px solid #000;
 }
 
-#content .view-directory .views-field-title {
-	margin-left:110px;
-	margin-right:10px;
-}
-#content .view-directory .views-field-field-title-value {
-	margin-left:110px;
-	margin-right:10px;
-	margin-bottom:10px;
-	font-weight:bold;
-}
-#content .view-directory .views-field-field-email-value {
-	margin-left:110px;
-	margin-right:10px;
-}
-#content .view-directory .views-field-field-phone-value {
-	margin-left:110px;
-	margin-right:10px;
-}
-#content .view-directory .views-field-field-tty-value {
-	margin-left:110px;
-	margin-right:10px;
-}
-#content .view-directory .views-field-field-fax-value {
+.view-student-directory .views-field-authname {
 	margin-left:110px;
 	margin-right:10px;
 }
@@ -89,27 +56,21 @@ a.directory-browse-by-letter-link, a.directory-browse-by-letter-link:hover, a.di
 }
 
 
-/*directory styling*/
+/*directory styling
 .views-row-odd{float:left; width:48%; padding-right:1.75%; margin-top:5px; margin-bottom:5px; clear:left;}
-.views-row-even{float:left; width:48%; margin-top:5px; margin-bottom:5px; clear:right;}
+.views-row-even{float:left; width:48%; margin-top:5px; margin-bottom:5px; clear:right;}*/
 .view-content {margin-top:2em;}
 .views-row-odd h3, .views-row-even h3 {margin:0;}
 
-.view-directory .views-field-field-picture {
+.view-student-directory .views-field-picture {
 	float:left;
 }
-.view-directory .views-field-field-picture img {
+.view-student-directory .views-field-picture img {
 	border:1px solid #000;
 }
-.view-directory .views-field-authname {
+.view-student-directory .views-field-authname {
 	margin-left:110px;
 	margin-right:10px;
-}
-.view-directory .views-field-field-authname-value {
-	margin-left:110px;
-	margin-right:10px;
-	margin-bottom:10px;
-	font-weight:bold;
 }
 .directory-clearer {
 	clear:both;
