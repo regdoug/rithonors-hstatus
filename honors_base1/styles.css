@@ -125,3 +125,12 @@ span.roles-council-usp:after {
 .field-field-project-participants div.field-item{
   display:inline;
 }
+
+/* Forum Comments */
+#comments { 
+    border-bottom: 1px solid #E9EFF3;
+    margin: 0px;
+    padding: 0px 25px;
+    position: relative;
+    top: -1px;
+}
