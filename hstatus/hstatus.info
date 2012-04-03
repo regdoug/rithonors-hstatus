@@ -1,0 +1,8 @@
+;hstatus.info
+;Created 4/1/12 by Reginald Pierce
+
+name = Honors Status
+description = Supermodule to manage Honors Status.  Created by the RIT Honors Tech Committee
+package = Honors
+core = 6.x
+;dependancies[] = 

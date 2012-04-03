@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * Implements hook_menu
+ */
+function hstatus_menu(){
+    $items['user/%user/mystatus'] = array(
+        'title' => 'My Status',
+        'page callback' => 'hstatus_user_page',
+        'page arguments' => array(1),
+        'type' => MENU_LOCAL_TASK,
+        'access callback' => '_hstatus_status_access',
+        'access arguments' => array(1),
+        'weight' => 2,
+        'file' => 'hstatus.pages.inc',
+    );
+    return $items;
+}
+
+/**
+ * Implements hook_theme
+ */
+function hstatus_theme($existing, $type, $theme, $path){
+    return array(
+        'hstatus_mystatus' => array(
+            'template' => 'templates/mystatus',
+            'file' => 'hstatus.pages.inc',
+            'arguments' => array('user' => NULL),
+        ),
+    );
+}
+
+/**
+ * Menu access callback for a user's MyStatus page.
+ *
+ * @param $account
+ *   A user account object.
+ * @return
+ *   TRUE if the current user has access, FALSE otherwise.
+ */
+function _hstatus_status_access($account) {
+  global $user;
+
+  // Anonymous users cannot have mystatus pages.
+  if (!$user->uid || !$account->uid) {
+    return FALSE;
+  }
+
+  // Administrators.
+  if (user_access('view all honors status pages') 
+        || user_access('administer honors status')) {
+    return TRUE;
+  }
+
+  // Users can always see their own status.
+  if ($user->uid == $account->uid) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
