@@ -2,38 +2,83 @@
 
 /* hstatus.pages.inc - Implements the display functions for the hStatus module */
 
+/**
+ * Function defined by hstatus_menu to generate the page.
+ * 
+ * All it does is start drupal's theme system
+ */
 function hstatus_user_page($user){
     return theme('hstatus_mystatus',$user);
 }
 
+/**
+ * Preprocess function for the theme hook 'hstatus_mystatus'.
+ * 
+ * It loads the database api from hstatus.db.inc and gets a user object
+ */
 function template_preprocess_hstatus_mystatus(&$variables){
+    // this shouldn't happen unless a null value (or no value) is passed to
+    // the theme function.  i.e. theme('hstatus_mystatus');
     if(is_null($variables['user'])){
         $variables['username'] = 'none';
     }else{
         $username = $variables['user']->name;
-        $status = _bogus_api_get_status($username);
-        switch($status){
-            default: $status_str = 'Not yet implemented';
-        }
-        $points = _bogus_api_get_points($username);
-        $cl = _bogus_api_get_cl($username);
-        switch($cl){
-            case 0: $cl_str = 'Pending'; break;
-            case 1: $cl_str = 'Approved'; break;
-            case 2: $cl_str = 'Rejected'; break;
-            default: $cl_str = 'Unknown';
-        };
         
-        //Guaranteed Variables
-        $variables['username'] = $username;
-        $variables['status'] = $status;
-        $variables['status_string'] = $status_str;
-        $variables['points_total'] = $points;
-        $variables['complearning_status'] = $cl;
-        $variables['complearning_status_string'] = $cl_str;
+        //loads the database API
+        module_load_include('inc', 'hstatus', 'includes/hstatus.db');
+        
+        //gets a user object
+        $huser = hstatus_load_user($username);
+        // $huser will be false if the load failed.
+        if($huser){
+        
+            //get all the variables first, then assign them to the $variables array
+            
+            $status = $huser->continuation['status'];
+            switch($status){
+                case 0: $status_str = 'Continuted';break;
+                case 1: $status_str = 'Conditional Continuation';break;
+                case 2: $status_str = 'Warning';break;
+                case 3: $status_str = 'Withdrawn';break;
+                case 4: $status_str = 'Graduated';break;
+                case 5: $status_str = 'Withdrawn due to BS/MS';break;
+                case 6: $status_str = 'Graduated with BS/MS';break;
+                case 7: $status_str = 'Conditional Continuation (BS/MS)';break;
+                default: $status_str = 'Unknown';
+            }
+            
+            $points = $huser->points['total'];
+            
+            $cl = $huser->continuation['cl'];
+            switch($cl){
+                case 0: $cl_str = 'Pending'; break;
+                case 1: $cl_str = 'Approved'; break;
+                case 2: $cl_str = 'Rejected'; break;
+                default: $cl_str = 'Unknown';
+            };
+            
+            $fullname = ucfirst($huser->basic['name']['firstname']).' '.
+                    ucfirst($huser->basic['name']['lastname']);
+            
+            //Guaranteed Variables
+            $variables['username'] = $username;
+            $variables['status'] = $status;
+            $variables['status_string'] = $status_str;
+            $variables['points_total'] = $points;
+            $variables['complearning_status'] = $cl;
+            $variables['complearning_status_string'] = $cl_str;
+            
+            //Optional variables
+            $variables['name'] = $fullname;
+            $variables['gpa'] = $huser->basic['gpa'];
+            $variables['year'] = $huser->basic['year'];
+            $variables['college'] = $huser->basic['college'];
+            $variables['department'] = $huser->basic['department'];
+            $variables['program'] = $huser->basic['program'];
+            
+        }else{ //the load failed.
+            //signal that the display should be nothing
+            $variables['username'] = 'none';
+        }
     }
 }
-
-function _bogus_api_get_status($uname){ return 0; }
-function _bogus_api_get_points($uname){ return 0; }
-function _bogus_api_get_cl($uname){ return -1; }

@@ -1,30 +1,79 @@
 <?php
 
 /**
+ * @file hstatus.module
+ * 
+ * This file must be located in the hstatus folder and is loaded on every
+ * page.
+ */
+
+/**
  * Implements hook_menu
+ * 
+ * hook_menu is called by drupal whenever a module is enabled or disabled
+ * to update the internal page registry.
+ * 
+ * Note that every page has a built-in permissions callback ("access callback")
+ * that determines if (1) it should be shown in menus and (2) if a user
+ * can visit it (throws a 403 on false)
  */
 function hstatus_menu(){
+    /* the array key gives the path.  note the % sign which indicates an
+     * argument.  The 'user' after the % indicates that argument should
+     * be the return value of the function 'user_load' instead of the actual
+     * argument, which will be an integer. Also note that this may not be
+     * the path the user sees because modules are allowed to alias any 
+     * path name they want.
+     */
     $items['user/%user/mystatus'] = array(
+        //menu title
         'title' => 'My Status',
+        //function to generate the HTML content
         'page callback' => 'hstatus_user_page',
+        //arguments to be passed to the preceding function
+        //it is an array because multiple arguments can be passed.
+        //1 means the first argument.
         'page arguments' => array(1),
-        'type' => MENU_LOCAL_TASK,
-        'access callback' => '_hstatus_status_access',
-        'access arguments' => array(1),
-        'weight' => 2,
+        //file that the page function is located in (relative to module directory)
         'file' => 'hstatus.pages.inc',
+        //MENU_LOCAL_TASK means that it shold be displayed as a tab
+        'type' => MENU_LOCAL_TASK,
+        //function to decide if the user has permissions
+        'access callback' => '_hstatus_status_access',
+        //arguments to the preceding function
+        'access arguments' => array(1),
+        //weight in menu or tab bar
+        'weight' => 2,
     );
     return $items;
 }
 
 /**
+ * Implements hook_perm
+ * 
+ * Just returns an array of strings to be used on the permissions page
+ */
+function hstatus_perm(){
+    return array('view all honors status pages','administer honors status');
+}
+
+/**
  * Implements hook_theme
+ * 
+ * hook_theme defines "theme hooks" which are just functions or files that
+ * generate HTML.  The benefit of doing this is that it makes it easy for
+ * other modules or themes to override your display.
  */
 function hstatus_theme($existing, $type, $theme, $path){
     return array(
         'hstatus_mystatus' => array(
+            //this is the file that generates the output
+            //relative to module directory, less the .tpl.php
             'template' => 'templates/mystatus',
+            //the file in which the preprocessor is located.
+            //preprocessors define variables for the template.
             'file' => 'hstatus.pages.inc',
+            //arguments passed to the 'theme' function and the preprocessor
             'arguments' => array('user' => NULL),
         ),
     );
@@ -39,23 +88,26 @@ function hstatus_theme($existing, $type, $theme, $path){
  *   TRUE if the current user has access, FALSE otherwise.
  */
 function _hstatus_status_access($account) {
-  global $user;
+    //$account is the page that is being accessed
+    //$user is the currently logged in user (almost always)
+    global $user;
 
-  // Anonymous users cannot have mystatus pages.
-  if (!$user->uid || !$account->uid) {
+    // Anonymous users cannot have mystatus pages or view mystatus pages.
+    if (!$user->uid || !$account->uid) {
+        return FALSE;
+    }
+
+    // Administrators.  (defined in hook_perm)
+    if (user_access('view all honors status pages') 
+            || user_access('administer honors status')) {
+        return TRUE;
+    }
+
+    // Users can always see their own status.
+    if ($user->uid == $account->uid) {
+        return TRUE;
+    }
+
+    //catch-all
     return FALSE;
-  }
-
-  // Administrators.
-  if (user_access('view all honors status pages') 
-        || user_access('administer honors status')) {
-    return TRUE;
-  }
-
-  // Users can always see their own status.
-  if ($user->uid == $account->uid) {
-    return TRUE;
-  }
-
-  return FALSE;
 }
