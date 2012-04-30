@@ -45,6 +45,18 @@ function hstatus_menu(){
         //weight in menu or tab bar
         'weight' => 2,
     );
+    $items['hstatus/static'] = array(
+        'title' => 'Testing Static Pages',
+        'page callback' => 'hstatus_static_page',
+        'file' => 'includes/hstatus.pages.inc',
+        'access callback' => '_hstatus_static_access',
+    );
+    $items['hstatus/usertest'] = array(
+        'title' => 'Testing hstatus.db.inc',
+        'page callback' => 'hstatus_test_db_page',
+        'file' => 'includes/hstatus.pages.inc',
+        'access callback' => '_hstatus_status_access',
+    );
     return $items;
 }
 
@@ -79,6 +91,8 @@ function hstatus_theme($existing, $type, $theme, $path){
     );
 }
 
+/*----------------Access Callbacks------------------*/
+
 /**
  * Menu access callback for a user's MyStatus page.
  *
@@ -111,3 +125,8 @@ function _hstatus_status_access($account) {
     //catch-all
     return FALSE;
 }
+
+/*
+ * for when you just need to signify unlimited access
+ */
+function _hstatus_static_access(){ return true; }
