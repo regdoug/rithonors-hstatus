@@ -29,7 +29,7 @@
  * -figure out how complearning submissions will work
  */
  
-if($username = 'none'):
+if($displaynone):
 ?>
 <h2>You are not in the Honors Database</h2>
 <?php else: ?>
