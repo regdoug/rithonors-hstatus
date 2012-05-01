@@ -1,4 +1,5 @@
 <?php
+$hstatus_timetosave = '6 months';
 
 /* hstatus.pages.inc - Implements the display functions for the hStatus module */
 
@@ -15,16 +16,14 @@ function hstatus_user_page($user){
  * Complearning form
  */
 function hstatus_forms_cl($arg0){
-    $timetosave = '6 months';
     
     if(is_numeric($arg0)){
         //activity entry
         $n = intVal($arg0);
         $form = array();
-        $form['number'] = array(
-            '#type' => 'hidden',
+        $form['page'] = array(
+            '#type' => 'value',
             '#value' => $n,
-            '#attributes' => array('type' => 'number', 'min' => '1'),
         );
         $form['heading'] = array(
             '#value' => '<h3>'.t("Activity $n").'</h3>',
@@ -66,7 +65,7 @@ function hstatus_forms_cl($arg0){
         
         global $user;
         module_load_include('hstatus','inc','hstatus.db');
-        $data = hstatus_load_cldraft($user->uid,$timetosave);
+        $data = hstatus_load_cldraft($user->uid,$hstatus_timetosave);
         if($data['count'] < $n){
             //page does not exist
             //don't do anything so that execution proceeds to the first page form
@@ -83,9 +82,14 @@ function hstatus_forms_cl($arg0){
     if($arg0 == 'last'){
         //last page
         $form = array();
+        $form['page'] = array(
+            '#type' => 'value',
+            '#value' => 'last',
+        );
         $form['information'] = array(
             '#value' => '<p>'.t("Your responses have been saved as a draft.
-            They will be stored for up to $timetosave.  If you are satisfied with your submission,
+            They will be stored for up to $hstatus_timetosave.  
+            If you are satisfied with your submission,
             you may submit the form now by clicking the button below.").'</p>',
         );
         $form['submit'] = array(
@@ -96,12 +100,18 @@ function hstatus_forms_cl($arg0){
     }else{
         //first page
         $form = array();
+        $form['page'] = array(
+            '#type' => 'value',
+            '#value' => 'first',
+        );
         $form['count'] = array(
             '#type' => 'textfield',
             '#title' => t('Activities'),
             '#description' => t('Number of activities that compose this submission.'),
             '#required' => true,
             '#element_validate' => 'hstatus_form_cl_count_validate',
+            //HTML5 attributes
+            '#attributes' => array('type' => 'number', 'min' => '1'),
         );
         $form['submit'] = array(
           '#type' => 'submit',
@@ -111,6 +121,27 @@ function hstatus_forms_cl($arg0){
     return $form;
 }
 
+function hstatus_form_cl_count_validate($element, &$form_state){
+	$v = $element['#value'];
+	if(empty($v) || !( is_numeric($v) && intVal($v) > 0 )){
+		form_error($element, $t('You must have a positive number of activities');
+	}
+}
+
+function hstatus_form_cl_submit($form, &$form_state)
+    switch($form_state['values']['page']){
+        case 'first': _hstatus_clform_newentry($form_state);break;
+        case 'last': _hstatus_clform_savefinal($form_state);break;
+        default: _hstatus_clform_savepage($form_state);break;
+    }
+}
+
+function _hstatus_clform_newentry(&$form_state){
+}
+function _hstatus_clform_savepage(&$form_state){
+}
+function _hstatus_clform_savefinal(&$form_state){
+}
     
 
 /**
