@@ -1,0 +1,98 @@
+function hstatus_menu(){
+$menu['/hstatus/submitcl/%'] = array(
+	'title' => 'Comp Learning Form',
+	'file' => 'includes/hstatus.forms.inc',
+	'page_callback' => 'drupal_get_form',
+	'page arguments' => array('hstatus_forms_cl', 1),
+	'access callback' => '_hstatus_form_cl_access',
+);
+}
+
+function hstatus_forms_cl($n)
+====
+Page /hstatus/submitcl/
+--called if $n is empty/null
+====
+
+$form['count'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Activities'),
+	'#description' => t('Number of activities that compose this submission.'),
+	'#required' => true,
+	'#element_validate' => 'hstatus_form_cl_count_validate',
+);
+$form['submit'] = array(
+  '#type' => 'submit',
+  '#value' => t('Next Page >'),
+);	
+
+---
+function hstatus_form_cl_count_validate($element, &$form_state){
+	$v = $element['#value'];
+	if(empty($v) || !( is_numeric($v) && intVal($v) > 0 )){
+		form_error($element, $t('You must have a positive number of activities');
+	}
+}
+
+====
+Page /hstatus/submitcl/1
+--called if $n is numeric
+====
+-(Dynamic)-
+$form['number'] = array(
+	'#type' => 'hidden',
+	'#value' => $n,
+	'#attributes' => array('type' => 'number', 'min' => '1'),
+);
+$form['heading'] = array(
+	'#value' => '<h3>'.t("Activity $n").'</h3>',
+);
+
+-(Static)-   //this is only half true.  #default_value will need to be loaded from the db
+$form['name'] = array(
+	'#type' => 'textarea',
+	'#required' => true,
+	'#title' => t('Activity Name');
+);
+$form['desc'] = array(
+	'#type' => 'textarea',
+	'#required' => true,
+	'#title' => t('Activity Description'),
+);
+$form['desc'] = array(
+	'#type' => 'textarea',
+	'#required' => true,
+	'#title' => t('Leadership/Citizenship'),
+);
+$form['desc'] = array(
+	'#type' => 'textarea',
+	'#required' => true,
+	'#title' => '('Time Commitment'),
+);
+$form['desc'] = array(
+	'#type' => 'textarea',
+	'#required' => true,
+	'#title' => '('Contact Information'),
+);
+$form['desc'] = array(
+	'#type' => 'textarea',
+	'#title' => '('Comments'),
+);
+$form['submit'] = array(
+  '#type' => 'submit',
+  '#value' => t('Next Page >'),
+);	
+
+====
+Page /hstatus/submitcl/last
+--called when $n is nonnumeric and equal to 'last'
+====
+
+$form['information'] = array(
+	'#value' => '<p>'.t("Your responses have been saved as a draft.  If you are satisfied with your submission,
+	you may submit the form now by clicking the button below.").'</p>',
+);
+$form['submit'] = array(
+  '#type' => 'submit',
+  '#value' => t('Done, Submit Now'),
+);

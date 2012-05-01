@@ -199,3 +199,18 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
 
     return (object) $u;
 }
+
+/**
+ * hstatus_load_cldraft
+ */
+function hstatus_load_cldraft($uid, $expire){
+    $q = 'SELECT updatetime, data FROM {h_cldrafts} WHERE uid=%d';
+    $rs = db_query($q,$uid);
+    $obj = db_fetch_object($rs);
+    
+    if($obj && $obj->updatetime > strtotime("-$expire")){
+        $data = unserialize($obj->data);
+        if(isset($data['count'])){return $data;}
+    }
+    return false;
+}

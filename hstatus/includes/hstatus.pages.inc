@@ -12,6 +12,108 @@ function hstatus_user_page($user){
 }
 
 /**
+ * Complearning form
+ */
+function hstatus_forms_cl($arg0){
+    $timetosave = '6 months';
+    
+    if(is_numeric($arg0)){
+        //activity entry
+        $n = intVal($arg0);
+        $form = array();
+        $form['number'] = array(
+            '#type' => 'hidden',
+            '#value' => $n,
+            '#attributes' => array('type' => 'number', 'min' => '1'),
+        );
+        $form['heading'] = array(
+            '#value' => '<h3>'.t("Activity $n").'</h3>',
+        );
+
+        $form['name'] = array(
+            '#type' => 'textarea',
+            '#required' => true,
+            '#title' => t('Activity Name'),
+        );
+        $form['desc'] = array(
+            '#type' => 'textarea',
+            '#required' => true,
+            '#title' => t('Activity Description'),
+        );
+        $form['lead'] = array(
+            '#type' => 'textarea',
+            '#required' => true,
+            '#title' => t('Leadership/Citizenship'),
+        );
+        $form['time'] = array(
+            '#type' => 'textarea',
+            '#required' => true,
+            '#title' => t('Time Commitment'),
+        );
+        $form['contact'] = array(
+            '#type' => 'textarea',
+            '#required' => true,
+            '#title' => t('Contact Information'),
+        );
+        $form['comment'] = array(
+            '#type' => 'textarea',
+            '#title' => t('Comments'),
+        );
+        $form['submit'] = array(
+          '#type' => 'submit',
+          '#value' => t('Next Page >'),
+        );
+        
+        global $user;
+        module_load_include('hstatus','inc','hstatus.db');
+        $data = hstatus_load_cldraft($user->uid,$timetosave);
+        if($data['count'] < $n){
+            //page does not exist
+            //don't do anything so that execution proceeds to the first page form
+        }elseif(isset($data[$n])){
+            $form['name']['#default_value'] = $data[$n]['name'];
+            $form['desc']['#default_value'] = $data[$n]['desc'];
+            $form['lead']['#default_value'] = $data[$n]['lead'];
+            $form['time']['#default_value'] = $data[$n]['time'];
+            $form['contact']['#default_value'] = $data[$n]['contact'];
+            $form['comment']['#default_value'] = $data[$n]['commment'];
+        }
+    }
+    
+    if($arg0 == 'last'){
+        //last page
+        $form = array();
+        $form['information'] = array(
+            '#value' => '<p>'.t("Your responses have been saved as a draft.
+            They will be stored for up to $timetosave.  If you are satisfied with your submission,
+            you may submit the form now by clicking the button below.").'</p>',
+        );
+        $form['submit'] = array(
+          '#type' => 'submit',
+          '#value' => t('Done, Submit Now'),
+        );
+        return $form;
+    }else{
+        //first page
+        $form = array();
+        $form['count'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Activities'),
+            '#description' => t('Number of activities that compose this submission.'),
+            '#required' => true,
+            '#element_validate' => 'hstatus_form_cl_count_validate',
+        );
+        $form['submit'] = array(
+          '#type' => 'submit',
+          '#value' => t('Next Page >'),
+        );
+    }
+    return $form;
+}
+
+    
+
+/**
  * hstatus_static_page
  * 
  * hstatus_test_db_page

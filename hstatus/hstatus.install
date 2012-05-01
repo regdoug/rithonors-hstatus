@@ -27,6 +27,35 @@ function hstatus_uninstall(){
     drupal_uninstall_schema('hstatus');
 }
 
+/*
+ * hook_update_N functions
+ * http://api.drupal.org/api/drupal/developer!hooks!install.php/function/hook_update_N/6
+ * 
+ * Whenever you make a change that requires a patch to the database
+ * (such as a change in the schema, you need to write a hook_update_N
+ * function.
+ * 
+ * Database updates consist of 3 parts:
+ *   - 1 digit for Drupal core compatibility
+ *   - 1 digit for your module's major release version 
+ *      (e.g. is this the 5.x-1.* (1) or 5.x-2.* (2) series of your module?)
+ *   - 2 digits for sequential counting starting with 00
+ */
+ 
+/**
+ * hstatus_update_6000
+ * 
+ * Creates the new h_cldrafts table
+ * 
+ * Added by Reginald Pierce on 05/01/2012
+ */
+function hstatus_update_6000(){
+    $schema = hstatus_schema();
+    $ret = array();
+    db_create_table($ret, 'h_cldrafts', $schema['h_cldrafts']);
+    return $ret;
+}
+
 /**
  * Implements hook_schema
  * 
@@ -39,6 +68,30 @@ function hstatus_schema() {
  
 //convenience function for creating a cache structure to be used by 'cache_set' and 'cache_get'
 $s['cache_honors'] = drupal_get_schema_unprocessed('system', 'cache');
+
+//complearning drafts table - allows compatibility with the old table
+//and the ability to extend the functionality of the front-end form
+$s['h_cldrafts'] = array(
+    'description' => t('Complearning Drafts'),
+    'fields' => array(
+        'uid' => array(
+            'description' => t('Drupal UID'),
+            'type' => 'int',
+            'not null' => true,
+        ),
+        'updatetime' => array(
+            'description' => t('Time that the entry was updated'),
+            'type' => 'int',
+            'not null' => true,
+        ),
+        'data' => array(
+            'description' => t('Serialized data'),
+            'type' => 'blob',
+            'size' => 'medium',
+        ),
+    ),
+    'primary key' => array('uid'),
+);
     
 //All the old tables: students, students_courses, students_gpa, students_points
 //students_waivers, complearning, continuation, notes.  (All prefixed)
@@ -373,11 +426,13 @@ $s['h_continuation'] = array(
             'length' => 7,
         ),
         'status' => array(
-            'description' => t('0=continued, 1=conditional continuation,
+            'description' => t('-1=not set, 0=continued, 1=conditional continuation,
                 2=warning, 3=withdrawn, 4=graduated, 5=BS/MS withdrawn, 
                 6=BS/MS graduated, 7=BS/MS conditional'),
             'type' => 'int',
             'size' => 'tiny',
+            'default' => -1,
+            'not null' => true,
         ),
         'comp_learn' => array(
             'description' => t('0=requirement met, 1=requirement not met'),

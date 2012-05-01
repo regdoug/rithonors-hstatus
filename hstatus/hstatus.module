@@ -57,6 +57,16 @@ function hstatus_menu(){
         'file' => 'includes/hstatus.pages.inc',
         'access callback' => '_hstatus_status_access',
     );
+    //complearning form
+    $items['hstatus/submitcl'] = array(
+        'title' => 'Comp Learning Form',
+        'file' => 'includes/hstatus.pages.inc',
+        'page_callback' => 'drupal_get_form',
+        //note that even though no % is in the path, anything postfixing
+        //the path gets passed as an argument
+        'page arguments' => array('hstatus_forms_cl', 1),
+        'access callback' => '_hstatus_form_cl_access',
+    );
     return $items;
 }
 
@@ -66,7 +76,8 @@ function hstatus_menu(){
  * Just returns an array of strings to be used on the permissions page
  */
 function hstatus_perm(){
-    return array('view all honors status pages','administer honors status');
+    return array('view all honors status pages','administer honors status',
+        'submit complementary learning');
 }
 
 /**
@@ -130,3 +141,16 @@ function _hstatus_status_access($account) {
  * for when you just need to signify unlimited access
  */
 function _hstatus_static_access(){ return true; }
+
+/*
+ * _hstatus_form_cl_access
+ */
+function _hstatus_form_cl_access(){
+    if(user_access('submit complementary learning')){
+        global $user;
+        module_load_include('hstatus','inc','hstatus.db');
+        $huser = hstatus_load_user($user->name);
+        $status = $huser->continuation['status'];
+        return $status <= 1;
+    }else{return false;}
+}
