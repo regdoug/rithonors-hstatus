@@ -137,10 +137,29 @@ function hstatus_form_cl_submit($form, &$form_state)
 }
 
 function _hstatus_clform_newentry(&$form_state){
+    $n = $form_state['values']['count'];
+    $data = array('count' => $n);
+    global $user;
+    module_load_include('hstatus','inc','hstatus.db');
+    $success = hstatus_save_cldraft($user->uid,$data);
+    if($success){
+        $form_state['redirect'] = 'hstatus/mystatus/1';
+    }
 }
 function _hstatus_clform_savepage(&$form_state){
 }
 function _hstatus_clform_savefinal(&$form_state){
+}
+function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
+    global $user;
+    module_load_include('hstatus','inc','hstatus.db');
+    $success = hstatus_save_cldraft($user->uid,$data);
+    if($success && $page){
+        $form_state['redirect'] = "hstatus/mystatus/$page";
+    }else{
+        $form_state['redirect'] = 'hstatus/mystatus';
+        drupal_set_message('Failed to save data','error');
+    }
 }
     
 

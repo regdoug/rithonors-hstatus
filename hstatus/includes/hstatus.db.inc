@@ -214,3 +214,17 @@ function hstatus_load_cldraft($uid, $expire){
     }
     return false;
 }
+
+/*
+ * hstatus_save_cldraft
+ */
+function hstatus_save_cldraft($uid,$data){
+    $check = "SELECT uid FROM {h_cldrafts} WHERE uid=%d";
+    $rs = db_query($check,$uid);
+    $obj = (object) array('uid'=>$uid,'updatetime'=>time(),'data'=>serialize($data));
+    if($rs && db_fetch_array($rs)){
+        return drupal_write_record('h_cldrafts',$obj,'uid');
+    }else{
+        return drupal_write_record('h_cldrafts',$obj);
+    }
+}
