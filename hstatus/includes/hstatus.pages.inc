@@ -1,7 +1,8 @@
 <?php
-$hstatus_timetosave = '6 months';
+const hstatus_timetosave = '6 months';
 
 /* hstatus.pages.inc - Implements the display functions for the hStatus module */
+//note the Drupal convention of making "private" functions start with an underscore
 
 /**
  * Function defined by hstatus_menu to generate the page.
@@ -65,7 +66,7 @@ function hstatus_forms_cl($arg0){
         
         global $user;
         module_load_include('hstatus','inc','hstatus.db');
-        $data = hstatus_load_cldraft($user->uid,$hstatus_timetosave);
+        $data = hstatus_load_cldraft($user->uid,hstatus_timetosave);
         if($data['count'] < $n){
             //page does not exist
             //don't do anything so that execution proceeds to the first page form
@@ -88,7 +89,7 @@ function hstatus_forms_cl($arg0){
         );
         $form['information'] = array(
             '#value' => '<p>'.t("Your responses have been saved as a draft.
-            They will be stored for up to $hstatus_timetosave.  
+            They will be stored for up to {${hstatus_timetosave}}.  
             If you are satisfied with your submission,
             you may submit the form now by clicking the button below.").'</p>',
         );
@@ -98,7 +99,7 @@ function hstatus_forms_cl($arg0){
         );
         return $form;
     }else{
-        //first page
+        //first page -- acts as a catch-all, rather than returning a 404
         $form = array();
         $form['page'] = array(
             '#type' => 'value',
@@ -147,8 +148,32 @@ function _hstatus_clform_newentry(&$form_state){
     }
 }
 function _hstatus_clform_savepage(&$form_state){
+    global $user;
+    module_load_include('hstatus','inc','hstatus.db');
+    $data = hstatus_load_cldraft($user->uid,hstatus_timetosave);
+    $vals = $form_state['values']; //note that PHP arrays are not assigned by reference
+    $n = $vals['page'];
+    unset($vals['page']);
+    $data[$n] = $vals;
+    $nextpage = ($n < $data['count'])?$n+1:'last';
+    _hstatus_clform_saveandredirect($form_state,$data,$nextpage);
 }
 function _hstatus_clform_savefinal(&$form_state){
+    global $user;
+    module_load_include('hstatus','inc','hstatus.db');
+    $cansubmit = hstatus_check_clsubmit($user->uid);
+    if($cansubmit){
+        $success = hstatus_clsubmit($user->uid);
+    }else{
+        $success = false;
+    }
+    if($success){
+        drupal_set_message(t('Complementary Learning sucessfully submitted.'));
+        $form_state['redirect'] = '<front>';
+    }else{
+        drupal_set_message(t('Failed to submit Complementary Learning. Do you have a pending submission?'));
+        $form_state['redirect'] = 'hstatus/mystatus/last';
+    }
 }
 function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
     global $user;
@@ -158,7 +183,7 @@ function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
         $form_state['redirect'] = "hstatus/mystatus/$page";
     }else{
         $form_state['redirect'] = 'hstatus/mystatus';
-        drupal_set_message('Failed to save data','error');
+        drupal_set_message(t('Failed to save data.'),'error');
     }
 }
     

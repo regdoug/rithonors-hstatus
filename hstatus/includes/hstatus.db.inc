@@ -202,15 +202,31 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
 
 /**
  * hstatus_load_cldraft
+ * 
+ * @param $uid The Drupal user id to search for
+ * @param $expire A time length (to be passed to strtotime) specifying the
+ *  maximum age of the data
+ * 
+ * this fails and returns false if the data cannot be loaded, if it is
+ * older than the expire length or if $data['count'] is not set.
  */
 function hstatus_load_cldraft($uid, $expire){
+    //basic caching
+    static $cldrafts;
+    if(isset($cldrafts[$uid]) && isset($cldrafts[$uid]['count']){
+        return $cldrafts;
+    }
+    
     $q = 'SELECT updatetime, data FROM {h_cldrafts} WHERE uid=%d';
     $rs = db_query($q,$uid);
     $obj = db_fetch_object($rs);
     
-    if($obj && $obj->updatetime > strtotime("-$expire")){
+    if($obj && $obj->updatetime > strtotime('-'.trim($expire))){
         $data = unserialize($obj->data);
-        if(isset($data['count'])){return $data;}
+        if(isset($data['count'])){
+            $cldrafts[$uid] = $data;
+            return $data;
+        }
     }
     return false;
 }
@@ -219,6 +235,10 @@ function hstatus_load_cldraft($uid, $expire){
  * hstatus_save_cldraft
  */
 function hstatus_save_cldraft($uid,$data){
+    //basic caching
+    static $cldrafts;
+    $cldrafts[$uid] = $data;
+    
     $check = "SELECT uid FROM {h_cldrafts} WHERE uid=%d";
     $rs = db_query($check,$uid);
     $obj = (object) array('uid'=>$uid,'updatetime'=>time(),'data'=>serialize($data));
