@@ -87,7 +87,7 @@ $s['h_cldrafts'] = array(
         'data' => array(
             'description' => t('Serialized data'),
             'type' => 'blob',
-            'size' => 'medium',
+            'size' => 'normal',
         ),
     ),
     'primary key' => array('uid'),

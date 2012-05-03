@@ -55,7 +55,7 @@ function hstatus_menu(){
         'title' => 'Testing hstatus.db.inc',
         'page callback' => 'hstatus_test_db_page',
         'file' => 'includes/hstatus.pages.inc',
-        'access callback' => '_hstatus_status_access',
+        'access callback' => '_hstatus_static_access',
     );
     //complearning form
     $items['hstatus/submitcl'] = array(

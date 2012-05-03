@@ -213,7 +213,7 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
 function hstatus_load_cldraft($uid, $expire){
     //basic caching
     static $cldrafts;
-    if(isset($cldrafts[$uid]) && isset($cldrafts[$uid]['count']){
+    if(isset($cldrafts[$uid]) && isset($cldrafts[$uid]['count'])){
         return $cldrafts;
     }
     

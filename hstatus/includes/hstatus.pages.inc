@@ -1,5 +1,6 @@
 <?php
 const hstatus_timetosave = '6 months';
+global $user;
 
 /* hstatus.pages.inc - Implements the display functions for the hStatus module */
 //note the Drupal convention of making "private" functions start with an underscore
@@ -64,8 +65,7 @@ function hstatus_forms_cl($arg0){
           '#value' => t('Next Page >'),
         );
         
-        global $user;
-        module_load_include('hstatus','inc','hstatus.db');
+        module_load_include('inc','hstatus','hstatus.db');
         $data = hstatus_load_cldraft($user->uid,hstatus_timetosave);
         if($data['count'] < $n){
             //page does not exist
@@ -125,11 +125,11 @@ function hstatus_forms_cl($arg0){
 function hstatus_form_cl_count_validate($element, &$form_state){
 	$v = $element['#value'];
 	if(empty($v) || !( is_numeric($v) && intVal($v) > 0 )){
-		form_error($element, $t('You must have a positive number of activities');
+		form_error($element, $t('You must have a positive number of activities'));
 	}
 }
 
-function hstatus_form_cl_submit($form, &$form_state)
+function hstatus_form_cl_submit($form, &$form_state){
     switch($form_state['values']['page']){
         case 'first': _hstatus_clform_newentry($form_state);break;
         case 'last': _hstatus_clform_savefinal($form_state);break;
@@ -140,16 +140,10 @@ function hstatus_form_cl_submit($form, &$form_state)
 function _hstatus_clform_newentry(&$form_state){
     $n = $form_state['values']['count'];
     $data = array('count' => $n);
-    global $user;
-    module_load_include('hstatus','inc','hstatus.db');
-    $success = hstatus_save_cldraft($user->uid,$data);
-    if($success){
-        $form_state['redirect'] = 'hstatus/mystatus/1';
-    }
+    _hstatus_clform_saveandredirect($form_state,$data,1);
 }
 function _hstatus_clform_savepage(&$form_state){
-    global $user;
-    module_load_include('hstatus','inc','hstatus.db');
+    module_load_include('inc','hstatus','hstatus.db');
     $data = hstatus_load_cldraft($user->uid,hstatus_timetosave);
     $vals = $form_state['values']; //note that PHP arrays are not assigned by reference
     $n = $vals['page'];
@@ -159,8 +153,7 @@ function _hstatus_clform_savepage(&$form_state){
     _hstatus_clform_saveandredirect($form_state,$data,$nextpage);
 }
 function _hstatus_clform_savefinal(&$form_state){
-    global $user;
-    module_load_include('hstatus','inc','hstatus.db');
+    module_load_include('inc','hstatus','hstatus.db');
     $cansubmit = hstatus_check_clsubmit($user->uid);
     if($cansubmit){
         $success = hstatus_clsubmit($user->uid);
@@ -172,17 +165,16 @@ function _hstatus_clform_savefinal(&$form_state){
         $form_state['redirect'] = '<front>';
     }else{
         drupal_set_message(t('Failed to submit Complementary Learning. Do you have a pending submission?'));
-        $form_state['redirect'] = 'hstatus/mystatus/last';
+        $form_state['redirect'] = 'hstatus/submitcl/last';
     }
 }
 function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
-    global $user;
-    module_load_include('hstatus','inc','hstatus.db');
+    module_load_include('inc','hstatus','hstatus.db');
     $success = hstatus_save_cldraft($user->uid,$data);
     if($success && $page){
-        $form_state['redirect'] = "hstatus/mystatus/$page";
+        $form_state['redirect'] = "hstatus/submitcl/$page";
     }else{
-        $form_state['redirect'] = 'hstatus/mystatus';
+        $form_state['redirect'] = 'hstatus/submitcl';
         drupal_set_message(t('Failed to save data.'),'error');
     }
 }
@@ -197,24 +189,28 @@ function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
  */
  
 function hstatus_static_page(){
-    global $user;
-    module_load_include('hstatus','inc','includes/hstatus.db'); 
-    $u = hstatus_load_user($user->name,false,false,true);
-    ob_start();
-    include 'test2.php';
-    $retVal = ob_get_contents();
-    ob_end_clean();
-    return $retVal;
+    if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
+        $retVal = 'Failed to load database';
+    }else{
+        $u = hstatus_load_user($user->name,false,false,true);
+        ob_start();
+        include 'test2.php';
+        $retVal = ob_get_contents();
+        ob_end_clean();
+        return $retVal;
+    }
     //return '<p>Hello!</p>';
 }
 function hstatus_test_db_page(){
-    global $user;
-    module_load_include('hstatus','inc','includes/hstatus.db');
-    $u = hstatus_load_user($user->name);
-    if($u){
-        $retVal = '<pre>'.print_r($u,true).'</pre>';
+    if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
+        $retVal = 'Failed to load database';
     }else{
-        $retVal = 'User failed to load';
+        $u = hstatus_load_user($user->name);
+        if($u){
+            $retVal = '<pre>'.print_r($u,true).'</pre>';
+        }else{
+            $retVal = 'User failed to load';
+        }
     }
     return $retVal;
 }
@@ -233,7 +229,10 @@ function template_preprocess_hstatus_mystatus(&$variables){
         $username = $variables['user']->name;
         
         //loads the database API
-        module_load_include('inc', 'hstatus', 'includes/hstatus.db');
+        if(module_load_include('inc', 'hstatus', 'includes/hstatus.db') === FALSE){
+            $variables['displaynone'] = true;
+            return;
+        }
         
         //gets a user object
         $huser = hstatus_load_user($username);
@@ -265,9 +264,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
                 default: $cl_str = 'Unknown';
             };
             
-            $fullname = ucfirst($huser->basic['name']['firstname']).' '.
-                    ucfirst($huser->basic['name']['lastname']);
-            
+            $fullname = ucwords(implode(' ',$huser->basic['name']));
             //Guaranteed Variables
             $variables['username'] = $username;
             $variables['status'] = $status;
