@@ -1,0 +1,21 @@
+<?
+function haddrole_user($op, &$edit, &$account, $category = NULL)
+{
+	if ($op=='login')
+	{
+		global $user;
+		$rid = -1; //needs to be changed to the id of the role to add
+		if ($rid == -1)
+			echo "You need to manually edit haddrole.module to set the correct role id. Until you do this nothing will happen.";
+		else
+		{
+			$roleName = db_result(db_query("SELECT r.name FROM {role} r WHERE r.name = '%s'", $role_name));
+			if (!isset($user->roles[$rid]))
+			{
+				$roles = $user->roles + array($rid => $roleName);
+				user_save($user, array('roles' => $roles));
+			}
+		}
+	}
+}
+?>
