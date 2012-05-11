@@ -130,7 +130,10 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
                 'program' => $arry['program'],
                 'gpa' => $arry['gpa'],
             );
-        }else{ return false; }
+        }else{ 
+            drupal_set_message("'$username' is not in Honors");
+            return false; 
+        }
         
         // Fetch Continuation Info
         $rs = db_query($q_continue, $username);
@@ -143,7 +146,10 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
                 'courses' => $arry['courses'],
                 'gpa' => $arry['gpa'],
             );
-        }else{return false;}
+        }else{
+            drupal_set_message("'$username' has no continuation entry");
+            return false;
+        }
         
         // Fetch Points
         // All of this might get changed later if we add columns to the h_students

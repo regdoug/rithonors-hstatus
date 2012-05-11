@@ -146,11 +146,14 @@ function _hstatus_static_access(){ return true; }
  * _hstatus_form_cl_access
  */
 function _hstatus_form_cl_access(){
+    return true;  //temp
+    global $user;
     if(user_access('submit complementary learning')){
-        global $user;
         module_load_include('hstatus','inc','hstatus.db');
         $huser = hstatus_load_user($user->name);
         $status = $huser->continuation['status'];
         return $status <= 1;
-    }else{return false;}
+    }else{
+        return false;
+    }
 }

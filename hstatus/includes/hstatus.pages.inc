@@ -1,6 +1,5 @@
 <?php
 const hstatus_timetosave = '6 months';
-global $user;
 
 /* hstatus.pages.inc - Implements the display functions for the hStatus module */
 //note the Drupal convention of making "private" functions start with an underscore
@@ -18,6 +17,7 @@ function hstatus_user_page($user){
  * Complearning form
  */
 function hstatus_forms_cl($arg0){
+global $user;
     
     if(is_numeric($arg0)){
         //activity entry
@@ -143,6 +143,7 @@ function _hstatus_clform_newentry(&$form_state){
     _hstatus_clform_saveandredirect($form_state,$data,1);
 }
 function _hstatus_clform_savepage(&$form_state){
+global $user;
     module_load_include('inc','hstatus','hstatus.db');
     $data = hstatus_load_cldraft($user->uid,hstatus_timetosave);
     $vals = $form_state['values']; //note that PHP arrays are not assigned by reference
@@ -169,6 +170,7 @@ function _hstatus_clform_savefinal(&$form_state){
     }
 }
 function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
+global $user;
     module_load_include('inc','hstatus','hstatus.db');
     $success = hstatus_save_cldraft($user->uid,$data);
     if($success && $page){
@@ -189,6 +191,7 @@ function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
  */
  
 function hstatus_static_page(){
+global $user;
     if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
         $retVal = 'Failed to load database';
     }else{
@@ -202,6 +205,7 @@ function hstatus_static_page(){
     //return '<p>Hello!</p>';
 }
 function hstatus_test_db_page(){
+global $user;
     if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
         $retVal = 'Failed to load database';
     }else{
