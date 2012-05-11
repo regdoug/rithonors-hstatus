@@ -9,6 +9,28 @@
  */
  
 /**
+ * hstatus_ishonors
+ * 
+ * @param $uid Drupal user id
+ * 
+ * Checks to see whether a drupal user is in honors
+ */
+function hstatus_ishonors($uid){
+    $q = 
+    "SELECT s.username
+    FROM {users} u
+    JOIN {h_students} s
+    ON u.name = s.username
+    WHERE u.uid=%d";
+    $rs = db_query($q,$uid);
+    if(db_fetch_array($rs)){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+/**
  * hstatus_load_user
  * 
  * Arguments:
