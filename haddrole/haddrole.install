@@ -1,0 +1,9 @@
+<?
+function haddrole_install()
+{
+}
+
+function haddrole_uninstall()
+{
+}
+?>
