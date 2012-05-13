@@ -233,12 +233,12 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
  * 
  * @param $uid The Drupal user id to search for
  * @param $expire A time length (to be passed to strtotime) specifying the
- *  maximum age of the data
+ *  maximum age of the data.  Defaults to 1 year
  * 
  * this fails and returns false if the data cannot be loaded, if it is
  * older than the expire length or if $data['count'] is not set.
  */
-function hstatus_load_cldraft($uid, $expire){
+function hstatus_load_cldraft($uid, $expire = '1 year'){
     //basic caching
     static $cldrafts;
     if(isset($cldrafts[$uid]) && isset($cldrafts[$uid]['count'])){
@@ -273,6 +273,22 @@ function hstatus_save_cldraft($uid,$data){
     if($rs && db_fetch_array($rs)){
         return drupal_write_record('h_cldrafts',$obj,'uid');
     }else{
-        return drupal_write_record('h_cldrafts',$obj);
+        //return drupal_write_record('h_cldrafts',$obj);
+        db_query('INSERT INTO {h_cldrafts} (uid,updatetime,data) VALUES (%d,%d,%b)',
+                $obj->uid,$obj->updatetime,$obj->data);
+        return true;
     }
+}
+
+/*
+ * hstatus_clsubmit
+ * 
+ * Saves a draft to the h_complearning database
+ */
+function hstatus_clsubmit($uid){
+    $data = hstatus_load_cldraft($uid);
+    
+    //TODO: implement this.
+    
+    return false;
 }
