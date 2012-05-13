@@ -259,8 +259,10 @@ function hstatus_load_cldraft($uid, $expire = '1 year'){
     return false;
 }
 
-/*
+/**
  * hstatus_save_cldraft
+ * 
+ * Saves $data to the h_cldrafts db table.
  */
 function hstatus_save_cldraft($uid,$data){
     //basic caching

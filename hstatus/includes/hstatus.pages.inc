@@ -1,8 +1,11 @@
 <?php
-const hstatus_timetosave = '6 months';
-
-/* hstatus.pages.inc - Implements the display functions for the hStatus module */
-//note the Drupal convention of making "private" functions start with an underscore
+/* 
+ * hstatus.pages.inc
+ * 
+ * Implements the page display functions for the hStatus module.
+ * 
+ * Forms are not included in this page.  For forms, see hstatus.forms.inc
+ */
 
 /**
  * Function defined by hstatus_menu to generate the page.
@@ -18,7 +21,7 @@ function hstatus_user_page($user){
  * 
  * hstatus_test_db_page
  * 
- * Expermental or demonstrative functions
+ * Expermental demonstrative functions
  */
  
 function hstatus_static_page(){

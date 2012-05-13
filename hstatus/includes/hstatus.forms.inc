@@ -137,32 +137,41 @@ function hstatus_forms_cl(&$form_state,$page){
     return $form;
 }
 
+/*
+ * hstatus_form_cl_count_validate
+ * 
+ * Validates the count field on the first page of the form
+ */
 function hstatus_form_cl_count_validate($element, &$form_state){
-    //DEBUG
-    //drupal_set_message(t('Validating count.'));
     //activites has to be a positive number
 	$v = trim($element['#value']);
     if(empty($v) || intval($v) < 1){
+        //flags the field as incorrect
         form_error($element, $t('You must have a positive integer number of activities.'));
     }
     //ensure it is actually an integer
     $integer = true;
     //probably faster than preg_match
     foreach(str_split($v) as $c){
+        //if there are decimal points, they will not be numeric.
         $integer = is_numeric($c);
         if(!$integer){
             form_error($element, $t('You must have a positive integer number of activities.'));
             return;
         }
     }
-    //DEBUG
-    //drupal_set_message('No errors in count.');
 }
+
+/*
+ * hstatus_forms_cl_submit
+ * 
+ * Called whenever the form is submitted.
+ * This function does not actually handle the data but instead passes
+ * it on to helper functions.
+ */
 
 function hstatus_forms_cl_submit($form, &$form_state){
     $page = $form_state['values']['page'];
-    //DEBUG
-    drupal_set_message(t("Page %page submitted.",array('%page'=>$page)));
     
     if(is_numeric($page)){
         _hstatus_clform_savepage($form_state);
@@ -175,13 +184,26 @@ function hstatus_forms_cl_submit($form, &$form_state){
     }
 }
 
+//====================================
+//===== Private/Helper Functions =====
+//====================================
+
+//note the Drupal convention of making 
+//"private" functions start with an underscore
+
+/*
+ * Helper function for the first page
+ */
 function _hstatus_clform_newentry(&$form_state){
     $n = $form_state['values']['count'];
-    //DEBUG
-    drupal_set_message(t('New entry with count @count.',array('@count'=>$n)));
     $data = array('count' => $n);
     _hstatus_clform_saveandredirect($form_state,$data,1);
 }
+
+/*
+ * Helper for all pages except first and last
+ */
+
 function _hstatus_clform_savepage(&$form_state){
     global $user;
     module_load_include('inc','hstatus','hstatus.db');
@@ -195,6 +217,10 @@ function _hstatus_clform_savepage(&$form_state){
     $nextpage = ($n < $data['count'])?$n+1:'last';
     _hstatus_clform_saveandredirect($form_state,$data,$nextpage);
 }
+
+/*
+ * Helper for last page
+ */
 function _hstatus_clform_savefinal(&$form_state){
     module_load_include('inc','hstatus','hstatus.db');
     $cansubmit = hstatus_check_clsubmit($user->uid);
@@ -212,18 +238,30 @@ function _hstatus_clform_savefinal(&$form_state){
         _hstatus_clform_redirect($form_state,'last');
     }
 }
+
+/*
+ * Saves the $data passed to it and calls the redirect helper
+ * with $page if it is successful.  If unsucessful, the redirect
+ * helper is called with false.
+ */
+
 function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
     global $user;
-    //DEBUG
-    drupal_set_message('Save and Redirect.');
     module_load_include('inc','hstatus','hstatus.db');
     $success = hstatus_save_cldraft($user->uid,$data);
     $page = ($success)?$page:false;
     _hstatus_clform_redirect($form_state,$page);
 } 
+
+/*
+ * The redirect helper.
+ * 
+ * Not actually a true redirect because the page doesn't change, but
+ * will reload the form to the $page requested.  If $page is false,
+ * the current page of the form is reloaded.
+ */
+
 function _hstatus_clform_redirect(&$form_state,$page){
-    //DEBUG
-    drupal_set_message(t("Redirecting to %page.",array('%page'=>$page)));
     if($page){
         $form_state['storage']['page'] = $page;
         drupal_set_message(t('Data saved successfully'));
