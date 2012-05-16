@@ -153,7 +153,7 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
                 'gpa' => $arry['gpa'],
             );
         }else{ 
-            drupal_set_message("'$username' is not in Honors");
+            drupal_set_message(t('@username is not in Honors',array('@username'=>$username)),'warning');
             return false; 
         }
         
@@ -169,7 +169,7 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
                 'gpa' => $arry['gpa'],
             );
         }else{
-            drupal_set_message("'$username' has no continuation entry");
+            drupal_set_message(t('@username has no continuation entry',array('@username'=>$username)),'warning');
             return false;
         }
         
@@ -294,9 +294,10 @@ function hstatus_save_cldraft($uid,$data){
 function hstatus_clsubmit($uid){
     $user = user_load($uid);
     $huser = hstatus_load_user($user->name);
-    $data = hstatus_load_cldraft($uid);
-    
-    if($huser->continuation['comp_learn'] == 1){
+    if(!$huser){
+        drupal_set_message('Failed to load your profile.','error');
+        return false;
+    }elseif($huser->continuation['comp_learn'] == 1){
         drupal_set_message(t('Not submitted. You have already completed Comp Learning for this year.'),'warning');
         return false;
     }elseif($huser->continuation['status'] > 2){
@@ -311,10 +312,13 @@ function hstatus_clsubmit($uid){
         }
     }
     
+    $data = hstatus_load_cldraft($uid);
+    
     $n = isset($data['count'])?intval($data['count']):0;
     $desc='';$lead='';$time='';$contact='';$comment='';
     if($n > 0){
-        for($i = 0; $i < $n; $i++){
+        // $data is not zero-indexed.
+        for($i = 1; $i <= $n; $i++){
             $prefix = "======  Activity $i =====".PHP_EOL;
             $desc .= $prefix.check_plain(strip_tags($data[$i]['desc']));
             $lead .= $prefix.check_plain(strip_tags($data[$i]['lead']));
@@ -329,13 +333,14 @@ function hstatus_clsubmit($uid){
     
     $submission = new stdClass();
     $submission->dce = $user->name;
-    $submission->title = "Complearning for {${implode(' ',$huser->basic['name'])}} ({${strftime('%b %a, %Y')}})";
+    $submission->title = "Complearning for ".$huser->basic['name']['firstname'].' '.
+                        $huser->basic['name']['lastname'].'. '.strftime('%b %a, %Y');
     $submission->submitted_date = strftime('%Y-%m-%d %H:%M:%S');
     $submission->description = $desc;
     $submission->reflection = $lead;
     $submission->date = $time;
     $submission->contact = $contact;
-    $submission->contact = $contact;
+    $submission->comments = $comment;
     
     return drupal_write_record('h_complearning',$submission);
 }

@@ -1,5 +1,8 @@
 <?php
 
+//works better than constants
+function _hstatus_timetosave(){return '6 months';}
+
 /**
  * hstatus_build_form
  * 
@@ -22,10 +25,7 @@ function hstatus_forms_cl(&$form_state,$page){
     //get data from database
     global $user;
     module_load_include('inc','hstatus','hstatus.db');
-    //set expire time.  
-    //this variable is also used in the final page of the form
-    $hstatus_timetosave = '6 months';
-    $data = hstatus_load_cldraft($user->uid,$hstatus_timetosave);
+    $data = hstatus_load_cldraft($user->uid,_hstatus_timetosave());
     
     //if we are coming from another page, we need to get it from the
     //storage rather than from the args
@@ -40,7 +40,7 @@ function hstatus_forms_cl(&$form_state,$page){
             '#value' => $n,
         );
         $form['heading'] = array(
-            '#value' => '<h3>'.t("Activity $n").'</h3>',
+            '#value' => '<h3>'.t('Activity !n',array('!n'=>$n)).'</h3>',
         );
 
         $form['name'] = array(
@@ -103,7 +103,7 @@ function hstatus_forms_cl(&$form_state,$page){
         );
         $form['information'] = array(
             '#value' => '<p>'.t("Your responses have been saved as a draft.
-            They will be stored for up to $hstatus_timetosave.  
+            They will be stored for up to "._hstatus_timetosave()."
             If you are satisfied with your submission,
             you may submit the form now by clicking the button below.").'</p>',
         );
@@ -147,7 +147,7 @@ function hstatus_form_cl_count_validate($element, &$form_state){
 	$v = trim($element['#value']);
     if(empty($v) || intval($v) < 1){
         //flags the field as incorrect
-        form_error($element, $t('You must have a positive integer number of activities.'));
+        form_error($element, t('You must have a positive integer number of activities.'));
     }
     //ensure it is actually an integer
     $integer = true;
@@ -156,7 +156,7 @@ function hstatus_form_cl_count_validate($element, &$form_state){
         //if there are decimal points, they will not be numeric.
         $integer = is_numeric($c);
         if(!$integer){
-            form_error($element, $t('You must have a positive integer number of activities.'));
+            form_error($element, t('You must have a positive integer number of activities.'));
             return;
         }
     }
@@ -195,8 +195,17 @@ function hstatus_forms_cl_submit($form, &$form_state){
  * Helper function for the first page
  */
 function _hstatus_clform_newentry(&$form_state){
+    global $user;
+    module_load_include('inc','hstatus','hstatus.db');
+    $data = hstatus_load_cldraft($user->uid,_hstatus_timetosave());
+    
     $n = $form_state['values']['count'];
-    $data = array('count' => $n);
+    
+    if($data){
+        $data['count'] = $n;
+    }else{
+        $data = array('count' => $n);
+    }
     _hstatus_clform_saveandredirect($form_state,$data,1);
 }
 
@@ -207,7 +216,7 @@ function _hstatus_clform_newentry(&$form_state){
 function _hstatus_clform_savepage(&$form_state){
     global $user;
     module_load_include('inc','hstatus','hstatus.db');
-    $data = hstatus_load_cldraft($user->uid,hstatus_timetosave);
+    $data = hstatus_load_cldraft($user->uid,_hstatus_timetosave());
     //DEBUG
     drupal_set_message('Loading data: '.($data)?'Success.':'Failure.');
     $vals = $form_state['values']; //note that PHP arrays are NOT assigned by reference
@@ -222,20 +231,16 @@ function _hstatus_clform_savepage(&$form_state){
  * Helper for last page
  */
 function _hstatus_clform_savefinal(&$form_state){
+    global $user;
     module_load_include('inc','hstatus','hstatus.db');
-    $cansubmit = hstatus_check_clsubmit($user->uid);
-    
-    if($cansubmit){
-        $success = hstatus_clsubmit($user->uid);
-    }else{
-        $success = false;
-    }
-    if($success){
+    if(hstatus_clsubmit($user->uid)){
         drupal_set_message(t('Complementary Learning sucessfully submitted.'));
+        unset($form_state['storage']);
+        unset($form_state['rebuild']);
         $form_state['redirect'] = '<front>';
     }else{
-        drupal_set_message(t('Failed to submit Complementary Learning. Do you have a pending submission?'));
-        _hstatus_clform_redirect($form_state,'last');
+        drupal_set_message(t('Failed to submit Complementary Learning.'),'error');
+        _hstatus_clform_redirect($form_state,'last',false);
     }
 }
 
@@ -261,12 +266,12 @@ function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
  * the current page of the form is reloaded.
  */
 
-function _hstatus_clform_redirect(&$form_state,$page){
+function _hstatus_clform_redirect(&$form_state,$page,$message=true){
     if($page){
         $form_state['storage']['page'] = $page;
-        drupal_set_message(t('Data saved successfully'));
+        if($message){drupal_set_message(t('Data saved successfully'));}
     }else{
         $form_state['redirect'] = false;
-        drupal_set_message(t('Failed to save data.'),'error');
+        if($message){drupal_set_message(t('Failed to save data.'),'error');}
     }
 }
