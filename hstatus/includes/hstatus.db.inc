@@ -221,6 +221,10 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
     
     if($loadSubmissions && ($reset || !isset($u['submissions']))){
         //TODO: implement
+            // Date, status, and link should be sufficient info.
+            // 1. 'complearn' => submitted to h_complearning.  This year only.
+            // 2. 'cldrafts' => h_cldrafts submissions.  link goes to form.  not expired only.
+            // 3. 'points' => ???
     }
     
     $husers[$username] = $u;  //update static variable for future calls
@@ -288,9 +292,50 @@ function hstatus_save_cldraft($uid,$data){
  * Saves a draft to the h_complearning database
  */
 function hstatus_clsubmit($uid){
+    $user = user_load($uid);
+    $huser = hstatus_load_user($user->name);
     $data = hstatus_load_cldraft($uid);
     
-    //TODO: implement this.
+    if($huser->continuation['comp_learn'] == 1){
+        drupal_set_message(t('Not submitted. You have already completed Comp Learning for this year.'),'warning');
+        return false;
+    }elseif($huser->continuation['status'] > 2){
+        drupal_set_message(t('Not submitted. You are not active in the Honors Program'),'warning');
+        return false;
+    }elseif(isset($huser->submissions['complearn']) && is_array($huser->submissions['complearn'])){
+        foreach($huser->submissions['complearn'] as $sub){
+            if($sub['status'] == -2){
+                drupal_set_message(t('Not submitted. You already have a pending submission.'),'warning');
+                return false;
+            }
+        }
+    }
     
-    return false;
+    $n = isset($data['count'])?intval($data['count']):0;
+    $desc='';$lead='';$time='';$contact='';$comment='';
+    if($n > 0){
+        for($i = 0; $i < $n; $i++){
+            $prefix = "======  Activity $i =====".PHP_EOL;
+            $desc .= $prefix.check_plain(strip_tags($data[$i]['desc']));
+            $lead .= $prefix.check_plain(strip_tags($data[$i]['lead']));
+            $time .= $prefix.check_plain(strip_tags($data[$i]['time']));
+            $contact .= $prefix.check_plain(strip_tags($data[$i]['contact']));
+            $comment .= $prefix.check_plain(strip_tags($data[$i]['comment']));
+        }
+    }else{
+        drupal_set_message(t('Not submitted.  You seem to have an invalid number of activities.'),'error');
+        return false;
+    }
+    
+    $submission = new stdClass();
+    $submission->dce = $user->name;
+    $submission->title = "Complearning for {${implode(' ',$huser->basic['name'])}} ({${strftime('%b %a, %Y')}})";
+    $submission->submitted_date = strftime('%Y-%m-%d %H:%M:%S');
+    $submission->description = $desc;
+    $submission->reflection = $lead;
+    $submission->date = $time;
+    $submission->contact = $contact;
+    $submission->contact = $contact;
+    
+    return drupal_write_record('h_complearning',$submission);
 }

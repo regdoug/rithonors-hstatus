@@ -153,8 +153,8 @@ function _hstatus_form_cl_access(){
         }
         $huser = hstatus_load_user($user->name);
         $status = $huser->continuation['status'];
-        return $status <= 1;
-        //return true;
+        // active in Honors.
+        return $status <= 2;
     }else{
         return false;
     }

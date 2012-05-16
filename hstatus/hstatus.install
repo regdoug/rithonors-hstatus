@@ -353,9 +353,10 @@ $s['h_complearning'] = array(
             'length' => 40,
         ),
         'date' => array(
-            'description' => t('I really don\'t understand this one either'),
-            'type' => 'datetime',
+            'description' => t('The time commitment'),
+            'type' => 'text',
             'not null' => true,
+            'size' => 'medium',
         ),
         'description' => array(
             'description' => t(''),
@@ -388,11 +389,11 @@ $s['h_complearning'] = array(
             'type' => 'datetime',
         ),
         'reviewed' => array(
-            'description' => t('status. 3=draft 2=pending, 1=approved, 0=denied, -1=deleted'),
+            'description' => t('status. 1=approved, 0=denied, -1=deleted, -2=pending'),
             'type' => 'int',
             'size' => 'tiny',
             'not null' => true,
-            'default' => 2,
+            'default' => -2,
         ),
         'reviewed_date' => array(
             'description' => t(''),
@@ -401,7 +402,6 @@ $s['h_complearning'] = array(
         'reviewed_by' => array(
             'description' => t('Name of reviewer'),
             'type' => 'varchar',
-            'not null' => true,
             'length' => 40,
         ),
         'reason' => array(
