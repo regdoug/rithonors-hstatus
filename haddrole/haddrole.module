@@ -1,12 +1,28 @@
-<?
+<?php
 function haddrole_user($op, &$edit, &$account, $category = NULL)
 {
 	if ($op=='login')
 	{
 		global $user;
-		$rid = -1; //needs to be changed to the id of the role to add
-		if ($rid == -1)
-			echo "You need to manually edit haddrole.module to set the correct role id. Until you do this nothing will happen.";
+		//variable_get retrieves system variables.  here we retrieve our variable 'haddrole_rid'
+		$rid = variable_get('haddrole_rid',0);
+		
+		//the variable wasn't set in the database
+		//this means that we haven't ever tried to retrieve the role.
+		if ($rid == 0){ 
+			$rs = db_query("SELECT rid FROM {role} WHERE name = %s",'Honors');
+			if($result = db_fetch_object()){
+				$rid = $result->rid;
+			}else{//there is no role called 'Honors'
+				//set rid to -1 so that we don't check again.
+				$rid = -1;
+			}
+			variable_set('haddrole_rid',$rid);
+		}
+				
+		if ($rid == -1){
+			drupal_set_message(t('You need to create a role called Honors and reinstall haddrole.'));
+		}
 		else
 		{
 			$roleName = db_result(db_query("SELECT r.name FROM {role} r WHERE r.name = '%s'", $role_name));
@@ -18,4 +34,3 @@ function haddrole_user($op, &$edit, &$account, $category = NULL)
 		}
 	}
 }
-?>
