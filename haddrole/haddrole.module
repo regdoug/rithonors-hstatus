@@ -21,15 +21,19 @@ function haddrole_user($op, &$edit, &$account, $category = NULL)
 		}
 				
 		if ($rid == -1){
-			drupal_set_message(t('You need to create a role called Honors and reinstall haddrole.'));
+			drupal_set_message(t('You need to create a role called Honors and reinstall haddrole.'),'warning');
 		}
 		else
 		{
 			$roleName = db_result(db_query("SELECT r.name FROM {role} r WHERE r.name = '%s'", $role_name));
 			if (!isset($user->roles[$rid]))
 			{
-				$roles = $user->roles + array($rid => $roleName);
-				user_save($user, array('roles' => $roles));
+				//load hstatus db api
+				module_load_include('inc','hstatus','includes/hstatus.db');
+				if(hstatus_ishonors($user->uid){
+					$roles = $user->roles + array($rid => $roleName);
+					user_save($user, array('roles' => $roles));
+				}
 			}
 		}
 	}

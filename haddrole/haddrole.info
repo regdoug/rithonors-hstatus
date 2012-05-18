@@ -2,3 +2,4 @@ name = Auto Honors Role Add
 description = Automagically determines if a user is an honors student on login and if so gives them the honors role. WARNING: This currently does not check if the student is an honors student. DO NOT USE on anything but a local website.
 package = Honors
 core=6.x
+dependancies[]=hstatus
