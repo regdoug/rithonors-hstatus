@@ -10,8 +10,8 @@ function haddrole_user($op, &$edit, &$account, $category = NULL)
 		//the variable wasn't set in the database
 		//this means that we haven't ever tried to retrieve the role.
 		if ($rid == 0){ 
-			$rs = db_query("SELECT rid FROM {role} WHERE name = %s",'Honors');
-			if($result = db_fetch_object()){
+			$rs = db_query("SELECT rid FROM {role} WHERE name = '%s'",'Honors');
+			if($result = db_fetch_object($rs)){
 				$rid = $result->rid;
 			}else{//there is no role called 'Honors'
 				//set rid to -1 so that we don't check again.
@@ -30,7 +30,7 @@ function haddrole_user($op, &$edit, &$account, $category = NULL)
 			{
 				//load hstatus db api
 				module_load_include('inc','hstatus','includes/hstatus.db');
-				if(hstatus_ishonors($user->uid){
+				if(hstatus_ishonors($user->uid)){
 					$roles = $user->roles + array($rid => $roleName);
 					user_save($user, array('roles' => $roles));
 				}
