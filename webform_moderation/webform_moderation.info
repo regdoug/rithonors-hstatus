@@ -1,4 +1,0 @@
-name = Webform Moderation
-description = Adds approve/reject functionality to selected webforms.
-core = 6.x
-package = Webform
