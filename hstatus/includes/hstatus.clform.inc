@@ -30,14 +30,6 @@ function hstatus_forms_cl(&$form_state,$page){
         $form_state['storage']['page'] = $page;
     }
     
-    //DEBUG
-    $form = array();
-    $form['currentstate'] = array(
-        '#prefix' => '<pre>',
-        '#suffix' => '</pre>',
-        '#value' => print_r($data,true),
-    );
-    
     //ensure that data is loaded if we are going to a page other than 'first'
     if(isset($data['count']) && intval($data['count']) > 0){
         $form_state['storage']['count'] = $data['count'];
@@ -47,9 +39,9 @@ function hstatus_forms_cl(&$form_state,$page){
         $page = 'first';
     }
     
+    $form = array();
     $n = intval($page);
-    //DEBUG
-    drupal_set_message("rendering page $n ($page)");
+    
     //if $page is a string, $n will be 0
     if($n > 0){
         //$form = array();
@@ -224,8 +216,6 @@ function hstatus_forms_cl_submit($form, &$form_state){
  * Helper function for the first page
  */
 function _hstatus_clform_newentry(&$form_state){
-    //DEBUG
-    drupal_set_message('recording new entry');
     
     if(isset($form_state['storage']['data']['count'])){
         $data = $form_state['storage']['data'];
@@ -250,9 +240,6 @@ function _hstatus_clform_savepage(&$form_state,$back=false){
     if(!isset($data['count'])){
         $data = _hstatus_clform_loaddata();
     }
-    
-    //DEBUG
-    drupal_set_message('Loading data: '.($data)?'Success.':'Failure.');
     
     $vals = $form_state['values']; //note that PHP arrays are NOT assigned by reference
     $n = $vals['page'];
@@ -309,16 +296,10 @@ function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
 function _hstatus_clform_redirect(&$form_state,$page='>',$message=true){
     if($page == '>' || $page == '<'){
         $n = $form_state['storage']['page'];
-        //DEBUG
-        drupal_set_message("current page: $n");
         if(is_numeric($n)){
             if($page == '>'){
-                //DEBUG
-                drupal_set_message('going forward');
                 $page = ($n < $form_state['storage']['count'])?$n+1:'last';
             }else{
-                //DEBUG
-                drupal_set_message('going backward');
                 $page = ($n > 1)?$n-1:'first';
             }
         }else{
