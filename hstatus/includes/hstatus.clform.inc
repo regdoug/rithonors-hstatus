@@ -247,8 +247,6 @@ function _hstatus_clform_savepage(&$form_state,$back=false){
     
     $data[$n] = $vals;
     
-    file_put_contents('/home/regdoug/hstatus.savepage.log',print_r($data,true));
-    
     $nextpage = $back?'<':'>';
     _hstatus_clform_saveandredirect($form_state,$data,$nextpage);
 }
