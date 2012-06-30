@@ -7,7 +7,7 @@
  *  - It keeps the code cleaner in the other files.
  *  - It gives more flexibility if we should change the db structure.
  */
- 
+
 /**
  * hstatus_load_user
  * 
@@ -130,7 +130,11 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
                 'program' => $arry['program'],
                 'gpa' => $arry['gpa'],
             );
-        }else{ return false; }
+        }else{
+            //DEBUG, but we should maybe return error statuses instead of just 'false' 
+            drupal_set_message(t('@username is not in Honors',array('@username'=>$username)),'warning');
+            return false; 
+        }
         
         // Fetch Continuation Info
         $rs = db_query($q_continue, $username);
@@ -143,7 +147,11 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
                 'courses' => $arry['courses'],
                 'gpa' => $arry['gpa'],
             );
-        }else{return false;}
+        }else{
+            //DEBUG, but we should maybe return error statuses instead of just 'false'
+            drupal_set_message(t('@username has no continuation entry',array('@username'=>$username)),'warning');
+            return false;
+        }
         
         // Fetch Points
         // All of this might get changed later if we add columns to the h_students
@@ -193,9 +201,126 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
     
     if($loadSubmissions && ($reset || !isset($u['submissions']))){
         //TODO: implement
+            // Date, status, and link should be sufficient info.
+            // 1. 'complearn' => submitted to h_complearning.  This year only.
+            // 2. 'cldrafts' => h_cldrafts submissions.  link goes to form.  not expired only.
+            // 3. 'points' => ???
     }
     
     $husers[$username] = $u;  //update static variable for future calls
 
     return (object) $u;
+}
+
+/**
+ * hstatus_load_cldraft
+ * 
+ * @param $uid The Drupal user id to search for
+ * @param $expire A time length (to be passed to strtotime) specifying the
+ *  maximum age of the data.  Defaults to 1 year
+ * 
+ * this fails and returns false if the data cannot be loaded, if it is
+ * older than the expire length or if $data['count'] is not set.
+ */
+function hstatus_load_cldraft($uid, $expire = '1 year'){
+    //basic caching
+    static $cldrafts;
+    if(isset($cldrafts[$uid]) && isset($cldrafts[$uid]['count'])){
+        return $cldrafts[$uid];
+    }
+    
+    $q = 'SELECT updatetime, data FROM {h_cldrafts} WHERE uid=%d';
+    $rs = db_query($q,$uid);
+    $obj = db_fetch_object($rs);
+    
+    if($obj && $obj->updatetime > strtotime('-'.trim($expire))){
+        $data = unserialize($obj->data);
+        if(isset($data['count'])){
+            $cldrafts[$uid] = $data;
+            return $data;
+        }
+    }
+    return false;
+}
+
+/**
+ * hstatus_save_cldraft
+ * 
+ * Saves $data to the h_cldrafts db table.
+ */
+function hstatus_save_cldraft($uid,$data){
+    //basic caching
+    static $cldrafts;
+    $cldrafts[$uid] = $data;
+    
+    $check = "SELECT uid FROM {h_cldrafts} WHERE uid=%d";
+    $rs = db_query($check,$uid);
+    $obj = (object) array('uid'=>$uid,'updatetime'=>time(),'data'=>serialize($data));
+    if($rs && db_fetch_array($rs)){
+        return drupal_write_record('h_cldrafts',$obj,'uid');
+    }else{
+        //return drupal_write_record('h_cldrafts',$obj);
+        db_query('INSERT INTO {h_cldrafts} (uid,updatetime,data) VALUES (%d,%d,%b)',
+                $obj->uid,$obj->updatetime,$obj->data);
+        return true;
+    }
+}
+
+/*
+ * hstatus_clsubmit
+ * 
+ * Saves a draft to the h_complearning database
+ */
+function hstatus_clsubmit($uid){
+    $user = user_load($uid);
+    $huser = hstatus_load_user($user->name);
+    if(!$huser){
+        drupal_set_message('Failed to load your profile.','error');
+        return false;
+    }elseif($huser->continuation['comp_learn'] == 1){
+        drupal_set_message(t('Not submitted. You have already completed Comp Learning for this year.'),'warning');
+        return false;
+    }elseif($huser->continuation['status'] > 2){
+        drupal_set_message(t('Not submitted. You are not active in the Honors Program'),'warning');
+        return false;
+    }elseif(isset($huser->submissions['complearn']) && is_array($huser->submissions['complearn'])){
+        foreach($huser->submissions['complearn'] as $sub){
+            if($sub['status'] == -2){
+                drupal_set_message(t('Not submitted. You already have a pending submission.'),'warning');
+                return false;
+            }
+        }
+    }
+    
+    $data = hstatus_load_cldraft($uid);
+    
+    $n = isset($data['count'])?intval($data['count']):0;
+    $desc='';$lead='';$time='';$contact='';$comment='';
+    if($n > 0){
+        // $data is not zero-indexed.
+        for($i = 1; $i <= $n; $i++){
+            $prefix = "======  Activity $i =====".PHP_EOL;
+            $desc .= $prefix.check_plain(strip_tags($data[$i]['desc'])).PHP_EOL;
+            $lead .= $prefix.check_plain(strip_tags($data[$i]['lead'])).PHP_EOL;
+            $time .= $prefix.check_plain(strip_tags($data[$i]['time'])).PHP_EOL;
+            $contact .= $prefix.check_plain(strip_tags($data[$i]['contact'])).PHP_EOL;
+            $comment .= $prefix.check_plain(strip_tags($data[$i]['comment'])).PHP_EOL;
+        }
+    }else{
+        drupal_set_message(t('Not submitted.  You seem to have an invalid number of activities.'),'error');
+        return false;
+    }
+    
+    $submission = new stdClass();
+    $submission->dce = $user->name;
+    $submission->title = "Complearning for ".$huser->basic['name']['firstname'].' '.
+                        $huser->basic['name']['lastname'].'. '.strftime('%b %a, %Y');
+    $submission->submitted_date = strftime('%Y-%m-%d %H:%M:%S');
+    $submission->description = $desc;
+    $submission->reflection = $lead;
+    $submission->date = $time;
+    $submission->contact = $contact;
+    $submission->comments = $comment;
+    
+    return drupal_write_record('h_complearning',$submission);
 }

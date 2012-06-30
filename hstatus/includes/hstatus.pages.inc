@@ -1,6 +1,11 @@
 <?php
-
-/* hstatus.pages.inc - Implements the display functions for the hStatus module */
+/* 
+ * hstatus.pages.inc
+ * 
+ * Implements the page display functions for the hStatus module.
+ * 
+ * Forms are not included in this page.  For forms, see hstatus.forms.inc
+ */
 
 /**
  * Function defined by hstatus_menu to generate the page.
@@ -25,7 +30,10 @@ function template_preprocess_hstatus_mystatus(&$variables){
         $username = $variables['user']->name;
         
         //loads the database API
-        module_load_include('inc', 'hstatus', 'includes/hstatus.db');
+        if(module_load_include('inc', 'hstatus', 'includes/hstatus.db') === FALSE){
+            $variables['displaynone'] = true;
+            return;
+        }
         
         //gets a user object
         $huser = hstatus_load_user($username);
@@ -57,9 +65,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
                 default: $cl_str = 'Unknown';
             };
             
-            $fullname = ucfirst($huser->basic['name']['firstname']).' '.
-                    ucfirst($huser->basic['name']['lastname']);
-            
+            $fullname = ucwords(implode(' ',$huser->basic['name']));
             //Guaranteed Variables
             $variables['username'] = $username;
             $variables['status'] = $status;
