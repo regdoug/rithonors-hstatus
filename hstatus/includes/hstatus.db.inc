@@ -229,11 +229,19 @@ function hstatus_load_cldraft($uid, $expire = '1 year'){
         return $cldrafts[$uid];
     }
     
-    $q = 'SELECT updatetime, data FROM {h_cldrafts} WHERE uid=%d';
-    $rs = db_query($q,$uid);
+    $q = 
+    "SELECT data.data 
+    FROM {h_cldrafts} draft
+    JOIN {h_cl_data} data
+    ON draft.id = data.id
+    WHERE draft.uid=%d
+    AND draft.updatetime > %d";
+    
+    $time = strtotime('-'.trim($expire));
+    $rs = db_query($q,$uid,$time);
     $obj = db_fetch_object($rs);
     
-    if($obj && $obj->updatetime > strtotime('-'.trim($expire))){
+    if($obj){
         $data = unserialize($obj->data);
         if(isset($data['count'])){
             $cldrafts[$uid] = $data;
@@ -253,15 +261,21 @@ function hstatus_save_cldraft($uid,$data){
     static $cldrafts;
     $cldrafts[$uid] = $data;
     
-    $check = "SELECT uid FROM {h_cldrafts} WHERE uid=%d";
-    $rs = db_query($check,$uid);
+    $rs = db_query("SELECT uid, id FROM {h_cldrafts} WHERE uid=%d",$uid);
+    if($rs){
+        $result = db_fetch_array();
+        $id = $result?$result['id']:false;
+    }
+        
     $obj = (object) array('uid'=>$uid,'updatetime'=>time(),'data'=>serialize($data));
-    if($rs && db_fetch_array($rs)){
+    if($id){
         return drupal_write_record('h_cldrafts',$obj,'uid');
     }else{
-        //return drupal_write_record('h_cldrafts',$obj);
-        db_query('INSERT INTO {h_cldrafts} (uid,updatetime,data) VALUES (%d,%d,%b)',
-                $obj->uid,$obj->updatetime,$obj->data);
+        //this may only work for MySQL...
+        db_query(
+        'INSERT INTO {h_cl_data} (data) VALUES (%b); 
+        INSERT INTO {h_cldrafts} (uid,updatetime) VALUES (%d,%d,LAST_INSERT_ID(id))'
+        ,serialize($data),$uid,time());
         return true;
     }
 }
@@ -271,7 +285,7 @@ function hstatus_save_cldraft($uid,$data){
  * 
  * Saves a draft to the h_complearning database
  */
-function hstatus_clsubmit($uid){
+function hstatus_clsubmit($uid, $expire = '1 year'){
     $user = user_load($uid);
     $huser = hstatus_load_user($user->name);
     if(!$huser){
@@ -293,34 +307,32 @@ function hstatus_clsubmit($uid){
     }
     
     $data = hstatus_load_cldraft($uid);
+    if(!isset($data['count']))return false;
     
-    $n = isset($data['count'])?intval($data['count']):0;
-    $desc='';$lead='';$time='';$contact='';$comment='';
-    if($n > 0){
-        // $data is not zero-indexed.
-        for($i = 1; $i <= $n; $i++){
-            $prefix = "======  Activity $i =====".PHP_EOL;
-            $desc .= $prefix.check_plain(strip_tags($data[$i]['desc'])).PHP_EOL;
-            $lead .= $prefix.check_plain(strip_tags($data[$i]['lead'])).PHP_EOL;
-            $time .= $prefix.check_plain(strip_tags($data[$i]['time'])).PHP_EOL;
-            $contact .= $prefix.check_plain(strip_tags($data[$i]['contact'])).PHP_EOL;
-            $comment .= $prefix.check_plain(strip_tags($data[$i]['comment'])).PHP_EOL;
-        }
-    }else{
-        drupal_set_message(t('Not submitted.  You seem to have an invalid number of activities.'),'error');
-        return false;
-    }
+    $q = 
+    "SELECT data.data, data.id 
+    FROM {h_cldrafts} draft
+    JOIN {h_cl_data} data
+    ON draft.id = data.id
+    WHERE draft.uid=%d
+    AND draft.updatetime > %d";
     
-    $submission = new stdClass();
-    $submission->dce = $user->name;
-    $submission->title = "Complearning for ".$huser->basic['name']['firstname'].' '.
-                        $huser->basic['name']['lastname'].'. '.strftime('%b %a, %Y');
-    $submission->submitted_date = strftime('%Y-%m-%d %H:%M:%S');
-    $submission->description = $desc;
-    $submission->reflection = $lead;
-    $submission->date = $time;
-    $submission->contact = $contact;
-    $submission->comments = $comment;
+    $time = strtotime('-'.trim($expire));
+    $rs = db_query($q,$uid,$time);
+    $result = db_fetch_object($rs);
     
-    return drupal_write_record('h_complearning',$submission);
+    /* Loop through the data array to compile hours and types */
+    $hours = 0; $types = '';
+    for($i = 1; $i <= $data['count']; $i++){
+        $hours += $data[$i]['hours'];
+        $types .= $data[$i]['type'].' ';
+    )
+    /* Save to db */
+    $record = new stdClass();
+    $record->uid = $uid;
+    $record->id = $result->id;
+    $record->hours = $hours;
+    $record->types = $types;
+    $record->submit_date = time();
+    return drupal_write_record('h_cl', $record);
 }

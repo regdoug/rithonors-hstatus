@@ -19,6 +19,8 @@ function hstatus_build_clform(){
  *  2. the page to load     ['page']
  *  3. the activity count   ['count']
  */
+ 
+ //TODO: add field 'hours' and field 'type'
 function hstatus_forms_cl(&$form_state,$page){
     if(isset($form_state['storage']['page']) 
             && isset($form_state['storage']['data']['count'])){

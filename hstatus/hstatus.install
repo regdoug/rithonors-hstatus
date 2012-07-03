@@ -43,15 +43,44 @@ function hstatus_uninstall(){
  */
  
 /**
- * hstatus_update_6000
- * 
- * Creates the new h_cldrafts table
+ * hstatus_update_6000 creates the new h_cldrafts table
  * 
  * Added by Reginald Pierce on 05/01/2012
  */
 function hstatus_update_6000(){
     $schema = hstatus_schema();
     $ret = array();
+    db_create_table($ret, 'h_cldrafts', $schema['h_cldrafts']);
+    return $ret;
+}
+
+/**
+ * hstatus_update_6001 implements a new complearning system.
+ * 
+ * The new system gives more flexibility and it should be more efficient
+ * than the old system.  The main changes are
+ *  - h_complearning is abandoned (but not deleted)
+ *  - A new table h_cl_data will store all submissions
+ *  - h_cldrafts and a new table, h_cl, will contain references to 
+ *    the data in h_cl_data.
+ *  - h_cl will support activity types, as per the request of
+ *    Complearning Advisor Doug Strouth.
+ * 
+ * Added by Reginald Pierce on 07/01/2012
+ */
+function hstatus_update_6001(){
+    $schema = hstatus_schema();
+    $ret = array();
+    //create new tables
+    db_create_table($ret, 'h_cl', $schema['h_cl']);
+    db_create_table($ret, 'h_cl_data', $schema['h_cl_data']);
+    //modify h_cldrafts by dropping and replacing it.
+    //the reason I do this is because I don't think that there will be anything
+    //valuable there and because it would be difficult to preserve the data.
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!This will cause data loss!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    db_drop_table($ret, 'h_cldrafts');
     db_create_table($ret, 'h_cldrafts', $schema['h_cldrafts']);
     return $ret;
 }
@@ -84,13 +113,88 @@ $s['h_cldrafts'] = array(
             'type' => 'int',
             'not null' => true,
         ),
-        'data' => array(
+        'id' => array(
+            'description' => t('Submission id (links to h_cl_two_data)'),
+            'type' => 'int',
+            'not null' => true,
+        ),
+    ),
+    'primary key' => array('uid'),
+);
+
+$s['h_cl'] = array(
+    'fields' => array(
+        'id' => array(
+            'type' => 'serial',
+            'description' => t('Submission id'),
+            'not null' => true,
+        ),
+        'uid' => array(
+            'description' => t('Drupal UID of submitter'),
+            'type' => 'int',
+            'not null' => true,
+        ),
+        'status' => array(
+            'description' => t('Submission Status.  0=>pending, 1=>accepted, 2=>rejected'),
+            'type' => 'int',
+            'size' => 'tiny',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'hours' => array(
+            'description' => t('Total hours in submission'),
+            'type' => 'int',
+            'size' => 'tiny',
+            'not null' => true,
+        ),
+        'types' => array(
+            'description' => t('Types of activities in submission'),
+            'type' => 'varchar',
+            'length' => 140,
+        ),
+        'submit_date' => array(
+            'description' => t('time of submission, in millis'),
+            'type' => 'int',
+            'not null' => true,
+        ),
+        'review_date' => array(
+            'description' => t('time reviewed, in millis'),
+            'type' => 'int',
+            'not null' => true,
+        ),
+        'reviewer_uid' => array(
+            'description' => t('Drupal UID of reviewer'),
+            'type' => 'int',
+            'not null' => true,
+            //it is actually faster to change 0 to an integer than to
+            //change null to an integer, therefore: default=0.
+            'default' => 0,
+        ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+        'type' => array('types'),
+        'status' => array('status'),
+    ),
+);
+
+$s['h_cl_data'] = array(
+    'fields' => array(
+        'id' => array(
+            'type' => 'serial',
+            'description' => t('Submission id'),
+            'not null' => true,
+        ),
+        'submission' => array(
             'description' => t('Serialized data'),
             'type' => 'blob',
             'size' => 'normal',
         ),
-    ),
-    'primary key' => array('uid'),
+        'review_comments' => array(
+            'description' => t('Comments made by reviewers. (optional)'),
+            'type' => 'text',
+            'size' => 'small',
+        ),
 );
     
 //All the old tables: students, students_courses, students_gpa, students_points
