@@ -47,59 +47,7 @@ function hstatus_forms_cl(&$form_state,$page){
     //if $page is a string, $n will be 0
     if($n > 0){
         //$form = array();
-        $form['page'] = array(
-            '#type' => 'value',
-            '#value' => $n,
-        );
-        $form['heading'] = array(
-            '#value' => '<h3>'.t('Activity !n',array('!n'=>$n)).'</h3>',
-        );
-
-        $form['name'] = array(
-            '#type' => 'textarea',
-            '#required' => true,
-            '#title' => t('Activity Name'),
-        );
-        $form['desc'] = array(
-            '#type' => 'textarea',
-            '#required' => true,
-            '#title' => t('Activity Description'),
-        );
-        $form['lead'] = array(
-            '#type' => 'textarea',
-            '#required' => true,
-            '#title' => t('Leadership/Citizenship'),
-        );
-        $form['time'] = array(
-            '#type' => 'textarea',
-            '#required' => true,
-            '#title' => t('Time Commitment'),
-        );
-        $form['contact'] = array(
-            '#type' => 'textarea',
-            '#required' => true,
-            '#title' => t('Contact Information'),
-        );
-        $form['comment'] = array(
-            '#type' => 'textarea',
-            '#title' => t('Comments'),
-        );
-        $form['back'] = array(
-          '#type' => 'submit',
-          '#value' => t('< Prev Page'),
-          '#id' => 'back',
-        );
-        $form['submit'] = array(
-          '#type' => 'submit',
-          '#value' => t('Next Page >'),
-        );
-        
-        $form['name']['#default_value'] = $data[$n]['name'];
-        $form['desc']['#default_value'] = $data[$n]['desc'];
-        $form['lead']['#default_value'] = $data[$n]['lead'];
-        $form['time']['#default_value'] = $data[$n]['time'];
-        $form['contact']['#default_value'] = $data[$n]['contact'];
-        $form['comment']['#default_value'] = $data[$n]['comment'];
+        _hstatus_clform_page_n($n,$form,$data);
         return $form;
     }
     
@@ -110,10 +58,14 @@ function hstatus_forms_cl(&$form_state,$page){
             '#value' => 'last',
         );
         $form['information'] = array(
+            //TODO: make this configurable
             '#value' => '<p>'.t("Your responses have been saved as a draft.
             They will be stored for up to "._hstatus_timetosave()."
             If you are satisfied with your submission,
-            you may submit the form now by clicking the button below.").'</p>',
+            you may submit the form now by clicking the button below.").
+            '</p><p><strong>'.t("Be aware that submitting this form will
+            prevent you from making further submissions until this
+            submission has been reviewed.").'</strong></p>'
         );
         $form['back'] = array(
           '#type' => 'submit',
@@ -136,7 +88,7 @@ function hstatus_forms_cl(&$form_state,$page){
             '#title' => t('Activities'),
             '#description' => t('Number of activities that compose this submission.'),
             '#required' => true,
-            '#element_validate' => array('hstatus_form_cl_count_validate'),
+            '#element_validate' => array('hstatus_form_cl_int_validate'),
             '#default_value' => (isset($data['count']))?$data['count']:1,
             //HTML5 attributes
             '#attributes' => array('type' => 'number', 'min' => '1'),
@@ -154,12 +106,10 @@ function hstatus_forms_cl(&$form_state,$page){
     return $form;
 }
 
-/*
- * hstatus_form_cl_count_validate
- * 
+/**
  * Validates the count field on the first page of the form
  */
-function hstatus_form_cl_count_validate($element, &$form_state){
+function hstatus_form_cl_int_validate($element, &$form_state){
     //activites has to be a positive number
 	$v = trim($element['#value']);
     if(empty($v) || intval($v) < 1){
@@ -210,6 +160,17 @@ function hstatus_forms_cl_submit($form, &$form_state){
 //====================================
 //===== Private/Helper Functions =====
 //====================================
+
+/* CONTENTS (in order)
+ * 
+ * _hstatus_clform_newentry
+ * _hstatus_clform_savepage
+ *             ..._savefinal
+ *             ..._saveandredirect
+ *             ..._redirect
+ *             ..._page_n
+ *             ..._loaddata
+ */
 
 //note the Drupal convention of making 
 //"private" functions start with an underscore
@@ -316,6 +277,86 @@ function _hstatus_clform_redirect(&$form_state,$page='>',$message=true){
         if($message){drupal_set_message(t('Failed to save data.'),'error');}
     }
 }
+
+/*
+ * Generates normal (not first or last) pages
+ */
+function _hstatus_clform_page_n($n,&$form,$data){
+    $form['page'] = array(
+        '#type' => 'value',
+        '#value' => $n,
+    );
+    $form['heading'] = array(
+        '#value' => '<h3>'.t('Activity !n',array('!n'=>$n)).'</h3>',
+    );
+    $form['type'] = array(
+        '#title' => t('Type of Activity'),
+        '#type' => 'select',
+        //TODO: make this configurable
+        '#options' => array(
+            'om' => 'OM',
+            'ra' => 'RA',
+            'eboard' => 'Club E-Board',
+            'other' => 'Other',
+        ),
+        '#default_value' => 'other',
+    );
+    $form['hours'] = array(
+        '#title' => t('Hours Spent'),
+        '#type' => 'textfield',
+        '#size' => 5,
+        '#maxlength' => 2,
+        '#required' => true,
+        '#default_value' => 0,
+        '#element_validate' => array('hstatus_form_cl_int_validate'),
+        '#attributes' => array('type' => 'number', 'min' => '0', 'max' => '50', 'step' => '1'),
+    );
+    $form['name'] = array(
+        '#type' => 'textfield',
+        '#required' => true,
+        '#title' => t('Activity Name'),
+    );
+    $form['desc'] = array(
+        '#type' => 'textarea',
+        '#required' => true,
+        '#title' => t('Activity Description'),
+        '#description' => t('Please include why this relates to Leadership and/or Citizenship'),
+    );
+    $form['time'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Dates and Times'),
+        '#description' => t('If necessary, please include information about when and where the activity was performed.'),
+    );
+    $form['contact'] = array(
+        '#type' => 'textarea',
+        '#required' => true,
+        '#title' => t('Contact Information'),
+        '#description' => t('Who should we contact to verify this information?'),
+    );
+    $form['comment'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Comments'),
+    );
+    $form['back'] = array(
+      '#type' => 'submit',
+      '#value' => t('< Prev Page'),
+      '#id' => 'back',
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Next Page >'),
+    );
+    
+    $form['hours']['#default_value'] = $data[$n]['hours'];
+    $form['type']['#default_value'] = $data[$n]['type'];
+    $form['name']['#default_value'] = $data[$n]['name'];
+    $form['desc']['#default_value'] = $data[$n]['desc'];
+    $form['lead']['#default_value'] = $data[$n]['lead'];
+    $form['time']['#default_value'] = $data[$n]['time'];
+    $form['contact']['#default_value'] = $data[$n]['contact'];
+    $form['comment']['#default_value'] = $data[$n]['comment'];
+}
+
 
 //this gets done often enough that it needs it's own helper function
 function _hstatus_clform_loaddata(){
