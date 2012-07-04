@@ -64,6 +64,13 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
     }
     
     //Query Definitions 
+    
+    /*
+     * Gathers basic student information such as name, college,
+     * gpa, and status
+     * 
+     * It takes one parameter: username as a string
+     */
     $q_basic = 
     "SELECT 
         student.firstname fname, 
@@ -78,29 +85,64 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
         ON student.username = gpas.username
      WHERE student.username = '%s'
      LIMIT 1";
+    /*
+     * Computes total Honors Points awarded
+     * 
+     * Takes username as a string
+     */
     $q_pts = "SELECT username, sum(numPoints) total
                 FROM {h_students_points}
                 WHERE username = '%s'
                 GROUP BY username";
+    /*
+     * Computes total Honors credits completed
+     * 
+     * Takes username as a string
+     */
     $q_cpts = "SELECT username, sum(credits) total
                 FROM {h_students_courses}
                 WHERE username = '%s'
                 GROUP BY username";
+    /*
+     * Computes total Honors Points Waivers granted
+     * 
+     * Takes username as a string
+     */
     $q_wpts = "SELECT username, sum(credits) total
                 FROM h_students_waivers
                 WHERE username = '%s'
                 GROUP BY username";
+    
+    /*
+     * Collects info from h_continuation table
+     * 
+     * Takes username as a string
+     */
     $q_continue = 
     "SELECT status, comp_learn, college, courses, gpa
      FROM {h_continuation}
      WHERE username = '%s'
      LIMIT 1";
+    /*
+     * Collects courses taken.  (Note this is different from $q_cpts
+     * which computes total credits)
+     */
     $q_courses = 
     "SELECT course, name, professor, quarter, grade, credits, honors
      FROM {h_students_courses} courses
      WHERE courses.username = '%s'
      LIMIT 1";
-    $q_submissions = ""; //TODO: write this.
+    /*
+     * Collects complearning submissions from within a specified
+     * timeframe.
+     */
+    $q_cl = 
+    "SELECT cl.id, cl.status, cl.submit_date
+    FROM {h_cl} cl
+    JOIN {users} u
+    ON u.uid = cl.uid
+    WHERE u.name = %s
+    AND cl.submit_date > %d";
     
     // is it in the short term cache?
     if(!$reset && isset($husers[$username])){
@@ -203,8 +245,12 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
         //TODO: implement
             // Date, status, and link should be sufficient info.
             // 1. 'complearn' => submitted to h_complearning.  This year only.
-            // 2. 'cldrafts' => h_cldrafts submissions.  link goes to form.  not expired only.
+            // 2. 'cldrafts' => true or false.  whether they have an
+            //          outstanding cldraft.
             // 3. 'points' => ???
+        //TODO: make this time configurable
+        //$rs_cl = db_query($q_cl,$username,strtotime('-9 months'));
+        
     }
     
     $husers[$username] = $u;  //update static variable for future calls
@@ -230,7 +276,7 @@ function hstatus_load_cldraft($uid, $expire = '1 year'){
     }
     
     $q = 
-    "SELECT data.data 
+    "SELECT data.submission 
     FROM {h_cldrafts} draft
     JOIN {h_cl_data} data
     ON draft.id = data.id
@@ -242,7 +288,7 @@ function hstatus_load_cldraft($uid, $expire = '1 year'){
     $obj = db_fetch_object($rs);
     
     if($obj){
-        $data = unserialize($obj->data);
+        $data = unserialize($obj->submission);
         if(isset($data['count'])){
             $cldrafts[$uid] = $data;
             return $data;
@@ -263,18 +309,28 @@ function hstatus_save_cldraft($uid,$data){
     
     $rs = db_query("SELECT uid, id FROM {h_cldrafts} WHERE uid=%d",$uid);
     if($rs){
-        $result = db_fetch_array();
-        $id = $result?$result['id']:false;
+        $result = db_fetch_array($rs);
+        $id = isset($result['id'])?$result['id']:-1;
     }
+    
+    if($id >= 0){
+        $dataobj = new stdClass();
+        $dataobj->id = $id;
+        $dataobj->submission = serialize($data);
         
-    $obj = (object) array('uid'=>$uid,'updatetime'=>time(),'data'=>serialize($data));
-    if($id){
-        return drupal_write_record('h_cldrafts',$obj,'uid');
+        $draftobj = new stdClass();
+        $draftobj->uid = $uid;
+        $draftobj->updatetime = time();
+        
+        $success = drupal_write_record('h_cl_data',$dataobj,'id');
+        if(!$success) return false;
+        
+        return drupal_write_record('h_cldrafts',$draftobj,'uid');
     }else{
-        //this may only work for MySQL...
+        //this probably only works for MySQL...
         db_query(
-        'INSERT INTO {h_cl_data} (data) VALUES (%b); 
-        INSERT INTO {h_cldrafts} (uid,updatetime) VALUES (%d,%d,LAST_INSERT_ID(id))'
+        'INSERT INTO {h_cl_data} (submission) VALUES (%b); 
+        INSERT INTO {h_cldrafts} (uid,updatetime,id) VALUES (%d,%d,LAST_INSERT_ID())'
         ,serialize($data),$uid,time());
         return true;
     }
@@ -306,11 +362,8 @@ function hstatus_clsubmit($uid, $expire = '1 year'){
         }
     }
     
-    $data = hstatus_load_cldraft($uid);
-    if(!isset($data['count']))return false;
-    
     $q = 
-    "SELECT data.data, data.id 
+    "SELECT data.submission, data.id 
     FROM {h_cldrafts} draft
     JOIN {h_cl_data} data
     ON draft.id = data.id
@@ -320,19 +373,22 @@ function hstatus_clsubmit($uid, $expire = '1 year'){
     $time = strtotime('-'.trim($expire));
     $rs = db_query($q,$uid,$time);
     $result = db_fetch_object($rs);
+    $data = unserialize($result->submission);
     
     /* Loop through the data array to compile hours and types */
     $hours = 0; $types = '';
     for($i = 1; $i <= $data['count']; $i++){
         $hours += $data[$i]['hours'];
         $types .= $data[$i]['type'].' ';
-    )
-    /* Save to db */
-    $record = new stdClass();
-    $record->uid = $uid;
-    $record->id = $result->id;
-    $record->hours = $hours;
-    $record->types = $types;
-    $record->submit_date = time();
-    return drupal_write_record('h_cl', $record);
+    }
+    /* Save to db
+     * 
+     * Don't use drupal_write_record b/c it will ignore information
+     * about the column `id` due to the fact that the column is
+     * an auto increment column.
+     */
+    $write = "INSERT INTO {h_cl}
+    (uid, id, hours, types, submit_date)
+    VALUES (%d, %d, %d, '%s', %d)";
+    return db_query($write,$uid,$result->id,$hours,$types,time());
 }

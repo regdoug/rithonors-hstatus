@@ -195,6 +195,8 @@ $s['h_cl_data'] = array(
             'type' => 'text',
             'size' => 'small',
         ),
+    ),
+    'primary key' => array('id'),
 );
     
 //All the old tables: students, students_courses, students_gpa, students_points

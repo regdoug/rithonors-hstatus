@@ -307,7 +307,6 @@ function _hstatus_clform_page_n($n,&$form,$data){
         '#size' => 5,
         '#maxlength' => 2,
         '#required' => true,
-        '#default_value' => 0,
         '#element_validate' => array('hstatus_form_cl_int_validate'),
         '#attributes' => array('type' => 'number', 'min' => '0', 'max' => '50', 'step' => '1'),
     );
@@ -348,7 +347,11 @@ function _hstatus_clform_page_n($n,&$form,$data){
     );
     
     $form['hours']['#default_value'] = $data[$n]['hours'];
-    $form['type']['#default_value'] = $data[$n]['type'];
+    if(isset($data[$n]['type'])){
+        //this one already has a default_value, so we don't want to
+        //accidentally overwrite it
+        $form['type']['#default_value'] = $data[$n]['type'];
+    }
     $form['name']['#default_value'] = $data[$n]['name'];
     $form['desc']['#default_value'] = $data[$n]['desc'];
     $form['lead']['#default_value'] = $data[$n]['lead'];
