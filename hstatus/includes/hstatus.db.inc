@@ -285,10 +285,10 @@ function hstatus_load_cldraft($uid, $expire = '1 year'){
     
     $time = strtotime('-'.trim($expire));
     $rs = db_query($q,$uid,$time);
-    $obj = db_fetch_object($rs);
+    $submission = db_result($rs);
     
     if($obj){
-        $data = unserialize($obj->submission);
+        $data = unserialize($submission);
         if(isset($data['count'])){
             $cldrafts[$uid] = $data;
             return $data;

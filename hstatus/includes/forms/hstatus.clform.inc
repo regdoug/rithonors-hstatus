@@ -91,7 +91,8 @@ function hstatus_forms_cl(&$form_state,$page){
             '#element_validate' => array('hstatus_form_cl_int_validate'),
             '#default_value' => (isset($data['count']))?$data['count']:1,
             //HTML5 attributes
-            '#attributes' => array('type' => 'number', 'min' => '1'),
+            '#attributes' => array('min' => '1'),
+            '#post_render' => array('hstatus_clform_number'),
         );
         $form['back'] = array(
           '#type' => 'submit',
@@ -104,6 +105,16 @@ function hstatus_forms_cl(&$form_state,$page){
         );
     }
     return $form;
+}
+
+/**
+ * Processes an input element from a plain textfield to an HTML5
+ * "number" textfield
+ */
+
+function hstatus_clform_number($html,$elements){
+    $html = str_replace('type="text"','type="number"',$html);
+    return $html;
 }
 
 /**
@@ -308,7 +319,9 @@ function _hstatus_clform_page_n($n,&$form,$data){
         '#maxlength' => 2,
         '#required' => true,
         '#element_validate' => array('hstatus_form_cl_int_validate'),
-        '#attributes' => array('type' => 'number', 'min' => '0', 'max' => '50', 'step' => '1'),
+        //HTML5 attributes
+        '#attributes' => array('min' => '0', 'max' => '50', 'step' => '1'),
+        '#post_render' => array('hstatus_clform_number'),
     );
     $form['name'] = array(
         '#type' => 'textfield',
