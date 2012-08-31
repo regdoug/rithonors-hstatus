@@ -45,16 +45,13 @@ function hstatus_menu(){
         //weight in menu or tab bar
         'weight' => 2,
     );
-    $items['hstatus/static'] = array(
-        'title' => 'Testing Static Pages',
-        'page callback' => 'hstatus_static_page',
-        'file' => 'includes/hstatus.pages.inc',
-        'access callback' => '_hstatus_static_access',
-    );
-    $items['hstatus/usertest'] = array(
-        'title' => 'Testing hstatus.db.inc',
-        'page callback' => 'hstatus_test_db_page',
-        'file' => 'includes/hstatus.pages.inc',
+    $items['hstatus/submission/%'] = array(
+        'title' => 'CL submission',
+        'page callback' => 'hstatus_cl_submission',
+        'page arguments' => array(2),
+        'type' => MENU_CALLBACK,
+        //'file' => 'includes/hstatus.ajax.inc',
+        //TODO: write real callback
         'access callback' => '_hstatus_static_access',
     );
 
@@ -68,6 +65,17 @@ function hstatus_menu(){
         'access callback' => '_hstatus_form_cl_access',
     );
     return $items;
+}
+
+function hstatus_cl_submission($sid){
+    $result = db_fetch_object(db_query('SELECT submission FROM {h_cl_data} WHERE id = %d',$sid));
+    $data = unserialize($result->submission);
+    $output = print_r($data,true);
+    $output = "<pre>$output</pre>";
+    //AJAX functions should echo the output and return null to prevent
+    //the theme system from kicking in.
+    echo $output;
+    return null;
 }
 
 /**
@@ -101,6 +109,13 @@ function hstatus_theme($existing, $type, $theme, $path){
             'arguments' => array('user' => NULL),
         ),
     );
+}
+
+/**
+ * Implements hook_views_api
+ */
+function hstatus_views_api(){
+    return array('api'=>2);
 }
 
 /*----------------Access Callbacks------------------*/
