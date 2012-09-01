@@ -52,7 +52,8 @@ function hstatus_menu(){
         'type' => MENU_CALLBACK,
         //'file' => 'includes/hstatus.ajax.inc',
         //TODO: write real callback
-        'access callback' => '_hstatus_static_access',
+        'access callback' => '_hstatus_cl_review_access',
+        'access arguments' => array('view'),
     );
 
     //complearning form
@@ -67,11 +68,27 @@ function hstatus_menu(){
     return $items;
 }
 
+//TODO: move this
 function hstatus_cl_submission($sid){
-    $result = db_fetch_object(db_query('SELECT submission FROM {h_cl_data} WHERE id = %d',$sid));
-    $data = unserialize($result->submission);
-    $output = print_r($data,true);
-    $output = "<pre>$output</pre>";
+    if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
+        print '<h1>Internal Error: hStatus Database API</h1>';
+        return null;
+    }
+    $data = hstatus_cl_data_by_id($sid);
+    $output = '';
+    if($data){
+        for($i = 1; $i <= $data['count']; $i++){
+            if($data[$i]['name'] == ''){
+                $data[$i]['name'] = "Activity $i";
+            }
+            $output .= theme('hstatus_cl_activity',$data[$i]);
+        }
+    }else{
+        $output = '<h1>Not Found</h1>';
+    }
+    
+    /*$output = print_r($data,true);
+    $output = "<pre>$output</pre>";*/
     //AJAX functions should echo the output and return null to prevent
     //the theme system from kicking in.
     echo $output;
@@ -85,7 +102,7 @@ function hstatus_cl_submission($sid){
  */
 function hstatus_perm(){
     return array('view all honors status pages','administer honors status',
-        'submit complementary learning');
+        'submit complementary learning', 'review complementary learning');
 }
 
 /**
@@ -107,6 +124,74 @@ function hstatus_theme($existing, $type, $theme, $path){
             'file' => 'includes/hstatus.pages.inc',
             //arguments passed to the 'theme' function and the preprocessor
             'arguments' => array('user' => NULL),
+        ),
+        'hstatus_cl_activity' => array(
+            'arguments' => array('activity' => NULL),
+            'file' => 'includes/hstatus.pages.inc',
+            'template' => 'templates/clactivity',
+        ),
+    );
+}
+
+/**
+ * Implements hook_action_info
+ */
+function hstatus_action_info(){
+    return array(
+        'hstatus_approve_cl_action' => array(
+            'description' => t('Approve Comp Learning Submission'),
+            'type' => 'complearning',
+            'configurable' => FALSE,
+        ),
+        'hstatus_reject_cl_action' => array(
+            'description' => t('Reject Comp Learning Submission'),
+            'type' => 'complearning',
+            'configurable' => FALSE,
+        ),
+    /*'user_block_ip_action' => array(
+      'description' => t('Ban IP address of current user'),
+      'type' => 'user',
+      'configurable' => FALSE,
+      'hooks' => array(
+        'nodeapi' => array('presave', 'delete', 'insert', 'update', 'view'),
+        'comment' => array('view', 'insert', 'update', 'delete'),
+        'user' => array('logout'),
+      )
+    ),*/
+  );
+}
+
+function hstatus_approve_cl_action($submission){
+    $id = $submission['id'];
+    db_query('UPDATE {h_cl} SET status=1 WHERE id=%d',$id);
+}
+function hstatus_reject_cl_action($submission){
+    $id = $submission['id'];
+    db_query('UPDATE {h_cl} SET status=2 WHERE id=%d',$id);
+}
+
+function hstatus_cl_load($sid){
+    if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
+        drupal_set_message('Internal Error: hStatus Database API missing','error');
+        return null;
+    }
+    $submission = hstatus_cl_data_by_id($sid);
+    $submission['id'] = $sid;
+    return $submission;
+}
+
+/*
+ * Implements hook_views_bulk_operations_object_info
+ */
+function hstatus_views_bulk_operations_object_info(){
+    return array(
+        'complearning' => array(
+            'type' => 'complearning',
+            'base_table' => 'h_cl',
+            'load' => 'hstatus_cl_load',
+            'oid' => 'id',
+            'title' => 'id',
+            'access' => '_hstatus_cl_review_access',
         ),
     );
 }
@@ -174,4 +259,15 @@ function _hstatus_form_cl_access(){
     }else{
         return false;
     }
+}
+
+function _hstatus_cl_review_access($op,$submission=null,$account=null){
+    if(is_numeric($op)){
+        $account = user_load($op);
+    }
+    if (empty($account)) {
+        $account = $GLOBALS['user'];
+    }
+    return $account->uid == 1 || user_access('review complementary learning',$account) ||
+            user_access('administer honors status',$account);
 }

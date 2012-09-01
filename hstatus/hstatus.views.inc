@@ -13,6 +13,7 @@ function hstatus_views_data(){
     $fields = array(
         'id' => array(
             'title' => t('ID'),
+            'help' => t('Submission ID'),
             'field' => array(
                 'handler' => 'views_handler_field', 
                 'click sortable' => false,
@@ -39,7 +40,7 @@ function hstatus_views_data(){
                 'click sortable' => TRUE,
             ), 
             'filter' => array(
-                'handler' => 'views_handler_filter_numeric',
+                'handler' => 'views_handler_filter_in_operator',
             ), 
             'sort' => array(
                 'handler' => 'views_handler_sort',

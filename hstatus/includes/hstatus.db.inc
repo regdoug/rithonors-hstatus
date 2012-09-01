@@ -158,6 +158,8 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
     // or the h_continuation table.
     } else {
         // Fetch Basic Info
+        $uid = db_result(db_query('SELECT uid FROM users WHERE name=%s',$username));
+        $u['uid'] = $uid;
         $rs = db_query($q_basic, $username,$username,$username,$username);
         $arry = db_fetch_array($rs);
         if($arry){
@@ -250,6 +252,12 @@ function hstatus_load_user($username, $loadCourses = false, $loadSubmissions = f
             // 3. 'points' => ???
         //TODO: make this time configurable
         //$rs_cl = db_query($q_cl,$username,strtotime('-9 months'));
+        $u['cldraft'] = (boolean)hstatus_load_cldraft($u['uid']);
+        $rs = db_query('SELECT id, status, hours, submitted_date, reviewed_date 
+                        FROM {h_cl} WHERE uid=%d 
+                        SORT BY submitted_date DESC LIMIT 1',
+                        $u['uid']);
+        $u['complearn'] = $rs?db_fetch_array($rs):null;
         
     }
     
@@ -328,10 +336,8 @@ function hstatus_save_cldraft($uid,$data){
         return drupal_write_record('h_cldrafts',$draftobj,'uid');
     }else{
         //this probably only works for MySQL...
-        db_query(
-        'INSERT INTO {h_cl_data} (submission) VALUES (%b); 
-        INSERT INTO {h_cldrafts} (uid,updatetime,id) VALUES (%d,%d,LAST_INSERT_ID())'
-        ,serialize($data),$uid,time());
+        db_query('INSERT INTO {h_cl_data} (submission) VALUES (%b)',serialize($data));
+        db_query('INSERT INTO {h_cldrafts} (uid,updatetime,id) VALUES (%d,%d,LAST_INSERT_ID())',$uid,time());
         return true;
     }
 }
@@ -390,5 +396,22 @@ function hstatus_clsubmit($uid, $expire = '1 year'){
     $write = "INSERT INTO {h_cl}
     (uid, id, hours, types, submit_date)
     VALUES (%d, %d, %d, '%s', %d)";
-    return db_query($write,$uid,$result->id,$hours,$types,time());
+    if(db_query($write,$uid,$result->id,$hours,$types,time())){
+        return db_query("DELETE FROM {h_cldrafts} WHERE uid=$uid");
+    }
 }
+
+/**
+ * Get complearning submission data by submission id
+ */
+function hstatus_cl_data_by_id($sid){
+    $result = db_query('SELECT submission FROM {h_cl_data} WHERE id = %d',$sid);
+    if(!$result) return null;
+    $obj = db_fetch_object($result);
+    if($obj){
+        return unserialize($obj->submission);
+    }else{
+        return null;
+    }
+}
+    
