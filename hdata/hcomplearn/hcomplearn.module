@@ -1,9 +1,9 @@
 <?php
 
 /**
- * @file hstatus.module
+ * @file hcomplearn.module
  * 
- * This file must be located in the hstatus folder and is loaded on every
+ * This file must be located in the hcomplearn folder and is loaded on every
  * page.
  */
 
@@ -17,7 +17,9 @@
  * that determines if (1) it should be shown in menus and (2) if a user
  * can visit it (throws a 403 on false)
  */
-function hstatus_menu(){
+function hcomplearn_menu(){
+    
+    //TODO: rewrite
     /* the array key gives the path.  note the % sign which indicates an
      * argument.  The 'user' after the % indicates that argument should
      * be the return value of the function 'user_load' instead of the actual
@@ -25,55 +27,37 @@ function hstatus_menu(){
      * the path the user sees because modules are allowed to alias any 
      * path name they want.
      */
-    $items['user/%user/mystatus'] = array(
-        //menu title
-        'title' => 'My Status',
-        //function to generate the HTML content
-        'page callback' => 'hstatus_user_page',
-        //arguments to be passed to the preceding function
-        //it is an array because multiple arguments can be passed.
-        //1 means the first argument.
-        'page arguments' => array(1),
-        //file that the page function is located in (relative to module directory)
-        'file' => 'includes/hstatus.pages.inc',
-        //MENU_LOCAL_TASK means that it shold be displayed as a tab
-        'type' => MENU_LOCAL_TASK,
-        //function to decide if the user has permissions
-        'access callback' => '_hstatus_status_access',
-        //arguments to the preceding function
-        'access arguments' => array(1),
-        //weight in menu or tab bar
-        'weight' => 2,
-    );
-    $items['hstatus/submission/%'] = array(
+    
+    //AJAX callback
+    $items['hcomplearn/submission/%'] = array(
         'title' => 'CL submission',
-        'page callback' => 'hstatus_cl_submission',
+        'page callback' => 'hcomplearn_cl_submission',
         'page arguments' => array(2),
         'type' => MENU_CALLBACK,
         //'file' => 'includes/hstatus.ajax.inc',
         //TODO: write real callback
-        'access callback' => '_hstatus_cl_review_access',
+        'access callback' => '_hcomplearn_cl_review_access',
         'access arguments' => array('view'),
     );
 
     //complearning form
     //note that even though no % is in the path, anything postfixing
     //the path gets passed as an argument
-    $items['hstatus/submitcl'] = array(
+    $items['hcomplearn/submitcl'] = array(
         'title' => 'Comp Learning Form',
-        'page callback' => 'hstatus_build_clform',
-        'file' => 'includes/forms/hstatus.clform.inc',
-        'access callback' => '_hstatus_form_cl_access',
+        'page callback' => 'hcomplearn_build_clform',
+        'file' => 'hcomplearn.form.inc',
+        'access callback' => '_hcomplearn_form_cl_access',
     );
     return $items;
 }
 
-//TODO: move this
-function hstatus_cl_submission($sid){
-    if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
-        print '<h1>Internal Error: hStatus Database API</h1>';
-        return null;
-    }
+//TODO: document this
+function hcomplearn_cl_submission($sid){
+    //if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
+        //print '<h1>Internal Error: hStatus Database API</h1>';
+        //return null;
+    //}
     $data = hstatus_cl_data_by_id($sid);
     $output = '';
     if($data){
@@ -81,7 +65,7 @@ function hstatus_cl_submission($sid){
             if($data[$i]['name'] == ''){
                 $data[$i]['name'] = "Activity $i";
             }
-            $output .= theme('hstatus_cl_activity',$data[$i]);
+            $output .= theme('hcomplearn_cl_activity',$data[$i]);
         }
     }else{
         $output = '<h1>Not Found</h1>';
@@ -100,8 +84,8 @@ function hstatus_cl_submission($sid){
  * 
  * Just returns an array of strings to be used on the permissions page
  */
-function hstatus_perm(){
-    return array('view all honors status pages','administer honors status',
+function hcomplearn_perm(){
+    return array('administer complementary learning',
         'submit complementary learning', 'review complementary learning');
 }
 
@@ -112,23 +96,12 @@ function hstatus_perm(){
  * generate HTML.  The benefit of doing this is that it makes it easy for
  * other modules or themes to override your display.
  */
-function hstatus_theme($existing, $type, $theme, $path){
+function hcomplearn_theme($existing, $type, $theme, $path){
     return array(
-        //renders the mystatus page
-        'hstatus_mystatus' => array(
-            //this is the file that generates the output
-            //relative to module directory, less the .tpl.php
-            'template' => 'templates/mystatus',
-            //the file in which the preprocessor is located.
-            //preprocessors define variables for the template.
-            'file' => 'includes/hstatus.pages.inc',
-            //arguments passed to the 'theme' function and the preprocessor
-            'arguments' => array('user' => NULL),
-        ),
-        'hstatus_cl_activity' => array(
+        'hcomplearn_cl_activity' => array(
             'arguments' => array('activity' => NULL),
-            'file' => 'includes/hstatus.pages.inc',
-            'template' => 'templates/clactivity',
+            //'file' => 'includes/hstatus.pages.inc',
+            'template' => 'clactivity',
         ),
     );
 }
@@ -136,14 +109,14 @@ function hstatus_theme($existing, $type, $theme, $path){
 /**
  * Implements hook_action_info
  */
-function hstatus_action_info(){
+function hcomplearn_action_info(){
     return array(
-        'hstatus_approve_cl_action' => array(
+        'hcomplearn_approve_cl_action' => array(
             'description' => t('Approve Comp Learning Submission'),
             'type' => 'complearning',
             'configurable' => FALSE,
         ),
-        'hstatus_reject_cl_action' => array(
+        'hcomplearn_reject_cl_action' => array(
             'description' => t('Reject Comp Learning Submission'),
             'type' => 'complearning',
             'configurable' => FALSE,
@@ -161,20 +134,20 @@ function hstatus_action_info(){
   );
 }
 
-function hstatus_approve_cl_action($submission){
+function hcomplearn_approve_cl_action($submission){
     $id = $submission['id'];
     db_query('UPDATE {h_cl} SET status=1 WHERE id=%d',$id);
 }
-function hstatus_reject_cl_action($submission){
+function hcomplearn_reject_cl_action($submission){
     $id = $submission['id'];
     db_query('UPDATE {h_cl} SET status=2 WHERE id=%d',$id);
 }
 
-function hstatus_cl_load($sid){
-    if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
-        drupal_set_message('Internal Error: hStatus Database API missing','error');
-        return null;
-    }
+function hcomplearn_cl_load($sid){
+    //if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
+        //drupal_set_message('Internal Error: hStatus Database API missing','error');
+        //return null;
+    //}
     $submission = hstatus_cl_data_by_id($sid);
     $submission['id'] = $sid;
     return $submission;
@@ -183,15 +156,15 @@ function hstatus_cl_load($sid){
 /*
  * Implements hook_views_bulk_operations_object_info
  */
-function hstatus_views_bulk_operations_object_info(){
+function hcomplearn_views_bulk_operations_object_info(){
     return array(
         'complearning' => array(
             'type' => 'complearning',
             'base_table' => 'h_cl',
-            'load' => 'hstatus_cl_load',
+            'load' => 'hcomplearn_cl_load',
             'oid' => 'id',
             'title' => 'id',
-            'access' => '_hstatus_cl_review_access',
+            'access' => '_hcomplearn_cl_review_access',
         ),
     );
 }
@@ -199,59 +172,27 @@ function hstatus_views_bulk_operations_object_info(){
 /**
  * Implements hook_views_api
  */
-function hstatus_views_api(){
+function hcomplearn_views_api(){
     return array('api'=>2);
 }
 
 /*----------------Access Callbacks------------------*/
 
-/**
- * Menu access callback for a user's MyStatus page.
- *
- * @param $account
- *   A user account object.
- * @return
- *   TRUE if the current user has access, FALSE otherwise.
- */
-function _hstatus_status_access($account) {
-    //$account is the page that is being accessed
-    //$user is the currently logged in user (almost always)
-    global $user;
-
-    // Anonymous users cannot have mystatus pages or view mystatus pages.
-    if (!$user->uid || !$account->uid) {
-        return FALSE;
-    }
-
-    // Administrators.  (defined in hook_perm)
-    if (user_access('view all honors status pages') 
-            || user_access('administer honors status')) {
-        return TRUE;
-    }
-
-    // Users can always see their own status.
-    if ($user->uid == $account->uid) {
-        return TRUE;
-    }
-
-    //catch-all
-    return FALSE;
-}
 
 /*
  * for when you just need to signify unlimited access
  */
-function _hstatus_static_access(){ return true; }
+function _hcomplearn_static_access(){ return true; }
 
 /*
- * _hstatus_form_cl_access
+ * _hcomplearn_form_cl_access
  */
-function _hstatus_form_cl_access(){
+function _hcomplearn_form_cl_access(){
     global $user;
     if(user_access('submit complementary learning')){
-        if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
-            return false;
-        }
+        //if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
+            //return false;
+        //}
         $huser = hstatus_load_user($user->name);
         $status = $huser->continuation['status'];
         // active in Honors.
@@ -261,7 +202,7 @@ function _hstatus_form_cl_access(){
     }
 }
 
-function _hstatus_cl_review_access($op,$submission=null,$account=null){
+function _hcomplearn_cl_review_access($op,$submission=null,$account=null){
     if(is_numeric($op)){
         $account = user_load($op);
     }

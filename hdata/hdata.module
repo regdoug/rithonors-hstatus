@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * @file hstatus.module
+ * 
+ * This file must be located in the hstatus folder and is loaded on every
+ * page.
+ */

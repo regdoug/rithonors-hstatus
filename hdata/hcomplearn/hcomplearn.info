@@ -1,0 +1,16 @@
+; hcomplearn.info
+; Created 9/4/12 by Reginald Pierce
+
+name = hComplearning
+description = Complearning submission and review.  Created by the RIT Honors Tech Committee
+
+; In case we make other modules, this will group them on the modules page
+package = Honors
+
+; required
+core = 6.x
+
+; Dependancies
+dependancies[] = hdata
+dependancies[] = views
+dependanceis[] = colorbox

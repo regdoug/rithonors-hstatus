@@ -1,8 +1,10 @@
 <?php
 /**
  * Implements hook_views_data (I think)
+ * 
+ * TODO: should this be in hcomplearn or hdata?
  */
-function hstatus_views_data(){
+function hcomplearn_views_data(){
     $group = t('Complearning');
     $base = array(
         'field' => 'id',

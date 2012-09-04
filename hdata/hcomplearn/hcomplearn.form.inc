@@ -1,14 +1,14 @@
 <?php
 
 //works better than constants
-function _hstatus_timetosave(){return '6 months';}
+function _hcomplearn_timetosave(){return '6 months';}
 
 /**
  * Convenience function to build complearning form
  */
 
-function hstatus_build_clform(){
-    return drupal_get_form('hstatus_forms_cl',(func_num_args() > 0)?func_get_arg(0):'first');
+function hcomplearn_build_clform(){
+    return drupal_get_form('hcomplearn_forms_cl',(func_num_args() > 0)?func_get_arg(0):'first');
 }
 
 /**
@@ -21,13 +21,13 @@ function hstatus_build_clform(){
  */
  
  //TODO: add field 'hours' and field 'type'
-function hstatus_forms_cl(&$form_state,$page){
+function hcomplearn_forms_cl(&$form_state,$page){
     if(isset($form_state['storage']['page']) 
             && isset($form_state['storage']['data']['count'])){
         $data = $form_state['storage']['data'];
         $page = $form_state['storage']['page'];
     }else{
-        $data = _hstatus_clform_loaddata();
+        $data = _hcomplearn_clform_loaddata();
         $form_state['storage']['data'] = $data;
         $form_state['storage']['page'] = $page;
     }
@@ -47,7 +47,7 @@ function hstatus_forms_cl(&$form_state,$page){
     //if $page is a string, $n will be 0
     if($n > 0){
         //$form = array();
-        _hstatus_clform_page_n($n,$form,$data);
+        _hcomplearn_clform_page_n($n,$form,$data);
         return $form;
     }
     
@@ -60,7 +60,7 @@ function hstatus_forms_cl(&$form_state,$page){
         $form['information'] = array(
             //TODO: make this configurable
             '#value' => '<p>'.t("Your responses have been saved as a draft.
-            They will be stored for up to "._hstatus_timetosave()."
+            They will be stored for up to "._hcomplearn_timetosave()."
             If you are satisfied with your submission,
             you may submit the form now by clicking the button below.").
             '</p><p><strong>'.t("Be aware that submitting this form will
@@ -88,11 +88,11 @@ function hstatus_forms_cl(&$form_state,$page){
             '#title' => t('Activities'),
             '#description' => t('Number of activities that compose this submission.'),
             '#required' => true,
-            '#element_validate' => array('hstatus_form_cl_int_validate'),
+            '#element_validate' => array('hcomplearn_form_cl_int_validate'),
             '#default_value' => (isset($data['count']))?$data['count']:1,
             //HTML5 attributes
             '#attributes' => array('min' => '1'),
-            '#post_render' => array('hstatus_clform_number'),
+            '#post_render' => array('hcomplearn_clform_number'),
         );
         $form['back'] = array(
           '#type' => 'submit',
@@ -112,7 +112,7 @@ function hstatus_forms_cl(&$form_state,$page){
  * "number" textfield
  */
 
-function hstatus_clform_number($html,$elements){
+function hcomplearn_clform_number($html,$elements){
     $html = str_replace('type="text"','type="number"',$html);
     return $html;
 }
@@ -120,7 +120,7 @@ function hstatus_clform_number($html,$elements){
 /**
  * Validates the count field on the first page of the form
  */
-function hstatus_form_cl_int_validate($element, &$form_state){
+function hcomplearn_form_cl_int_validate($element, &$form_state){
     //activites has to be a positive number
 	$v = trim($element['#value']);
     if(empty($v) || intval($v) < 1){
@@ -141,30 +141,30 @@ function hstatus_form_cl_int_validate($element, &$form_state){
 }
 
 /*
- * hstatus_forms_cl_submit
+ * hcomplearn_forms_cl_submit
  * 
  * Called whenever the form is submitted.
  * This function does not actually handle the data but instead passes
  * it on to helper functions.
  */
 
-function hstatus_forms_cl_submit($form, &$form_state){
+function hcomplearn_forms_cl_submit($form, &$form_state){
     $page = $form_state['values']['page'];
     $back = ($form_state['clicked_button']['#id'] == 'back');
     
     if(is_numeric($page)){
-        _hstatus_clform_savepage($form_state,$back);
+        _hcomplearn_clform_savepage($form_state,$back);
     }elseif($page == 'first'){
-        _hstatus_clform_newentry($form_state);
+        _hcomplearn_clform_newentry($form_state);
     }elseif($page == 'last'){
         if($back){
             drupal_set_message('going back to '.$form_state['storage']['count']);
-            _hstatus_clform_redirect($form_state,$form_state['storage']['count'],false);
+            _hcomplearn_clform_redirect($form_state,$form_state['storage']['count'],false);
         }else{
-            _hstatus_clform_savefinal($form_state);
+            _hcomplearn_clform_savefinal($form_state);
         }
     }else{
-        _hstatus_clform_redirect($form_state,false,false);
+        _hcomplearn_clform_redirect($form_state,false,false);
     }
 }
 
@@ -174,8 +174,8 @@ function hstatus_forms_cl_submit($form, &$form_state){
 
 /* CONTENTS (in order)
  * 
- * _hstatus_clform_newentry
- * _hstatus_clform_savepage
+ * _hcomplearn_clform_newentry
+ * _hcomplearn_clform_savepage
  *             ..._savefinal
  *             ..._saveandredirect
  *             ..._redirect
@@ -189,30 +189,30 @@ function hstatus_forms_cl_submit($form, &$form_state){
 /*
  * Helper function for the first page
  */
-function _hstatus_clform_newentry(&$form_state){
+function _hcomplearn_clform_newentry(&$form_state){
     
     if(isset($form_state['storage']['data']['count'])){
         $data = $form_state['storage']['data'];
     }else{
-        $data = _hstatus_clform_loaddata();
+        $data = _hcomplearn_clform_loaddata();
     }
     
     $n = $form_state['values']['count'];
     $form_state['storage']['count'] = $n;
     $data['count'] = $n;
     
-    _hstatus_clform_saveandredirect($form_state,$data,1);
+    _hcomplearn_clform_saveandredirect($form_state,$data,1);
 }
 
 /*
  * Helper for all pages except first and last
  */
 
-function _hstatus_clform_savepage(&$form_state,$back=false){
+function _hcomplearn_clform_savepage(&$form_state,$back=false){
     
     $data = $form_state['storage']['data'];
     if(!isset($data['count'])){
-        $data = _hstatus_clform_loaddata();
+        $data = _hcomplearn_clform_loaddata();
     }
     
     $vals = $form_state['values']; //note that PHP arrays are NOT assigned by reference
@@ -222,15 +222,15 @@ function _hstatus_clform_savepage(&$form_state,$back=false){
     $data[$n] = $vals;
     
     $nextpage = $back?'<':'>';
-    _hstatus_clform_saveandredirect($form_state,$data,$nextpage);
+    _hcomplearn_clform_saveandredirect($form_state,$data,$nextpage);
 }
 
 /*
  * Helper for last page
  */
-function _hstatus_clform_savefinal(&$form_state){
+function _hcomplearn_clform_savefinal(&$form_state){
     global $user;
-    module_load_include('inc','hstatus','hstatus.db');
+    //module_load_include('inc','hstatus','hstatus.db');
     if(hstatus_clsubmit($user->uid)){
         drupal_set_message(t('Complementary Learning sucessfully submitted.'));
         unset($form_state['storage']);
@@ -238,7 +238,7 @@ function _hstatus_clform_savefinal(&$form_state){
         $form_state['redirect'] = '<front>';
     }else{
         drupal_set_message(t('Failed to submit Complementary Learning.'),'error');
-        _hstatus_clform_redirect($form_state,'last',false);
+        _hcomplearn_clform_redirect($form_state,'last',false);
     }
 }
 
@@ -248,13 +248,13 @@ function _hstatus_clform_savefinal(&$form_state){
  * helper is called with false.
  */
 
-function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
+function _hcomplearn_clform_saveandredirect(&$form_state,$data,$page){
     global $user;
-    module_load_include('inc','hstatus','hstatus.db');
+    //module_load_include('inc','hstatus','hstatus.db');
     $success = hstatus_save_cldraft($user->uid,$data);
     if($success)$form_state['storage']['data'] = $data;
     $page = ($success)?$page:false;
-    _hstatus_clform_redirect($form_state,$page);
+    _hcomplearn_clform_redirect($form_state,$page);
 } 
 
 /*
@@ -265,7 +265,7 @@ function _hstatus_clform_saveandredirect(&$form_state,$data,$page){
  * the current page of the form is reloaded.
  */
 
-function _hstatus_clform_redirect(&$form_state,$page='>',$message=true){
+function _hcomplearn_clform_redirect(&$form_state,$page='>',$message=true){
     if($page == '>' || $page == '<'){
         $n = $form_state['storage']['page'];
         if(is_numeric($n)){
@@ -292,7 +292,7 @@ function _hstatus_clform_redirect(&$form_state,$page='>',$message=true){
 /*
  * Generates normal (not first or last) pages
  */
-function _hstatus_clform_page_n($n,&$form,$data){
+function _hcomplearn_clform_page_n($n,&$form,$data){
     $form['page'] = array(
         '#type' => 'value',
         '#value' => $n,
@@ -318,10 +318,10 @@ function _hstatus_clform_page_n($n,&$form,$data){
         '#size' => 5,
         '#maxlength' => 2,
         '#required' => true,
-        '#element_validate' => array('hstatus_form_cl_int_validate'),
+        '#element_validate' => array('hcomplearn_form_cl_int_validate'),
         //HTML5 attributes
         '#attributes' => array('min' => '0', 'max' => '50', 'step' => '1'),
-        '#post_render' => array('hstatus_clform_number'),
+        '#post_render' => array('hcomplearn_clform_number'),
     );
     $form['name'] = array(
         '#type' => 'textfield',
@@ -375,8 +375,8 @@ function _hstatus_clform_page_n($n,&$form,$data){
 
 
 //this gets done often enough that it needs it's own helper function
-function _hstatus_clform_loaddata(){
+function _hcomplearn_clform_loaddata(){
     global $user;
-    module_load_include('inc','hstatus','hstatus.db');
-    return hstatus_load_cldraft($user->uid,_hstatus_timetosave());
+    //module_load_include('inc','hstatus','hstatus.db');
+    return hstatus_load_cldraft($user->uid,_hcomplearn_timetosave());
 }

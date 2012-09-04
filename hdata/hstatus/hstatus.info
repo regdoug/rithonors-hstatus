@@ -1,0 +1,14 @@
+; hstatus.info
+; Created 4/1/12 by Reginald Pierce
+
+name = hStatus
+description = My Status page module.  Created by the RIT Honors Tech Committee
+
+; In case we make other modules, this will group them on the modules page
+package = Honors
+
+; required
+core = 6.x
+
+; All modules in this package depend on hdata
+dependancies[] = hdata
