@@ -35,7 +35,7 @@ function hstatus_menu(){
         //1 means the first argument.
         'page arguments' => array(1),
         //file that the page function is located in (relative to module directory)
-        'file' => 'includes/hstatus.pages.inc',
+        'file' => 'hstatus.pages.inc',
         //MENU_LOCAL_TASK means that it shold be displayed as a tab
         'type' => MENU_LOCAL_TASK,
         //function to decide if the user has permissions
@@ -70,10 +70,10 @@ function hstatus_theme($existing, $type, $theme, $path){
         'hstatus_mystatus' => array(
             //this is the file that generates the output
             //relative to module directory, less the .tpl.php
-            'template' => 'templates/mystatus',
+            'template' => 'mystatus',
             //the file in which the preprocessor is located.
             //preprocessors define variables for the template.
-            'file' => 'includes/hstatus.pages.inc',
+            'file' => 'hstatus.pages.inc',
             //arguments passed to the 'theme' function and the preprocessor
             'arguments' => array('user' => NULL),
         ),

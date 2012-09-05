@@ -30,13 +30,13 @@ function template_preprocess_hstatus_mystatus(&$variables){
         $username = $variables['user']->name;
         
         //loads the database API
-        if(module_load_include('inc', 'hstatus', 'includes/hstatus.db') === FALSE){
+        /*if(module_load_include('inc', 'hstatus', 'includes/hstatus.db') === FALSE){
             $variables['displaynone'] = true;
             return;
-        }
+        }*/
         
         //gets a user object
-        $huser = hstatus_load_user($username);
+        $huser = hdata_load_user($username);
         // $huser will be false if the load failed.
         if($huser){
         

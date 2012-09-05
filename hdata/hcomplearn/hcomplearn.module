@@ -19,14 +19,7 @@
  */
 function hcomplearn_menu(){
     
-    //TODO: rewrite
-    /* the array key gives the path.  note the % sign which indicates an
-     * argument.  The 'user' after the % indicates that argument should
-     * be the return value of the function 'user_load' instead of the actual
-     * argument, which will be an integer. Also note that this may not be
-     * the path the user sees because modules are allowed to alias any 
-     * path name they want.
-     */
+    //TODO: write docs
     
     //AJAX callback
     $items['hcomplearn/submission/%'] = array(
@@ -58,7 +51,7 @@ function hcomplearn_cl_submission($sid){
         //print '<h1>Internal Error: hStatus Database API</h1>';
         //return null;
     //}
-    $data = hstatus_cl_data_by_id($sid);
+    $data = hdata_cl_data_by_id($sid);
     $output = '';
     if($data){
         for($i = 1; $i <= $data['count']; $i++){
@@ -148,7 +141,7 @@ function hcomplearn_cl_load($sid){
         //drupal_set_message('Internal Error: hStatus Database API missing','error');
         //return null;
     //}
-    $submission = hstatus_cl_data_by_id($sid);
+    $submission = hdata_cl_data_by_id($sid);
     $submission['id'] = $sid;
     return $submission;
 }
@@ -193,7 +186,7 @@ function _hcomplearn_form_cl_access(){
         //if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
             //return false;
         //}
-        $huser = hstatus_load_user($user->name);
+        $huser = hdata_load_user($user->name);
         $status = $huser->continuation['status'];
         // active in Honors.
         return $status <= 2;

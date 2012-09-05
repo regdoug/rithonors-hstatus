@@ -1,7 +1,7 @@
 <?php
 
 /**
- * hstatus.install
+ * hdata.install
  *
  * Installs the schema for the honors student tables
  * (the same as the tables for the old site)
@@ -12,9 +12,9 @@
  * 
  * Run when the module is installed (NOTE: this is different that enable!)
  */
-function hstatus_install(){
-    //calls hstatus_schema and creates db tables
-    drupal_install_schema('hstatus');
+function hdata_install(){
+    //calls hdata_schema and creates db tables
+    drupal_install_schema('hdata');
 }
 
 /**
@@ -22,9 +22,9 @@ function hstatus_install(){
  * 
  * Run when a module is uninstalled (NOTE: this is different than disable!)
  */
-function hstatus_uninstall(){
-    //calls hstatus_schema and deletes db tables
-    drupal_uninstall_schema('hstatus');
+function hdata_uninstall(){
+    //calls hdata_schema and deletes db tables
+    drupal_uninstall_schema('hdata');
 }
 
 /*
@@ -43,19 +43,19 @@ function hstatus_uninstall(){
  */
  
 /**
- * hstatus_update_6000 creates the new h_cldrafts table
+ * hdata_update_6000 creates the new h_cldrafts table
  * 
  * Added by Reginald Pierce on 05/01/2012
  */
-function hstatus_update_6000(){
-    $schema = hstatus_schema();
+function hdata_update_6000(){
+    $schema = hdata_schema();
     $ret = array();
     db_create_table($ret, 'h_cldrafts', $schema['h_cldrafts']);
     return $ret;
 }
 
 /**
- * hstatus_update_6001 implements a new complearning system.
+ * hdata_update_6001 implements a new complearning system.
  * 
  * The new system gives more flexibility and it should be more efficient
  * than the old system.  The main changes are
@@ -68,8 +68,8 @@ function hstatus_update_6000(){
  * 
  * Added by Reginald Pierce on 07/01/2012
  */
-function hstatus_update_6001(){
-    $schema = hstatus_schema();
+function hdata_update_6001(){
+    $schema = hdata_schema();
     $ret = array();
     //create new tables
     db_create_table($ret, 'h_cl', $schema['h_cl']);
@@ -88,12 +88,12 @@ function hstatus_update_6001(){
 /**
  * Implements hook_schema
  * 
- * Defines the database structure for the hstatus module
+ * Defines the database structure for the hdata module
  * 
  * NOTE: If you modify this you MUST create an "update" function or it will
  * not affect any previous installs of this module!
  */
-function hstatus_schema() {
+function hdata_schema() {
  
 //convenience function for creating a cache structure to be used by 'cache_set' and 'cache_get'
 $s['cache_honors'] = drupal_get_schema_unprocessed('system', 'cache');

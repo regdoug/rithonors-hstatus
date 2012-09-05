@@ -10,7 +10,7 @@ package = Honors
 ; required
 core = 6.x
 
-; Dependancies
-dependancies[] = hdata
-dependancies[] = views
-dependanceis[] = colorbox
+; Dependencies
+dependencies[] = hdata
+dependencies[] = views
+dependenceis[] = colorbox
