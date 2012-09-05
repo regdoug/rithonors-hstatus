@@ -36,7 +36,8 @@ function template_preprocess_hstatus_mystatus(&$variables){
         }*/
         
         //gets a user object
-        $huser = hdata_load_user($username);
+        $huser = hdata_load_user($username,true,true,true);
+        $variables['huser'] = $huser;
         // $huser will be false if the load failed.
         if($huser){
         
@@ -44,7 +45,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
             
             $status = $huser->continuation['status'];
             switch($status){
-                case 0: $status_str = 'Continuted';break;
+                case 0: $status_str = 'Continued';break;
                 case 1: $status_str = 'Conditional Continuation';break;
                 case 2: $status_str = 'Warning';break;
                 case 3: $status_str = 'Withdrawn';break;

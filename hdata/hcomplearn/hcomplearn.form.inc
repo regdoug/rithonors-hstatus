@@ -231,7 +231,7 @@ function _hcomplearn_clform_savepage(&$form_state,$back=false){
 function _hcomplearn_clform_savefinal(&$form_state){
     global $user;
     //module_load_include('inc','hstatus','hstatus.db');
-    if(hstatus_clsubmit($user->uid)){
+    if(hdata_clsubmit($user->uid)){
         drupal_set_message(t('Complementary Learning sucessfully submitted.'));
         unset($form_state['storage']);
         unset($form_state['rebuild']);
@@ -251,7 +251,7 @@ function _hcomplearn_clform_savefinal(&$form_state){
 function _hcomplearn_clform_saveandredirect(&$form_state,$data,$page){
     global $user;
     //module_load_include('inc','hstatus','hstatus.db');
-    $success = hstatus_save_cldraft($user->uid,$data);
+    $success = hdata_save_cldraft($user->uid,$data);
     if($success)$form_state['storage']['data'] = $data;
     $page = ($success)?$page:false;
     _hcomplearn_clform_redirect($form_state,$page);
@@ -378,5 +378,5 @@ function _hcomplearn_clform_page_n($n,&$form,$data){
 function _hcomplearn_clform_loaddata(){
     global $user;
     //module_load_include('inc','hstatus','hstatus.db');
-    return hstatus_load_cldraft($user->uid,_hcomplearn_timetosave());
+    return hdata_load_cldraft($user->uid,_hcomplearn_timetosave());
 }

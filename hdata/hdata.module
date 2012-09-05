@@ -158,10 +158,13 @@ function hdata_load_user($username, $loadCourses = false, $loadSubmissions = fal
     // or the h_continuation table.
     } else {
         // Fetch Basic Info
+        $u['username'] = $username;
         $uid = db_result(db_query('SELECT uid FROM users WHERE name=\'%s\'',$username));
         $u['uid'] = $uid;
         $rs = db_query($q_basic, $username,$username,$username,$username);
         $arry = db_fetch_array($rs);
+        
+        //TODO: make something meaningful out of college+dept+program
         if($arry){
             $u['basic'] = array(
                 'name' => array(
@@ -253,9 +256,9 @@ function hdata_load_user($username, $loadCourses = false, $loadSubmissions = fal
         //TODO: make this time configurable
         //$rs_cl = db_query($q_cl,$username,strtotime('-9 months'));
         $u['cldraft'] = (boolean)hdata_load_cldraft($u['uid']);
-        $rs = db_query('SELECT id, status, hours, submitted_date, reviewed_date 
+        $rs = db_query('SELECT id, status, hours, submit_date, review_date 
                         FROM {h_cl} WHERE uid=%d 
-                        SORT BY submitted_date DESC LIMIT 1',
+                        ORDER BY submit_date DESC LIMIT 1',
                         $u['uid']);
         $u['complearn'] = $rs?db_fetch_array($rs):null;
         
