@@ -1,6 +1,11 @@
 <?php
 
-//works better than constants
+/*
+ * Function to return the length of time for which drafts should be stored.
+ * 
+ * Even though right now it is a constant, it could eventually be a
+ * setting in the future.
+ */
 function _hcomplearn_timetosave(){return '6 months';}
 
 /**
@@ -57,13 +62,27 @@ function hcomplearn_forms_cl(&$form_state,$page){
             '#type' => 'value',
             '#value' => 'last',
         );
+        /* Loop through the data array to compile hours and types */
+        $hours = 0;
+        for($i = 1; $i <= $data['count']; $i++){
+            $hours += $data[$i]['hours'];
+        }
+        //TODO: don't hard code numbers!
+        if($hours < 20) {
+            drupal_set_message(t('You need more than !h hours',array('!h'=>$hours)),'warning');
+            $maysubmitmsg = $maysubmit = false;
+        }else{
+            $maysubmitmsg = 'If you are satisfied with your submission,
+            you may submit the form now by clicking the button below.';
+            $maysubmit = false;
+        }
+            
         $form['information'] = array(
             //TODO: make this configurable
             '#value' => '<p>'.t("Your responses have been saved as a draft.
             They will be stored for up to "._hcomplearn_timetosave()."
-            If you are satisfied with your submission,
-            you may submit the form now by clicking the button below.").
-            '</p><p><strong>'.t("Be aware that submitting this form will
+            $maysubmitmsg").'</p><p><strong>'.
+            t("Be aware that submitting this form will
             prevent you from making further submissions until this
             submission has been reviewed.").'</strong></p>'
         );
@@ -75,6 +94,7 @@ function hcomplearn_forms_cl(&$form_state,$page){
         $form['submit'] = array(
           '#type' => 'submit',
           '#value' => t('Done, Submit Now'),
+          '#disabled' => !$maysubmit,
         );
         return $form;
     }else{
@@ -377,6 +397,5 @@ function _hcomplearn_clform_page_n($n,&$form,$data){
 //this gets done often enough that it needs it's own helper function
 function _hcomplearn_clform_loaddata(){
     global $user;
-    //module_load_include('inc','hstatus','hstatus.db');
     return hdata_load_cldraft($user->uid,_hcomplearn_timetosave());
 }

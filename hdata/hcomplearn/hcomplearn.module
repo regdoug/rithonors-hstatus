@@ -28,7 +28,6 @@ function hcomplearn_menu(){
         'page arguments' => array(2),
         'type' => MENU_CALLBACK,
         //'file' => 'includes/hstatus.ajax.inc',
-        //TODO: write real callback
         'access callback' => '_hcomplearn_cl_review_access',
         'access arguments' => array('view'),
     );
@@ -47,10 +46,6 @@ function hcomplearn_menu(){
 
 //TODO: document this
 function hcomplearn_cl_submission($sid){
-    //if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
-        //print '<h1>Internal Error: hStatus Database API</h1>';
-        //return null;
-    //}
     $data = hdata_cl_data_by_id($sid);
     $output = '';
     if($data){
@@ -64,8 +59,6 @@ function hcomplearn_cl_submission($sid){
         $output = '<h1>Not Found</h1>';
     }
     
-    /*$output = print_r($data,true);
-    $output = "<pre>$output</pre>";*/
     //AJAX functions should echo the output and return null to prevent
     //the theme system from kicking in.
     echo $output;
@@ -93,7 +86,6 @@ function hcomplearn_theme($existing, $type, $theme, $path){
     return array(
         'hcomplearn_cl_activity' => array(
             'arguments' => array('activity' => NULL),
-            //'file' => 'includes/hstatus.pages.inc',
             'template' => 'clactivity',
         ),
     );
@@ -114,7 +106,8 @@ function hcomplearn_action_info(){
             'type' => 'complearning',
             'configurable' => FALSE,
         ),
-    /*'user_block_ip_action' => array(
+    /* Example action -- taken from Drupal 
+      'user_block_ip_action' => array(
       'description' => t('Ban IP address of current user'),
       'type' => 'user',
       'configurable' => FALSE,
@@ -127,6 +120,8 @@ function hcomplearn_action_info(){
   );
 }
 
+//TODO: add permissions checks for approve and reject
+
 function hcomplearn_approve_cl_action($submission){
     $id = $submission['id'];
     db_query('UPDATE {h_cl} SET status=1 WHERE id=%d',$id);
@@ -137,10 +132,6 @@ function hcomplearn_reject_cl_action($submission){
 }
 
 function hcomplearn_cl_load($sid){
-    //if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
-        //drupal_set_message('Internal Error: hStatus Database API missing','error');
-        //return null;
-    //}
     $submission = hdata_cl_data_by_id($sid);
     $submission['id'] = $sid;
     return $submission;
@@ -183,9 +174,6 @@ function _hcomplearn_static_access(){ return true; }
 function _hcomplearn_form_cl_access(){
     global $user;
     if(user_access('submit complementary learning')){
-        //if(module_load_include('inc','hstatus','includes/hstatus.db') === FALSE){
-            //return false;
-        //}
         $huser = hdata_load_user($user->name);
         $status = $huser->continuation['status'];
         // active in Honors.

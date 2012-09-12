@@ -283,6 +283,8 @@ function hdata_load_cldraft($uid, $expire = '1 year'){
     //basic caching
     static $cldrafts;
     if(isset($cldrafts[$uid]) && isset($cldrafts[$uid]['count'])){
+        //DEBUG
+        drupal_set_message('loading from short term cache');
         return $cldrafts[$uid];
     }
     
@@ -298,13 +300,17 @@ function hdata_load_cldraft($uid, $expire = '1 year'){
     $rs = db_query($q,$uid,$time);
     $submission = db_result($rs);
     
-    if($obj){
+    if($submission){
         $data = unserialize($submission);
-        if(isset($data['count'])){
+        if(isset($data['count']) && $data['count'] > 0){
             $cldrafts[$uid] = $data;
             return $data;
+        }else{
+            //DEBUG
+            drupal_set_message('Invalid count loaded');
         }
     }
+    drupal_set_message('returning false');
     return false;
 }
 
@@ -364,7 +370,8 @@ function hdata_clsubmit($uid, $expire = '1 year'){
         return false;
     }elseif(isset($huser->submissions['complearn']) && is_array($huser->submissions['complearn'])){
         foreach($huser->submissions['complearn'] as $sub){
-            if($sub['status'] == -2){
+            //TODO: don't hard code values
+            if($sub['status'] == 0){
                 drupal_set_message(t('Not submitted. You already have a pending submission.'),'warning');
                 return false;
             }
