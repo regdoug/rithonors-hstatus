@@ -23,7 +23,7 @@ function hdata_user_load($user){return _hdata_user_load($user);}
 function hdata_user_save($user){return _hdata_user_save($user);}
 /* Used internally, but userful(?) externally for info */
 //TODO: make this a system variable
-function hdata_user_cache_life(){return 2*60*60;}
+function hdata_user_cache_life(){return '2 days';}
 
 /* id should be uid if $draft is true */
 function hdata_cl_load($id,$draft=false){ return _hdata_cl_load($id,$draft); }
@@ -122,7 +122,7 @@ function _hdata_user_load($user, $reset = false){
     $u['submissions'] = _hdata_user_load_submissions($uid);
     
     cache_set("hdata_user:$username", serialize($u), 'cache_honors', 
-        time() + hdata_user_cache_life());
+        strtotime('+'.hdata_user_cache_life()));
     $husers[$username] = $u;  //update static variable for future calls
 
     return $u;
@@ -212,15 +212,39 @@ function _hdata_user_save($user){
     if(!(isset($user['uid']) && isset($user['name']))){
         return false;
     }
-    $success = _hdata_user_save_basic($user) && _hdata_user_save_continuation($user);
+    $success = _hdata_user_save_basic($user) || _hdata_user_save_continuation($user);
     if($success){
         cache_set("hdata_user:$username", serialize($u), 'cache_honors', 
-        time() + hdata_user_cache_life());
+        strtotime('+'.hdata_user_cache_life()));
         return true;
     }else{ return false; }
- }
- function _hdata_user_save_basic($user){return false;}
- function _hdata_user_save_continuation($user){return false;}
+}
+
+function _hdata_user_save_basic($user){
+    //TODO: do perm checks
+    $q = "UPDATE {h_students}
+    SET firstname='%s', lastname='%s', college='%s', department='%s', program='%s', active=%d
+    WHERE username='%s'";
+    $b = $user['basic'];
+    if(db_query($q,$b['name']['firstname'],$b['name']['lastname'],
+            $b['college'], $b['department'], $b['program'],$b['active'],$user['name'])){
+        return true;
+    }else{
+        return false;
+    }
+}
+function _hdata_user_save_continuation($user){
+    //TODO: do perm checks
+    $q = "UPDATE {h_continuation}
+    SET status=%d, comp_learn=%d, college=%d, courses=%d, gpa=%d
+    WHERE username='%s'";
+    $c = $user['continuation'];
+    if(db_query($q,$c['status'],$c['cl'],$c['college'],$c['courses'],$c['gpa'],$user['name'])){
+        return true;
+    }else{
+        return false;
+    }
+}
  
  function _hdata_cl_load($id,$draft){
     if($draft){
@@ -257,6 +281,11 @@ function _hdata_cl_save($sub,$draft){
         $q = "UPDATE {h_cl} SET status=%d, reviewed_date=%d, reviewer_uid=%d WHERE id=%d";
         return (bool)db_query($q,$sub['status'],$sub['reviewed_date'],$sub['reviewer_uid'],$sub['id']);
     }else if(!$draft && $sub['draft']){
+        $username = user_load($sub['uid']);
+        if(($msg = hcomplearn_submit_allowed($username)) != 'ok'){
+            drupal_set_message($msg,'error');
+            return false;
+        }
         //saving a draft as a submission
         $data = _hdata_cl_save_stripdraft($sub['data']);
         $info = _hdata_cl_save_extractinfo($data);
@@ -358,68 +387,6 @@ function _hdata_cldraft_save($uid,$data){
         db_query('INSERT INTO {h_cl_data} (submission) VALUES (%b)',serialize($data));
         db_query('INSERT INTO {h_cldrafts} (uid,updatetime,id) VALUES (%d,%d,LAST_INSERT_ID())',$uid,time());
         return true;
-    }
-}
-
-/*
- * hdata_clsubmit
- * 
- * Saves a draft to the h_complearning database
- */
-function hdata_clsubmit($uid, $expire = '1 year'){
-    
-    //TODO: offload this to the hcomplearning module
-    
-    $user = user_load($uid);
-    $huser = hdata_load_user($user->name);
-    if(!$huser){
-        drupal_set_message('Failed to load your profile.','error');
-        return false;
-    }elseif($huser->continuation['comp_learn'] == 1){
-        drupal_set_message(t('Not submitted. You have already completed Comp Learning for this year.'),'warning');
-        return false;
-    }elseif($huser->continuation['status'] > 2){
-        drupal_set_message(t('Not submitted. You are not active in the Honors Program'),'warning');
-        return false;
-    }elseif(isset($huser->submissions['complearn']) && is_array($huser->submissions['complearn'])){
-        foreach($huser->submissions['complearn'] as $sub){
-            if($sub['status'] == -2){
-                drupal_set_message(t('Not submitted. You already have a pending submission.'),'warning');
-                return false;
-            }
-        }
-    }
-    
-    $q = 
-    "SELECT data.submission, data.id 
-    FROM {h_cldrafts} draft
-    JOIN {h_cl_data} data
-    ON draft.id = data.id
-    WHERE draft.uid=%d
-    AND draft.updatetime > %d";
-    
-    $time = strtotime('-'.trim($expire));
-    $rs = db_query($q,$uid,$time);
-    $result = db_fetch_object($rs);
-    $data = unserialize($result->submission);
-    
-    /* Loop through the data array to compile hours and types */
-    $hours = 0; $types = '';
-    for($i = 1; $i <= $data['count']; $i++){
-        $hours += $data[$i]['hours'];
-        $types .= $data[$i]['type'].' ';
-    }
-    /* Save to db
-     * 
-     * Don't use drupal_write_record b/c it will ignore information
-     * about the column `id` due to the fact that the column is
-     * an auto increment column.
-     */
-    $write = "INSERT INTO {h_cl}
-    (uid, id, hours, types, submit_date)
-    VALUES (%d, %d, %d, '%s', %d)";
-    if(db_query($write,$uid,$result->id,$hours,$types,time())){
-        return db_query("DELETE FROM {h_cldrafts} WHERE uid=$uid");
     }
 }
 

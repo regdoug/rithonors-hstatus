@@ -58,45 +58,7 @@ function hcomplearn_forms_cl(&$form_state,$page){
     
     if($page == 'last'){
         //last page
-        $form['page'] = array(
-            '#type' => 'value',
-            '#value' => 'last',
-        );
-        /* Loop through the data array to compile hours and types */
-        $hours = 0;
-        for($i = 1; $i <= $data['count']; $i++){
-            $hours += $data[$i]['hours'];
-        }
-        //TODO: don't hard code numbers!
-        if($hours < 20) {
-            drupal_set_message(t('You need more than !h hours',array('!h'=>$hours)),'warning');
-            $maysubmitmsg = $maysubmit = false;
-        }else{
-            $maysubmitmsg = 'If you are satisfied with your submission,
-            you may submit the form now by clicking the button below.';
-            $maysubmit = false;
-        }
-            
-        $form['information'] = array(
-            //TODO: make this configurable
-            '#value' => '<p>'.t("Your responses have been saved as a draft.
-            They will be stored for up to "._hcomplearn_timetosave()."
-            $maysubmitmsg").'</p><p><strong>'.
-            t("Be aware that submitting this form will
-            prevent you from making further submissions until this
-            submission has been reviewed.").'</strong></p>'
-        );
-        $form['back'] = array(
-          '#type' => 'submit',
-          '#value' => t('< Prev Page'),
-          '#id' => 'back',
-        );
-        $form['submit'] = array(
-          '#type' => 'submit',
-          '#value' => t('Done, Submit Now'),
-          '#disabled' => !$maysubmit,
-        );
-        return $form;
+        $form = _hcomplearn_page_last($form,$username,$data);
     }else{
         //first page -- acts as a catch-all, rather than returning a 404
         $form['page'] = array(
@@ -393,6 +355,76 @@ function _hcomplearn_clform_page_n($n,&$form,$data){
     $form['comment']['#default_value'] = $data[$n]['comment'];
 }
 
+function _hcomplearn_page_last(&$form,$username,$data){
+    /*
+     * This function is mostly validation to make sure the user is allowed
+     * to submit a complearning submission.  Most of these checks are in
+     */
+    $huser = hdata_load_user($username);
+    // Loop through the data array to get total hours
+    $hours = 0;
+    for($i = 1; $i <= $data['count']; $i++){
+        $hours += $data[$i]['hours'];
+    }
+    //TODO: don't hard code numbers!
+    if($hours < 20) {
+        drupal_set_message(t('You need more than !h hours',array('!h'=>$hours)),'warning');
+        $maysubmitmsg = $maysubmit = false;
+    }elseif(($msg = hcomplearn_submit_allowed($username)) != 'ok'){
+        drupal_set_message($msg,'warning');
+        $maysubmitmsg = $maysubmit = false;
+    }else{
+        $maysubmitmsg = 'If you are satisfied with your submission,
+        you may submit the form now by clicking the button below.';
+        $maysubmit = true;
+    }
+    
+    
+    $form['page'] = array(
+        '#type' => 'value',
+        '#value' => 'last',
+    );    
+    $form['information'] = array(
+        //TODO: make this configurable
+        '#value' => '<p>'.t("Your responses have been saved as a draft.
+        They will be stored for up to "._hcomplearn_timetosave()."
+        $maysubmitmsg").'</p><p><strong>'.
+        t("Be aware that submitting this form will
+        prevent you from making further submissions until this
+        submission has been reviewed.").'</strong></p>'
+    );
+    $form['back'] = array(
+      '#type' => 'submit',
+      '#value' => t('< Prev Page'),
+      '#id' => 'back',
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Done, Submit Now'),
+      '#disabled' => !$maysubmit,
+    );
+}
+
+function hcomplearn_submit_allowed($username){
+    if(!$huser){
+        return t('Failed to load your profile.');
+    }elseif($huser->continuation['comp_learn'] == 1){
+        return t('You have already completed Comp Learning for this year.');
+    }elseif($huser->continuation['status'] > 2){
+        return t('You are not active in the Honors Program');
+    }elseif(isset($huser->submissions['complearn']) && is_array($huser->submissions['complearn'])){
+        foreach($huser->submissions['complearn'] as $sub){
+            if($sub['status'] == 0){
+                return t('You already have a pending submission.');
+            }elseif($sub['status'] == 1 && $sub['submit_time'] > strtotime('-'._hcomplearn_timetosave())){
+                return t('You have already completed Comp Learning for this year.');
+            }
+        }
+    }else{
+        return 'ok';
+    }
+}
+    
 
 //this gets done often enough that it needs it's own helper function
 function _hcomplearn_clform_loaddata(){
