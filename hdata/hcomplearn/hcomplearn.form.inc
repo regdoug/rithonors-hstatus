@@ -1,13 +1,5 @@
 <?php
 
-/*
- * Function to return the length of time for which drafts should be stored.
- * 
- * Even though right now it is a constant, it could eventually be a
- * setting in the future.
- */
-function _hcomplearn_timetosave(){return '6 months';}
-
 /**
  * Convenience function to build complearning form
  */
@@ -32,7 +24,7 @@ function hcomplearn_forms_cl(&$form_state,$page){
         $data = $form_state['storage']['data'];
         $page = $form_state['storage']['page'];
     }else{
-        $data = _hcomplearn_clform_loaddata();
+        $data = _hcomplearn_loaddata();
         $form_state['storage']['data'] = $data;
         $form_state['storage']['page'] = $page;
     }
@@ -52,13 +44,15 @@ function hcomplearn_forms_cl(&$form_state,$page){
     //if $page is a string, $n will be 0
     if($n > 0){
         //$form = array();
-        _hcomplearn_clform_page_n($n,$form,$data);
+        _hcomplearn_page_n($n,$form,$data);
         return $form;
     }
     
     if($page == 'last'){
         //last page
-        $form = _hcomplearn_page_last($form,$username,$data);
+        global $user;
+        $huser = hdata_user_load(array('uid'=>$user->uid,'name'=>$user->name));
+        _hcomplearn_page_last($form,$huser,$data);
     }else{
         //first page -- acts as a catch-all, rather than returning a 404
         $form['page'] = array(
@@ -74,7 +68,7 @@ function hcomplearn_forms_cl(&$form_state,$page){
             '#default_value' => (isset($data['count']))?$data['count']:1,
             //HTML5 attributes
             '#attributes' => array('min' => '1'),
-            '#post_render' => array('hcomplearn_clform_number'),
+            '#post_render' => array('hcomplearn_number'),
         );
         $form['back'] = array(
           '#type' => 'submit',
@@ -94,7 +88,7 @@ function hcomplearn_forms_cl(&$form_state,$page){
  * "number" textfield
  */
 
-function hcomplearn_clform_number($html,$elements){
+function hcomplearn_number($html,$elements){
     $html = str_replace('type="text"','type="number"',$html);
     return $html;
 }
@@ -135,18 +129,20 @@ function hcomplearn_forms_cl_submit($form, &$form_state){
     $back = ($form_state['clicked_button']['#id'] == 'back');
     
     if(is_numeric($page)){
-        _hcomplearn_clform_savepage($form_state,$back);
+        _hcomplearn_savepage($form_state,$back);
     }elseif($page == 'first'){
-        _hcomplearn_clform_newentry($form_state);
+        _hcomplearn_newentry($form_state);
     }elseif($page == 'last'){
         if($back){
             drupal_set_message('going back to '.$form_state['storage']['count']);
-            _hcomplearn_clform_redirect($form_state,$form_state['storage']['count'],false);
+            _hcomplearn_redirect($form_state,$form_state['storage']['count'],false);
         }else{
-            _hcomplearn_clform_savefinal($form_state);
+            _hcomplearn_savefinal($form_state);
         }
     }else{
-        _hcomplearn_clform_redirect($form_state,false,false);
+        //DEBUG
+        //drupal_set_message('cl_submit redirecting','warning');
+        _hcomplearn_redirect($form_state,false,false);
     }
 }
 
@@ -156,8 +152,8 @@ function hcomplearn_forms_cl_submit($form, &$form_state){
 
 /* CONTENTS (in order)
  * 
- * _hcomplearn_clform_newentry
- * _hcomplearn_clform_savepage
+ * _hcomplearn_newentry
+ * _hcomplearn_savepage
  *             ..._savefinal
  *             ..._saveandredirect
  *             ..._redirect
@@ -171,30 +167,30 @@ function hcomplearn_forms_cl_submit($form, &$form_state){
 /*
  * Helper function for the first page
  */
-function _hcomplearn_clform_newentry(&$form_state){
-    
+function _hcomplearn_newentry(&$form_state){
+    global $user;
     if(isset($form_state['storage']['data']['count'])){
         $data = $form_state['storage']['data'];
     }else{
-        $data = _hcomplearn_clform_loaddata();
+        $data = _hcomplearn_loaddata();
     }
     
     $n = $form_state['values']['count'];
     $form_state['storage']['count'] = $n;
     $data['count'] = $n;
     
-    _hcomplearn_clform_saveandredirect($form_state,$data,1);
+    _hcomplearn_saveandredirect($form_state,$data,1);
 }
 
 /*
  * Helper for all pages except first and last
  */
 
-function _hcomplearn_clform_savepage(&$form_state,$back=false){
+function _hcomplearn_savepage(&$form_state,$back=false){
     
     $data = $form_state['storage']['data'];
     if(!isset($data['count'])){
-        $data = _hcomplearn_clform_loaddata();
+        $data = _hcomplearn_loaddata();
     }
     
     $vals = $form_state['values']; //note that PHP arrays are NOT assigned by reference
@@ -204,23 +200,27 @@ function _hcomplearn_clform_savepage(&$form_state,$back=false){
     $data[$n] = $vals;
     
     $nextpage = $back?'<':'>';
-    _hcomplearn_clform_saveandredirect($form_state,$data,$nextpage);
+    _hcomplearn_saveandredirect($form_state,$data,$nextpage);
 }
 
 /*
  * Helper for last page
  */
-function _hcomplearn_clform_savefinal(&$form_state){
+function _hcomplearn_savefinal(&$form_state){
     global $user;
-    //module_load_include('inc','hstatus','hstatus.db');
-    if(hdata_clsubmit($user->uid)){
+    //sending true to hdata_cl_load tells it to load a draft
+    $sub = hdata_cl_load($user->uid,true);
+    //when we pretend that the draft we just loaded is a submission
+    //(by passing false) hdata_cl_save automagically converts and saves
+    //it as a full-fledged submission.
+    if(hdata_cl_save($sub,false)){
         drupal_set_message(t('Complementary Learning sucessfully submitted.'));
         unset($form_state['storage']);
         unset($form_state['rebuild']);
         $form_state['redirect'] = '<front>';
     }else{
         drupal_set_message(t('Failed to submit Complementary Learning.'),'error');
-        _hcomplearn_clform_redirect($form_state,'last',false);
+        _hcomplearn_redirect($form_state,'last',false);
     }
 }
 
@@ -230,13 +230,16 @@ function _hcomplearn_clform_savefinal(&$form_state){
  * helper is called with false.
  */
 
-function _hcomplearn_clform_saveandredirect(&$form_state,$data,$page){
+function _hcomplearn_saveandredirect(&$form_state,$data,$page){
     global $user;
-    //module_load_include('inc','hstatus','hstatus.db');
-    $success = hdata_save_cldraft($user->uid,$data);
+    $sub = hdata_cl_load($user->uid,true);
+    $sub['data'] = $data;
+    $success = hdata_cl_save($sub,true);
     if($success)$form_state['storage']['data'] = $data;
     $page = ($success)?$page:false;
-    _hcomplearn_clform_redirect($form_state,$page);
+    //DEBUG
+    //drupal_set_message('saveandredirect: redirecting to '.$page,'warning');
+    _hcomplearn_redirect($form_state,$page);
 } 
 
 /*
@@ -247,7 +250,7 @@ function _hcomplearn_clform_saveandredirect(&$form_state,$data,$page){
  * the current page of the form is reloaded.
  */
 
-function _hcomplearn_clform_redirect(&$form_state,$page='>',$message=true){
+function _hcomplearn_redirect(&$form_state,$page='>',$message=true){
     if($page == '>' || $page == '<'){
         $n = $form_state['storage']['page'];
         if(is_numeric($n)){
@@ -267,14 +270,14 @@ function _hcomplearn_clform_redirect(&$form_state,$page='>',$message=true){
         if($message){drupal_set_message(t('Data saved successfully'));}
     }else{
         $form_state['redirect'] = false;
-        if($message){drupal_set_message(t('Failed to save data.'),'error');}
+        if($message){drupal_set_message(t('Failed to save data.').$page,'error');}
     }
 }
 
 /*
  * Generates normal (not first or last) pages
  */
-function _hcomplearn_clform_page_n($n,&$form,$data){
+function _hcomplearn_page_n($n,&$form,$data){
     $form['page'] = array(
         '#type' => 'value',
         '#value' => $n,
@@ -303,7 +306,7 @@ function _hcomplearn_clform_page_n($n,&$form,$data){
         '#element_validate' => array('hcomplearn_form_cl_int_validate'),
         //HTML5 attributes
         '#attributes' => array('min' => '0', 'max' => '50', 'step' => '1'),
-        '#post_render' => array('hcomplearn_clform_number'),
+        '#post_render' => array('hcomplearn_number'),
     );
     $form['name'] = array(
         '#type' => 'textfield',
@@ -347,20 +350,21 @@ function _hcomplearn_clform_page_n($n,&$form,$data){
         //accidentally overwrite it
         $form['type']['#default_value'] = $data[$n]['type'];
     }
-    $form['name']['#default_value'] = $data[$n]['name'];
-    $form['desc']['#default_value'] = $data[$n]['desc'];
-    $form['lead']['#default_value'] = $data[$n]['lead'];
-    $form['time']['#default_value'] = $data[$n]['time'];
-    $form['contact']['#default_value'] = $data[$n]['contact'];
-    $form['comment']['#default_value'] = $data[$n]['comment'];
+    //TODO: don't hard code this array
+    $fields = array('type','hours','name','desc','time','contact','comment');
+    foreach($fields as $f){
+        $form[$f]['#default_value'] = $data[$n][$f];
+    }
 }
 
-function _hcomplearn_page_last(&$form,$username,$data){
+function _hcomplearn_page_last(&$form,$huser,$data){
     /*
      * This function is mostly validation to make sure the user is allowed
      * to submit a complearning submission.  Most of these checks are in
      */
-    $huser = hdata_load_user($username);
+    //DEBUG
+    //if(!$huser) drupal_set_message('page_last: no user','warning');
+    
     // Loop through the data array to get total hours
     $hours = 0;
     for($i = 1; $i <= $data['count']; $i++){
@@ -370,28 +374,46 @@ function _hcomplearn_page_last(&$form,$username,$data){
     if($hours < 20) {
         drupal_set_message(t('You need more than !h hours',array('!h'=>$hours)),'warning');
         $maysubmitmsg = $maysubmit = false;
-    }elseif(($msg = hcomplearn_submit_allowed($username)) != 'ok'){
-        drupal_set_message($msg,'warning');
+    }elseif(($submitwarning = hcomplearn_submit_allowed($huser)) != 'ok'){
         $maysubmitmsg = $maysubmit = false;
     }else{
-        $maysubmitmsg = 'If you are satisfied with your submission,
-        you may submit the form now by clicking the button below.';
+        //TODO: make this configurable
+        $maysubmitmsg = t('If you are satisfied with your submission,
+            you may submit the form now by clicking the button below.');
+        $submitwarning = '<p><strong>'.
+            t('Be aware that submitting this form will
+            prevent you from making further submissions until this
+            submission has been reviewed.').'</strong></p>';
         $maysubmit = true;
     }
-    
+    $genericmessage = t('Your responses have been saved as a draft.
+        They will be stored for up to @time.', 
+        array('@time' => hcomplearn_timetosave() ) );
     
     $form['page'] = array(
         '#type' => 'value',
         '#value' => 'last',
     );    
-    $form['information'] = array(
-        //TODO: make this configurable
-        '#value' => '<p>'.t("Your responses have been saved as a draft.
-        They will be stored for up to "._hcomplearn_timetosave()."
-        $maysubmitmsg").'</p><p><strong>'.
-        t("Be aware that submitting this form will
-        prevent you from making further submissions until this
-        submission has been reviewed.").'</strong></p>'
+    $form['info1'] = array(
+        '#value' => $genericmessage,
+        '#prefix' => '<p>',
+        '#suffix' => '</p>',
+    );    
+    $form['info2'] = array(
+        '#value' => $maysubmitmsg,
+        '#prefix' => '<p>',
+        '#suffix' => '</p>',
+    );    
+    $form['info3'] = array(
+        '#value' => $submitwarning,
+        '#prefix' => '<p><strong>',
+        '#suffix' => '</strong></p>',
+    );
+    //DEBUG
+    $form['user'] = array(
+        '#prefix' => '<pre>',
+        '#value' => print_r($huser,true),
+        '#suffix' => '</pre>',
     );
     $form['back'] = array(
       '#type' => 'submit',
@@ -405,18 +427,20 @@ function _hcomplearn_page_last(&$form,$username,$data){
     );
 }
 
-function hcomplearn_submit_allowed($username){
+function hcomplearn_submit_allowed($huser){
+    //DEBUG
+    //drupal_set_message('hcomplearn_submit allowed: '.$huser['name'],'warning');
     if(!$huser){
         return t('Failed to load your profile.');
-    }elseif($huser->continuation['comp_learn'] == 1){
+    }elseif($huser['continuation']['comp_learn'] == 1){
         return t('You have already completed Comp Learning for this year.');
-    }elseif($huser->continuation['status'] > 2){
+    }elseif($huser['continuation']['status'] > 2){
         return t('You are not active in the Honors Program');
-    }elseif(isset($huser->submissions['complearn']) && is_array($huser->submissions['complearn'])){
-        foreach($huser->submissions['complearn'] as $sub){
+    }elseif(isset($huser['submissions']['complearn']) && is_array($huser['submissions']['complearn'])){
+        foreach($huser['submissions']['complearn'] as $sub){
             if($sub['status'] == 0){
                 return t('You already have a pending submission.');
-            }elseif($sub['status'] == 1 && $sub['submit_time'] > strtotime('-'._hcomplearn_timetosave())){
+            }elseif($sub['status'] == 1 && $sub['submit_time'] > strtotime('-'.hcomplearn_timetosave())){
                 return t('You have already completed Comp Learning for this year.');
             }
         }
@@ -427,7 +451,8 @@ function hcomplearn_submit_allowed($username){
     
 
 //this gets done often enough that it needs it's own helper function
-function _hcomplearn_clform_loaddata(){
+function _hcomplearn_loaddata(){
     global $user;
-    return hdata_load_cldraft($user->uid,_hcomplearn_timetosave());
+    $sub = hdata_cl_load($user->uid,true);
+    return $sub['data'];
 }

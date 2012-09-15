@@ -1,8 +1,30 @@
 <?php
 /**
- * Implements hook_views_data (I think)
+ * Implements hook_views_handlers to register our handlers with Views
+ */
+function hcomplearn_views_handlers(){
+    $retval['handlers'] = array(
+        //the name of our handler
+        'hcomplearn_views_handler_field_status' => array(
+            //the parent class of our handler
+            'parent' => 'views_handler_field',
+            //the file our handler is located in
+            'file' => 'hcomplearn_views_handler_field_status.inc',
+        ),
+        'hcomplearn_views_handler_filter_cl_status' => array(
+            'parent' => 'views_handler_filter_in_operator',
+            'file' => 'hcomplearn_views_handler_filter_cl_status.inc',
+        ),
+    );
+    return $retval;
+}
+
+/**
+ * Implements hook_views_data
  * 
- * TODO: should this be in hcomplearn or hdata?
+ * Although this is something that could just as easily be in the hdata
+ * module, I placed it here in hcomplearn because I feel that it would
+ * get forgotten in hdata.
  */
 function hcomplearn_views_data(){
     $group = t('Complearning');
@@ -34,15 +56,15 @@ function hcomplearn_views_data(){
                 'help' => t('The user that submitted the entry.'),
             ),
         ),
-        //TODO: implement custom handler to translate the numbers.
+        //Note the custom handler to translate the numbers to status strings.
         'status' => array(
             'title' => t('Submission Status'),
             'field' => array(
-                'handler' => 'views_handler_field_numeric', 
+                'handler' => 'hcomplearn_views_handler_field_status', 
                 'click sortable' => TRUE,
             ), 
             'filter' => array(
-                'handler' => 'views_handler_filter_in_operator',
+                'handler' => 'hcomplearn_views_handler_filter_cl_status',
             ), 
             'sort' => array(
                 'handler' => 'views_handler_sort',

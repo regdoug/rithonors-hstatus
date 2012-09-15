@@ -7,20 +7,49 @@
  *  - It keeps the code cleaner in the other files.
  *  - It gives more flexibility if we should change the db structure.
  */
+ 
+/*
+ * Public Functions
+ * 
+ * All the implementation detail are sequestered into other functions in
+ * this file for greater readability and to make it so that the whole
+ * interface is visible at-a-glance.
+ */
+
+/* Returns a user array. $user = array('uid => 0, 'name => '') */
+function hdata_user_load($user){return _hdata_user_load($user,true);} 
+/* Saves the basic and continuation elements.  $user is a modified 
+ * object from hdata_user_load */
+function hdata_user_save($user){return _hdata_user_save($user);}
+/* Used internally, but userful(?) externally for info */
+//TODO: make this a system variable
+function hdata_user_cache_life(){return '2 minutes';}
+
+/* id should be uid if $draft is true */
+function hdata_cl_load($id,$draft=false){ return _hdata_cl_load($id,$draft); }
+/* $draft is what you want it to be saved as */
+function hdata_cl_save($submission,$draft=false){ return _hdata_cl_save($submission,$draft); } 
+//TODO: make this a system variable
+function hdata_cl_draft_life(){return '1 year';}
+
+
 
 /**
- * hdata_load_user
+ * hdata_user load
  * 
  * Arguments:
- *  1. $username - RIT DCE
- *  2. $loadCourses - NOT YET SUPPORTED
- *  3. $loadSubmissions - NOT YET SUPPORTED
+ *  1. $user - array with either $user['name'] or $user['uid'] set.  
+ *          $user['name'] overrides $user['uid'].
  *  4. $reset - forces loading of a new user object instead of using the cache.
+ * 
+ * Returns: an array representing the user
  * 
  * Loads an hdata user object.  This function is very complex because it
  * uses a smart caching system to improve performance.
  * 
- * Structure
+ * Structure (array keys)
+ *      -name: username
+ *      -uid
  *      -basic
  *          -name
  *              -firstname
@@ -41,36 +70,66 @@
  *          -waivers
  *          -courses
  *          -total
- *      -courses (optional, NOT YET SUPPORTED)
+ *      -courses (NOT YET SUPPORTED)
  *          array of (course, name, professor, quarter, grade, credits, honors)
- *      -submissions (optional, NOT YET SUPPORTED)
- *          -to be determined
+ *      -submissions
+ *          -complearn: complearning submissions
+ *          -cldraft: true or false whether a cl draft is submitted
  */
  
-function hdata_load_user($username, $loadCourses = false, $loadSubmissions = false, $reset = false){
+function _hdata_user_load($userinfo, $reset = false){
+    //get the username and uid
+    if(isset($user['name']) && isset($user['uid'])){
+        //do nothing
+    }else{
+        $user = user_load($userinfo);
+        $uid = $user->uid;
+        $username = $user->name;
+        if(!($username && $uid)) return false; //not found
+    }
+     
     //allows short-term caching (within each page load)
     static $husers;
     
     /*check the short term cache in the static variable $husers.
     * The decision making process is as follows:
-    *   1. check if caches should be used at all from the $reset variable.
-    *   2. check to see if the user is available in the array
-    *   3. if we don't have to load courses or submissions then it is guaranteed
-    *       to be everything that we need in the object.
+    *   1. If $reset is false:
+    *       a. check the short term cache (& return if available)
+    *       b. check the long term cache (& return if available)
+    *   2. Fetch the data
+    *   3. Cache the data
+    *   4. Return the user object
     */
-    if(!$reset && isset($husers[$username]) 
-            && !($loadCourses || $loadSubmissions)){
+    if(!$reset && isset($husers[$username])){
+        //fetch from 
         return $husers[$username];
     }
     
-    //Query Definitions 
+    if(!$reset && ($cache = cache_get("hdata_user:$username",'cache_honors')) && !empty($cache->data)) {
+        // get from long term cache
+        // all cached data in the db cache is serialized.
+        return unserialize($cache->data);
+    }
     
-    /*
-     * Gathers basic student information such as name, college,
-     * gpa, and status
-     * 
-     * It takes one parameter: username as a string
-     */
+    $u['name'] = $username;
+    $u['uid'] = $uid;
+    $u['basic'] = _hdata_user_load_basic($username);
+    $u['continuation'] = _hdata_user_load_continuation($username);
+    $u['points'] = _hdata_user_load_points($username);
+    $u['submissions'] = _hdata_user_load_submissions($uid);
+    
+    cache_set("hdata_user:$username", serialize($u), 'cache_honors', 
+        strtotime('+'.hdata_user_cache_life()));
+    $husers[$username] = $u;  //update static variable for future calls
+
+    return $u;
+}
+
+/*
+ * Gathers basic student information such as name, college,
+ * gpa, and status
+ */
+function _hdata_user_load_basic($username){
     $q_basic = 
     "SELECT 
         student.firstname fname, 
@@ -85,189 +144,226 @@ function hdata_load_user($username, $loadCourses = false, $loadSubmissions = fal
         ON student.username = gpas.username
      WHERE student.username = '%s'
      LIMIT 1";
-    /*
-     * Computes total Honors Points awarded
-     * 
-     * Takes username as a string
-     */
-    $q_pts = "SELECT username, sum(numPoints) total
-                FROM {h_students_points}
-                WHERE username = '%s'
-                GROUP BY username";
-    /*
-     * Computes total Honors credits completed
-     * 
-     * Takes username as a string
-     */
-    $q_cpts = "SELECT username, sum(credits) total
-                FROM {h_students_courses}
-                WHERE username = '%s'
-                GROUP BY username";
-    /*
-     * Computes total Honors Points Waivers granted
-     * 
-     * Takes username as a string
-     */
-    $q_wpts = "SELECT username, sum(credits) total
-                FROM h_students_waivers
-                WHERE username = '%s'
-                GROUP BY username";
-    
-    /*
-     * Collects info from h_continuation table
-     * 
-     * Takes username as a string
-     */
+     $rs = db_query($q_basic, $username);
+     $arry = db_fetch_array($rs);
+     if($arry){
+         return array(
+             'name' => array(
+                 'firstname' => $arry['fname'],
+                 'lastname' => $arry['lname'],
+             ),
+             'active' => $arry['active'],
+             'college' => $arry['college'],
+             'department' => $arry['dpt'],
+             'program' => $arry['program'],
+             'gpa' => $arry['gpa'],
+         );
+     }else{
+         return false; 
+     }
+}
+/*
+ * Collects info from h_continuation table
+ */
+function _hdata_user_load_continuation($username){
     $q_continue = 
     "SELECT status, comp_learn, college, courses, gpa
      FROM {h_continuation}
      WHERE username = '%s'
      LIMIT 1";
-    /*
-     * Collects courses taken.  (Note this is different from $q_cpts
-     * which computes total credits)
-     */
-    $q_courses = 
-    "SELECT course, name, professor, quarter, grade, credits, honors
-     FROM {h_students_courses} courses
-     WHERE courses.username = '%s'
-     LIMIT 1";
-    /*
-     * Collects complearning submissions from within a specified
-     * timeframe.
-     */
-    $q_cl = 
-    "SELECT cl.id, cl.status, cl.submit_date
-    FROM {h_cl} cl
-    JOIN {users} u
-    ON u.uid = cl.uid
-    WHERE u.name = %s
-    AND cl.submit_date > %d";
+    $rs = db_query($q_continue, $username);
+    $arry = db_fetch_array($rs);
+    if($arry){
+        return array(
+            'status' => $arry['status'],
+            'cl' => $arry['comp_learn'],
+            'college' => $arry['college'],
+            'courses' => $arry['courses'],
+            'gpa' => $arry['gpa'],
+        );
+    }else{
+        return false;
+    }
+}
+function _hdata_user_load_points($username){
+    //I don't like the way this used to be done.
+    //It needs a redo.
+    return null;
+}
+/*
+ * Grabs most recent comp learning submission and indicates whether
+ * a draft is in progress
+ */
+function _hdata_user_load_submissions($uid){
+    $rs = db_query('SELECT id, status, hours, submit_date, review_date 
+                    FROM {h_cl} WHERE uid=%d 
+                    ORDER BY submit_date DESC LIMIT 1', $uid);
+    return array(
+        'complearn' =>  $rs?db_fetch_array($rs):false,
+        'cldraft' => (bool)_hdata_cldraft_load($uid,hdata_cl_draft_life()),
+    );
+}
+
+function _hdata_user_save($user){
+    //If they aren't both set, it probably isn't a valid object
+    if(!(isset($user['uid']) && isset($user['name']))){
+        return false;
+    }
+    $success = _hdata_user_save_basic($user) || _hdata_user_save_continuation($user);
+    if($success){
+        cache_set("hdata_user:$username", serialize($u), 'cache_honors', 
+        strtotime('+'.hdata_user_cache_life()));
+        return true;
+    }else{ return false; }
+}
+
+function _hdata_user_save_basic($user){
+    //TODO: do perm checks
+    $q = "UPDATE {h_students}
+    SET firstname='%s', lastname='%s', college='%s', department='%s', program='%s', active=%d
+    WHERE username='%s'";
+    $b = $user['basic'];
+    if(db_query($q,$b['name']['firstname'],$b['name']['lastname'],
+            $b['college'], $b['department'], $b['program'],$b['active'],$user['name'])){
+        return true;
+    }else{
+        return false;
+    }
+}
+function _hdata_user_save_continuation($user){
+    //TODO: do perm checks
+    $q = "UPDATE {h_continuation}
+    SET status=%d, comp_learn=%d, college=%d, courses=%d, gpa=%d
+    WHERE username='%s'";
+    $c = $user['continuation'];
+    if(db_query($q,$c['status'],$c['cl'],$c['college'],$c['courses'],$c['gpa'],$user['name'])){
+        return true;
+    }else{
+        return false;
+    }
+}
+ 
+function _hdata_cl_load($id,$draft){
+    //static variable caching
+    static $drafts;
+    static $submissions;
     
-    // is it in the short term cache?
-    if(!$reset && isset($husers[$username])){
-        $u = $husers[$username];
-    // is it in the long term (database) cache?
-    } else if(!$reset 
-            && ($cache = cache_get("hdata_user:$username",'cache_honors')) 
-            && !empty($cache->data)) {
-        // all cached data in the db cache is serialized.
-        $u = unserialize($cache->data);
-    // fetch new data.
-    // Note that this will fail if the user lacks an entry in either the h_students
-    // or the h_continuation table.
-    } else {
-        // Fetch Basic Info
-        $u['username'] = $username;
-        $uid = db_result(db_query('SELECT uid FROM users WHERE name=\'%s\'',$username));
-        $u['uid'] = $uid;
-        $rs = db_query($q_basic, $username,$username,$username,$username);
-        $arry = db_fetch_array($rs);
-        
-        //TODO: make something meaningful out of college+dept+program
-        if($arry){
-            $u['basic'] = array(
-                'name' => array(
-                    'firstname' => $arry['fname'],
-                    'lastname' => $arry['lname'],
-                ),
-                'active' => $arry['active'],
-                'college' => $arry['college'],
-                'department' => $arry['dpt'],
-                'program' => $arry['program'],
-                'gpa' => $arry['gpa'],
-            );
-        }else{
-            //DEBUG, but we should maybe return error statuses instead of just 'false' 
-            drupal_set_message(t('@username is not in Honors',array('@username'=>$username)),'warning');
-            return false; 
+    if($draft){
+        if(isset($drafts[$id])){
+            return $drafts[$id];
         }
+        //DEBUG
+        //drupal_set_message('hdata_cl_load: loading draft','warning');
+        $data = _hdata_cldraft_load($id,hcomplearn_timetosave());
         
-        // Fetch Continuation Info
-        $rs = db_query($q_continue, $username);
-        $arry = db_fetch_array($rs);
-        if($arry){
-            $u['continuation'] = array(
-                'status' => $arry['status'],
-                'cl' => $arry['comp_learn'],
-                'college' => $arry['college'],
-                'courses' => $arry['courses'],
-                'gpa' => $arry['gpa'],
-            );
+        if($data){
+            $sid = $data['id'];
+            unset($data['id']);
         }else{
-            //DEBUG, but we should maybe return error statuses instead of just 'false'
-            drupal_set_message(t('@username has no continuation entry',array('@username'=>$username)),'warning');
+            $sid = false;
+            //DEBUG
+            //drupal_set_message('hdata_cl_load: no data in draft','warning');
+        }
+        $retval = array(
+            'uid' => $id,
+            'id' => $sid,
+            'draft' => true,
+            'data' => $data,
+        );
+        //cache it
+        $drafts[$id] = $retval;
+        return $retval;
+    }else{
+        if(isset($submissions[$id])){
+            return $submissions[$id];
+        }
+        $data = _hdata_cl_data_by_id($id);
+        $rs = db_query('SELECT id, uid, status, hours, types, submit_date, review_date, reviewer_uid 
+                        FROM {h_cl} WHERE id=%d',
+                        $id);
+        if($rs){
+            $info = db_fetch_array($rs);
+            $info['draft'] = $draft;
+            $info['data'] = $data;
+            //cache it
+            $submissions[$id] = $info;
+            return $info;
+        }else{ return false; }
+    }
+}
+function _hdata_cl_save($sub,$draft){
+    if($draft && $sub['draft']){
+        //saving a draft as a draft
+        //DEBUG
+        //drupal_set_message('hdata_cl_save: saving draft as draft','warning');
+        return _hdata_cldraft_save($sub['uid'],$sub['data']);
+    }else if(!$draft && !$sub['draft']){
+        //saving a submission as a submission
+        //DEBUG
+        //drupal_set_message('hdata_cl_save: saving sub as sub','warning');
+        //only certain fields are supposed to be mutable
+        $q = "UPDATE {h_cl} SET status=%d, reviewed_date=%d, reviewer_uid=%d WHERE id=%d";
+        return (bool)db_query($q,$sub['status'],$sub['reviewed_date'],$sub['reviewer_uid'],$sub['id']);
+    }else if(!$draft && $sub['draft']){
+        //DEBUG
+        //drupal_set_message('hdata_cl_save: saving draft as sub '.$sub['uid'],'warning');
+        $huser = hdata_user_load(array('uid'=>$sub['uid']));
+        if(($msg = hcomplearn_submit_allowed($huser)) != 'ok'){
+            drupal_set_message($msg,'error');
             return false;
         }
+        //saving a draft as a submission
+        // first clean out junk
+        _hdata_cl_save_stripdraft($sub['data']);
+        $success = _hdata_cldraft_save($sub['uid'],$sub['data']);
+        if(!$success) return false;
         
-        // Fetch Points
-        // All of this might get changed later if we add columns to the h_students
-        // table that store this information (those would be updated via cron)
-        $u['points'] = array(
-            'points' => 0,
-            'courses' => 0,
-            'waivers' => 0,
-            'total' => 0,
-        );
-        //keep track of total points
-        $total = 0;
-        //points from point submissions like trips, research, etc
-        $rs = db_query($q_pts, $username);
-        $arry = db_fetch_array($rs);
-        if($arry){
-            $u['points']['points'] = $arry['total'];
-            $total += $arry['total'];
-        }
-        //points from courses
-        $rs = db_query($q_cpts, $username);
-        $arry = db_fetch_array($rs);
-        if($arry){
-            $u['points']['courses'] = $arry['total'];
-            $total += $arry['total'];
-        }
-        //points from waivers
-        $rs = db_query($q_wpts, $username);
-        $arry = db_fetch_array($rs);
-        if($arry){
-            $u['points']['waivers'] = $arry['total'];
-            $total += $arry['total'];
-        }
-        //total points
-        $u['points']['total'] = $total;
+        //get hours and types out of the array
+        $info = _hdata_cl_save_extractinfo($sub['data']);
+        //TODO: don't hard code this
+        if($info['hours'] < 20) return false;
         
-        //store data in cache with 2 hour lifetime.
-        //this comes before the db queries for courses and submissions because we
-        //don't cache the courses and submissions because they aren't always loaded.
-        cache_set("hdata_user:$username", serialize($u), 'cache_honors', time() + 2*60*60);
+        //perform queries
+        $q = "INSERT INTO {h_cl} (id, uid, hours, types, submit_date) VALUES (%d, %d, %d, '%s', %d)";
+        if(db_query($q, $sub['id'], $sub['uid'], $info['hours'], $info['types'], time())){
+            //there is no longer a draft, just a full-fledged submission
+            return (bool)db_query("DELETE FROM {h_cl_drafts} WHERE id=%d",$sub['id']);
+        }else{
+            return false;
+        }
+    }else{
+        //illegal operation
+        //DEBUG
+        //drupal_set_message('hdata_cl_save: doing nothing','warning');
+        return false;
     }
-    
-                    // below needed in case of static variable load
-    if($loadCourses && ($reset || !isset($u['courses']))){
-        //TODO: implement
-    }
-    
-    if($loadSubmissions && ($reset || !isset($u['submissions']))){
-        //TODO: implement
-            // Date, status, and link should be sufficient info.
-            // 1. 'complearn' => submitted to h_complearning.  This year only.
-            // 2. 'cldrafts' => true or false.  whether they have an
-            //          outstanding cldraft.
-            // 3. 'points' => ???
-        //TODO: make this time configurable
-        //$rs_cl = db_query($q_cl,$username,strtotime('-9 months'));
-        $u['cldraft'] = (boolean)hdata_load_cldraft($u['uid']);
-        $rs = db_query('SELECT id, status, hours, submit_date, review_date 
-                        FROM {h_cl} WHERE uid=%d 
-                        ORDER BY submit_date DESC LIMIT 1',
-                        $u['uid']);
-        $u['complearn'] = $rs?db_fetch_array($rs):null;
-        
-    }
-    
-    $husers[$username] = $u;  //update static variable for future calls
-
-    return (object) $u;
 }
+//strips out unnecessary information in the data field.
+//This is necessary b/c the form is lazy and stores all the 
+function _hdata_cl_save_stripdraft(&$d){
+    for($i = 0; $i < $d['count']; $i++){
+        foreach ($d[$i] as $key => $val) {
+            //TODO: don't hard code this array
+            $whitelist = array('type','hours','name','desc','time','contact','comment');
+            if(!in_array($key,$whitelist)){
+                unset($d[$i][$key]);
+            }
+        }
+    }
+}
+function _hdata_cl_save_extractinfo($data){
+    $hours = 0; $types = '';
+    for($i = 1; $i <= $data['count']; $i++){
+        $hours += $data[$i]['hours'];
+        $types .= $data[$i]['type'].' ';
+    }
+    return array('hours'=>$hours,'info'=>$info);
+}      
+        
+ 
+ //////////////////////////////////////////////////////////////////
+ //////////////////////OLD STUFF///////////////////////////////////
+ //////////////////////////////////////////////////////////////////
 
 /**
  * hdata_load_cldraft
@@ -279,17 +375,15 @@ function hdata_load_user($username, $loadCourses = false, $loadSubmissions = fal
  * this fails and returns false if the data cannot be loaded, if it is
  * older than the expire length or if $data['count'] is not set.
  */
-function hdata_load_cldraft($uid, $expire = '1 year'){
+function _hdata_cldraft_load($uid, $expire = '1 year'){
     //basic caching
     static $cldrafts;
     if(isset($cldrafts[$uid]) && isset($cldrafts[$uid]['count'])){
-        //DEBUG
-        drupal_set_message('loading from short term cache');
         return $cldrafts[$uid];
     }
     
     $q = 
-    "SELECT data.submission 
+    "SELECT data.submission, data.id 
     FROM {h_cldrafts} draft
     JOIN {h_cl_data} data
     ON draft.id = data.id
@@ -298,19 +392,18 @@ function hdata_load_cldraft($uid, $expire = '1 year'){
     
     $time = strtotime('-'.trim($expire));
     $rs = db_query($q,$uid,$time);
-    $submission = db_result($rs);
+    $arr = db_fetch_array($rs);
     
-    if($submission){
+    if($arr){
+        $submission = $arr['submission'];
+        $id = $arr['id'];
         $data = unserialize($submission);
-        if(isset($data['count']) && $data['count'] > 0){
+        $data['id'] = $id;
+        if(isset($data['count'])){
             $cldrafts[$uid] = $data;
             return $data;
-        }else{
-            //DEBUG
-            drupal_set_message('Invalid count loaded');
         }
     }
-    drupal_set_message('returning false');
     return false;
 }
 
@@ -319,7 +412,7 @@ function hdata_load_cldraft($uid, $expire = '1 year'){
  * 
  * Saves $data to the h_cldrafts db table.
  */
-function hdata_save_cldraft($uid,$data){
+function _hdata_cldraft_save($uid,$data){
     //basic caching
     static $cldrafts;
     $cldrafts[$uid] = $data;
@@ -331,6 +424,8 @@ function hdata_save_cldraft($uid,$data){
     }
     
     if($id >= 0){
+        //DEBUG
+        //drupal_set_message('hdata_cldraft_save: saving existing draft','warning');
         $dataobj = new stdClass();
         $dataobj->id = $id;
         $dataobj->submission = serialize($data);
@@ -344,6 +439,8 @@ function hdata_save_cldraft($uid,$data){
         
         return drupal_write_record('h_cldrafts',$draftobj,'uid');
     }else{
+        //DEBUG
+        //drupal_set_message('hdata_cldraft_save: saving new draft','warning');
         //this probably only works for MySQL...
         db_query('INSERT INTO {h_cl_data} (submission) VALUES (%b)',serialize($data));
         db_query('INSERT INTO {h_cldrafts} (uid,updatetime,id) VALUES (%d,%d,LAST_INSERT_ID())',$uid,time());
@@ -351,70 +448,10 @@ function hdata_save_cldraft($uid,$data){
     }
 }
 
-/*
- * hdata_clsubmit
- * 
- * Saves a draft to the h_complearning database
- */
-function hdata_clsubmit($uid, $expire = '1 year'){
-    $user = user_load($uid);
-    $huser = hdata_load_user($user->name);
-    if(!$huser){
-        drupal_set_message('Failed to load your profile.','error');
-        return false;
-    }elseif($huser->continuation['comp_learn'] == 1){
-        drupal_set_message(t('Not submitted. You have already completed Comp Learning for this year.'),'warning');
-        return false;
-    }elseif($huser->continuation['status'] > 2){
-        drupal_set_message(t('Not submitted. You are not active in the Honors Program'),'warning');
-        return false;
-    }elseif(isset($huser->submissions['complearn']) && is_array($huser->submissions['complearn'])){
-        foreach($huser->submissions['complearn'] as $sub){
-            //TODO: don't hard code values
-            if($sub['status'] == 0){
-                drupal_set_message(t('Not submitted. You already have a pending submission.'),'warning');
-                return false;
-            }
-        }
-    }
-    
-    $q = 
-    "SELECT data.submission, data.id 
-    FROM {h_cldrafts} draft
-    JOIN {h_cl_data} data
-    ON draft.id = data.id
-    WHERE draft.uid=%d
-    AND draft.updatetime > %d";
-    
-    $time = strtotime('-'.trim($expire));
-    $rs = db_query($q,$uid,$time);
-    $result = db_fetch_object($rs);
-    $data = unserialize($result->submission);
-    
-    /* Loop through the data array to compile hours and types */
-    $hours = 0; $types = '';
-    for($i = 1; $i <= $data['count']; $i++){
-        $hours += $data[$i]['hours'];
-        $types .= $data[$i]['type'].' ';
-    }
-    /* Save to db
-     * 
-     * Don't use drupal_write_record b/c it will ignore information
-     * about the column `id` due to the fact that the column is
-     * an auto increment column.
-     */
-    $write = "INSERT INTO {h_cl}
-    (uid, id, hours, types, submit_date)
-    VALUES (%d, %d, %d, '%s', %d)";
-    if(db_query($write,$uid,$result->id,$hours,$types,time())){
-        return db_query("DELETE FROM {h_cldrafts} WHERE uid=$uid");
-    }
-}
-
 /**
  * Get complearning submission data by submission id
  */
-function hdata_cl_data_by_id($sid){
+function _hdata_cl_data_by_id($sid){
     $result = db_query('SELECT submission FROM {h_cl_data} WHERE id = %d',$sid);
     if(!$result) return null;
     $obj = db_fetch_object($result);

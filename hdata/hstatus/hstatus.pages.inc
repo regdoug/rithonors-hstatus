@@ -36,14 +36,14 @@ function template_preprocess_hstatus_mystatus(&$variables){
         }*/
         
         //gets a user object
-        $huser = hdata_load_user($username,true,true,true);
+        $huser = hdata_user_load(array('name'=>$username));
         $variables['huser'] = $huser;
         // $huser will be false if the load failed.
         if($huser){
         
             //get all the variables first, then assign them to the $variables array
             
-            $status = $huser->continuation['status'];
+            $status = $huser['continuation']['status'];
             switch($status){
                 case 0: $status_str = 'Continued';break;
                 case 1: $status_str = 'Conditional Continuation';break;
@@ -56,9 +56,9 @@ function template_preprocess_hstatus_mystatus(&$variables){
                 default: $status_str = 'Unknown';
             }
             
-            $points = $huser->points['total'];
+            $points = $huser['points']['total'];
             
-            $cl = $huser->continuation['cl'];
+            $cl = $huser['continuation']['cl'];
             switch($cl){
                 case 0: $cl_str = 'Pending'; break;
                 case 1: $cl_str = 'Approved'; break;
@@ -66,7 +66,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
                 default: $cl_str = 'Unknown';
             };
             
-            $fullname = ucwords(implode(' ',$huser->basic['name']));
+            $fullname = ucwords(implode(' ',$huser['basic']['name']));
             //Guaranteed Variables
             $variables['username'] = $username;
             $variables['status'] = $status;
@@ -77,11 +77,11 @@ function template_preprocess_hstatus_mystatus(&$variables){
             
             //Optional variables
             $variables['name'] = $fullname;
-            $variables['gpa'] = $huser->basic['gpa'];
-            $variables['year'] = $huser->basic['year'];
-            $variables['college'] = $huser->basic['college'];
-            $variables['department'] = $huser->basic['department'];
-            $variables['program'] = $huser->basic['program'];
+            $variables['gpa'] = $huser['basic']['gpa'];
+            $variables['year'] = $huser['basic']['year'];
+            $variables['college'] = $huser['basic']['college'];
+            $variables['department'] = $huser['basic']['department'];
+            $variables['program'] = $huser['basic']['program'];
             
         }else{ //the load failed.
             //signal that the display should be nothing

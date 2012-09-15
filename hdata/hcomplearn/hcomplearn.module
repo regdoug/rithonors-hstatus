@@ -6,6 +6,14 @@
  * This file must be located in the hcomplearn folder and is loaded on every
  * page.
  */
+ 
+/*
+ * Function to return the length of time for which drafts should be stored.
+ * 
+ * Even though right now it is a constant, it could eventually be a
+ * setting in the future.
+ */
+function hcomplearn_timetosave(){return '6 months';}
 
 /**
  * Implements hook_menu
@@ -44,9 +52,19 @@ function hcomplearn_menu(){
     return $items;
 }
 
-//TODO: document this
+/**
+ * hcomplearn_cl_submission is an AJAX callback function to generate
+ * HTML from complearning submission data.
+ * 
+ * The design intent of this function was that it would be used to
+ * return HTML to an AJAX lightbox embedded in a general complearning
+ * reviewing page.  As such, it does not display general information
+ * such as username, total hours, or time submitted.  It merely gets the
+ * submission data and themes it with the theme hook "hcomplearn_cl_activity"
+ */
 function hcomplearn_cl_submission($sid){
-    $data = hdata_cl_data_by_id($sid);
+    $complearning = hdata_cl_load($sid);
+    $data = $complearning['data'];
     $output = '';
     if($data){
         for($i = 1; $i <= $data['count']; $i++){
@@ -131,12 +149,6 @@ function hcomplearn_reject_cl_action($submission){
     db_query('UPDATE {h_cl} SET status=2 WHERE id=%d',$id);
 }
 
-function hcomplearn_cl_load($sid){
-    $submission = hdata_cl_data_by_id($sid);
-    $submission['id'] = $sid;
-    return $submission;
-}
-
 /*
  * Implements hook_views_bulk_operations_object_info
  */
@@ -145,7 +157,7 @@ function hcomplearn_views_bulk_operations_object_info(){
         'complearning' => array(
             'type' => 'complearning',
             'base_table' => 'h_cl',
-            'load' => 'hcomplearn_cl_load',
+            'load' => 'hdata_cl_load',
             'oid' => 'id',
             'title' => 'id',
             'access' => '_hcomplearn_cl_review_access',
@@ -174,8 +186,8 @@ function _hcomplearn_static_access(){ return true; }
 function _hcomplearn_form_cl_access(){
     global $user;
     if(user_access('submit complementary learning')){
-        $huser = hdata_load_user($user->name);
-        $status = $huser->continuation['status'];
+        $huser = hdata_user_load(array('uid'=>$user->uid,'name'=>$user->name));
+        $status = $huser['continuation']['status'];
         // active in Honors.
         return $status <= 2;
     }else{
