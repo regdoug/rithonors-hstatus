@@ -1,0 +1,39 @@
+hdata/hcomplearn/hcomplearn.module-33-
+hdata/hcomplearn/hcomplearn.module:34:    //TODO: write docs
+hdata/hcomplearn/hcomplearn.module-35-
+hdata/hcomplearn/hcomplearn.module-36-    //AJAX callback
+--
+hdata/hcomplearn/hcomplearn.module-144-
+hdata/hcomplearn/hcomplearn.module:145://TODO: add permissions checks for approve and reject
+hdata/hcomplearn/hcomplearn.module-146-
+hdata/hcomplearn/hcomplearn.module-147-function hcomplearn_approve_cl_action($submission){
+--
+hdata/hcomplearn/hcomplearn.form.inc-19-
+hdata/hcomplearn/hcomplearn.form.inc:20: //TODO: add field 'hours' and field 'type'
+hdata/hcomplearn/hcomplearn.form.inc-21-function hcomplearn_forms_cl(&$form_state,$page){
+hdata/hcomplearn/hcomplearn.form.inc-22-    if(isset($form_state['storage']['page'])
+--
+hdata/hcomplearn/hcomplearn.form.inc-308-        '#type' => 'select',
+hdata/hcomplearn/hcomplearn.form.inc:309:        //TODO: make this configurable
+hdata/hcomplearn/hcomplearn.form.inc-310-        '#options' => array(
+hdata/hcomplearn/hcomplearn.form.inc-311-            'om' => 'OM',
+--
+hdata/hcomplearn/hcomplearn.form.inc-389-    }
+hdata/hcomplearn/hcomplearn.form.inc:390:    //TODO: don't hard code numbers!
+hdata/hcomplearn/hcomplearn.form.inc-391-    if($hours < hcomplearn_minhours()) {
+hdata/hcomplearn/hcomplearn.form.inc-392-        drupal_set_message(t('You need more than !h hours',array('!h'=>$hours)),'warning');
+--
+hdata/hcomplearn/hcomplearn.form.inc-396-    }else{
+hdata/hcomplearn/hcomplearn.form.inc:397:        //TODO: make this configurable
+hdata/hcomplearn/hcomplearn.form.inc-398-        $maysubmitmsg = t('If you are satisfied with your submission,
+hdata/hcomplearn/hcomplearn.form.inc-399-            you may submit the form now by clicking the button below.');
+--
+hdata/hdata.module-26-/* Used internally, but userful(?) externally for info */
+hdata/hdata.module:27://TODO: make this a system variable
+hdata/hdata.module-28-function hdata_user_cache_life(){return '1 month';}
+hdata/hdata.module-29-
+--
+hdata/hstatus/mystatus.tpl.php-26- * 
+hdata/hstatus/mystatus.tpl.php:27: * TODO
+hdata/hstatus/mystatus.tpl.php-28- * -figure out how "other points" will work
+hdata/hstatus/mystatus.tpl.php-29- * -figure out how complearning submissions will work
