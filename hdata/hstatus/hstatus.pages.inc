@@ -1,15 +1,15 @@
 <?php
-/* 
+/*
  * hstatus.pages.inc
- * 
+ *
  * Implements the page display functions for the hStatus module.
- * 
+ *
  * Forms are not included in this page.  For forms, see hstatus.forms.inc
  */
 
 /**
  * Function defined by hstatus_menu to generate the page.
- * 
+ *
  * All it does is start drupal's theme system
  */
 function hstatus_user_page($user){
@@ -18,7 +18,7 @@ function hstatus_user_page($user){
 
 /**
  * Preprocess function for the theme hook 'hstatus_mystatus'.
- * 
+ *
  * It loads the database api from hstatus.db.inc and gets a user object
  */
 function template_preprocess_hstatus_mystatus(&$variables){
@@ -28,21 +28,21 @@ function template_preprocess_hstatus_mystatus(&$variables){
         $variables['displaynone'] = true;
     }else{
         $username = $variables['user']->name;
-        
+
         //loads the database API
         /*if(module_load_include('inc', 'hstatus', 'includes/hstatus.db') === FALSE){
             $variables['displaynone'] = true;
             return;
         }*/
-        
+
         //gets a user object
         $huser = hdata_user_load(array('name'=>$username));
         $variables['huser'] = $huser;
         // $huser will be false if the load failed.
         if($huser){
-        
+
             //get all the variables first, then assign them to the $variables array
-            
+
             $status = $huser['continuation']['status'];
             switch($status){
                 case 0: $status_str = 'Continued';break;
@@ -55,9 +55,9 @@ function template_preprocess_hstatus_mystatus(&$variables){
                 case 7: $status_str = 'Conditional Continuation (BS/MS)';break;
                 default: $status_str = 'Unknown';
             }
-            
+
             $points = $huser['points']['total'];
-            
+
             $cl = $huser['continuation']['cl'];
             switch($cl){
                 case 0: $cl_str = 'Pending'; break;
@@ -65,7 +65,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
                 case 2: $cl_str = 'Rejected'; break;
                 default: $cl_str = 'Unknown';
             };
-            
+
             $fullname = ucwords(implode(' ',$huser['basic']['name']));
             //Guaranteed Variables
             $variables['username'] = $username;
@@ -74,7 +74,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
             $variables['points_total'] = $points;
             $variables['complearning_status'] = $cl;
             $variables['complearning_status_string'] = $cl_str;
-            
+
             //Optional variables
             $variables['name'] = $fullname;
             $variables['gpa'] = $huser['basic']['gpa'];
@@ -82,7 +82,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
             $variables['college'] = $huser['basic']['college'];
             $variables['department'] = $huser['basic']['department'];
             $variables['program'] = $huser['basic']['program'];
-            
+
         }else{ //the load failed.
             //signal that the display should be nothing
             $variables['displaynone'] = true;

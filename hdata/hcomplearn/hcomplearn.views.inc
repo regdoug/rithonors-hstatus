@@ -21,7 +21,7 @@ function hcomplearn_views_handlers(){
 
 /**
  * Implements hook_views_data
- * 
+ *
  * Although this is something that could just as easily be in the hdata
  * module, I placed it here in hcomplearn because I feel that it would
  * get forgotten in hdata.
@@ -39,9 +39,9 @@ function hcomplearn_views_data(){
             'title' => t('ID'),
             'help' => t('Submission ID'),
             'field' => array(
-                'handler' => 'views_handler_field', 
+                'handler' => 'views_handler_field',
                 'click sortable' => false,
-            ), 
+            ),
         ),
         'uid' => array(
             'title' => t('Submitter'),
@@ -60,43 +60,43 @@ function hcomplearn_views_data(){
         'status' => array(
             'title' => t('Submission Status'),
             'field' => array(
-                'handler' => 'hcomplearn_views_handler_field_status', 
+                'handler' => 'hcomplearn_views_handler_field_status',
                 'click sortable' => TRUE,
-            ), 
+            ),
             'filter' => array(
                 'handler' => 'hcomplearn_views_handler_filter_cl_status',
-            ), 
+            ),
             'sort' => array(
                 'handler' => 'views_handler_sort',
             ),
         ),
         'hours' => array(
-            'title' => t('Total hours spent'), 
-            'help' => t('Sum of the hours spent on each activity'), 
+            'title' => t('Total hours spent'),
+            'help' => t('Sum of the hours spent on each activity'),
             'field' => array(
-                'handler' => 'views_handler_field_numeric', 
+                'handler' => 'views_handler_field_numeric',
                 'click sortable' => TRUE,
-            ), 
+            ),
             'filter' => array(
                 'handler' => 'views_handler_filter_numeric',
-            ), 
+            ),
             'sort' => array(
                 'handler' => 'views_handler_sort',
             ),
         ),
         'types' => array(
-            'title' => t('Types of activities performed'), 
-            'help' => t('Types of activities as whitespace separated tags'), 
+            'title' => t('Types of activities performed'),
+            'help' => t('Types of activities as whitespace separated tags'),
             'field' => array(
-                'handler' => 'views_handler_field', 
+                'handler' => 'views_handler_field',
                 'click sortable' => true,
-            ), 
+            ),
             'sort' => array(
                 'handler' => 'views_handler_sort',
-            ), 
+            ),
             'filter' => array(
                 'handler' => 'views_handler_filter_string',
-            ), 
+            ),
             'argument' => array(
                 'handler' => 'views_handler_argument_string',
             ),

@@ -2,33 +2,37 @@
 
 /**
  * @file hcomplearn.module
- * 
+ *
  * This file must be located in the hcomplearn folder and is loaded on every
  * page.
  */
- 
+
 /*
  * Function to return the length of time for which drafts should be stored.
- * 
+ *
  * Even though right now it is a constant, it could eventually be a
  * setting in the future.
  */
 function hcomplearn_timetosave(){return '6 months';}
+/*
+ * Another constant function
+ */
+function hcomplearn_minhours(){return 20;}
 
 /**
  * Implements hook_menu
- * 
+ *
  * hook_menu is called by drupal whenever a module is enabled or disabled
  * to update the internal page registry.
- * 
+ *
  * Note that every page has a built-in permissions callback ("access callback")
  * that determines if (1) it should be shown in menus and (2) if a user
  * can visit it (throws a 403 on false)
  */
 function hcomplearn_menu(){
-    
+
     //TODO: write docs
-    
+
     //AJAX callback
     $items['hcomplearn/submission/%'] = array(
         'title' => 'CL submission',
@@ -55,7 +59,7 @@ function hcomplearn_menu(){
 /**
  * hcomplearn_cl_submission is an AJAX callback function to generate
  * HTML from complearning submission data.
- * 
+ *
  * The design intent of this function was that it would be used to
  * return HTML to an AJAX lightbox embedded in a general complearning
  * reviewing page.  As such, it does not display general information
@@ -76,7 +80,7 @@ function hcomplearn_cl_submission($sid){
     }else{
         $output = '<h1>Not Found</h1>';
     }
-    
+
     //AJAX functions should echo the output and return null to prevent
     //the theme system from kicking in.
     echo $output;
@@ -85,7 +89,7 @@ function hcomplearn_cl_submission($sid){
 
 /**
  * Implements hook_perm
- * 
+ *
  * Just returns an array of strings to be used on the permissions page
  */
 function hcomplearn_perm(){
@@ -95,7 +99,7 @@ function hcomplearn_perm(){
 
 /**
  * Implements hook_theme
- * 
+ *
  * hook_theme defines "theme hooks" which are just functions or files that
  * generate HTML.  The benefit of doing this is that it makes it easy for
  * other modules or themes to override your display.
@@ -124,7 +128,7 @@ function hcomplearn_action_info(){
             'type' => 'complearning',
             'configurable' => FALSE,
         ),
-    /* Example action -- taken from Drupal 
+    /* Example action -- taken from Drupal
       'user_block_ip_action' => array(
       'description' => t('Ban IP address of current user'),
       'type' => 'user',

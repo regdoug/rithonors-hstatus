@@ -10,16 +10,16 @@ function hcomplearn_build_clform(){
 
 /**
  * Complearning form
- * 
+ *
  * $form_state['storage'] is used to store three things:
  *  1. the $data array      ['data']
  *  2. the page to load     ['page']
  *  3. the activity count   ['count']
  */
- 
+
  //TODO: add field 'hours' and field 'type'
 function hcomplearn_forms_cl(&$form_state,$page){
-    if(isset($form_state['storage']['page']) 
+    if(isset($form_state['storage']['page'])
             && isset($form_state['storage']['data']['count'])){
         $data = $form_state['storage']['data'];
         $page = $form_state['storage']['page'];
@@ -28,7 +28,7 @@ function hcomplearn_forms_cl(&$form_state,$page){
         $form_state['storage']['data'] = $data;
         $form_state['storage']['page'] = $page;
     }
-    
+
     //ensure that data is loaded if we are going to a page other than 'first'
     if(isset($data['count']) && intval($data['count']) > 0){
         $form_state['storage']['count'] = $data['count'];
@@ -37,17 +37,17 @@ function hcomplearn_forms_cl(&$form_state,$page){
         if($page != 'first')drupal_set_message(t('Number of activities unknown.  Going to first page'));
         $page = 'first';
     }
-    
+
     $form = array();
     $n = intval($page);
-    
+
     //if $page is a string, $n will be 0
     if($n > 0){
         //$form = array();
         _hcomplearn_page_n($n,$form,$data);
         return $form;
     }
-    
+
     if($page == 'last'){
         //last page
         global $user;
@@ -118,7 +118,7 @@ function hcomplearn_form_cl_int_validate($element, &$form_state){
 
 /*
  * hcomplearn_forms_cl_submit
- * 
+ *
  * Called whenever the form is submitted.
  * This function does not actually handle the data but instead passes
  * it on to helper functions.
@@ -127,7 +127,7 @@ function hcomplearn_form_cl_int_validate($element, &$form_state){
 function hcomplearn_forms_cl_submit($form, &$form_state){
     $page = $form_state['values']['page'];
     $back = ($form_state['clicked_button']['#id'] == 'back');
-    
+
     if(is_numeric($page)){
         _hcomplearn_savepage($form_state,$back);
     }elseif($page == 'first'){
@@ -151,7 +151,7 @@ function hcomplearn_forms_cl_submit($form, &$form_state){
 //====================================
 
 /* CONTENTS (in order)
- * 
+ *
  * _hcomplearn_newentry
  * _hcomplearn_savepage
  *             ..._savefinal
@@ -161,7 +161,7 @@ function hcomplearn_forms_cl_submit($form, &$form_state){
  *             ..._loaddata
  */
 
-//note the Drupal convention of making 
+//note the Drupal convention of making
 //"private" functions start with an underscore
 
 /*
@@ -174,11 +174,11 @@ function _hcomplearn_newentry(&$form_state){
     }else{
         $data = _hcomplearn_loaddata();
     }
-    
+
     $n = $form_state['values']['count'];
     $form_state['storage']['count'] = $n;
     $data['count'] = $n;
-    
+
     _hcomplearn_saveandredirect($form_state,$data,1);
 }
 
@@ -187,18 +187,18 @@ function _hcomplearn_newentry(&$form_state){
  */
 
 function _hcomplearn_savepage(&$form_state,$back=false){
-    
+
     $data = $form_state['storage']['data'];
     if(!isset($data['count'])){
         $data = _hcomplearn_loaddata();
     }
-    
+
     $vals = $form_state['values']; //note that PHP arrays are NOT assigned by reference
     $n = $vals['page'];
     unset($vals['page']);
-    
+
     $data[$n] = $vals;
-    
+
     $nextpage = $back?'<':'>';
     _hcomplearn_saveandredirect($form_state,$data,$nextpage);
 }
@@ -210,6 +210,18 @@ function _hcomplearn_savefinal(&$form_state){
     global $user;
     //sending true to hdata_cl_load tells it to load a draft
     $sub = hdata_cl_load($user->uid,true);
+    $d = $sub['data'];
+    //strips out unnecessary information in the data field.
+    //This is necessary b/c the form is lazy and stores all the
+    //form build keys and suchlike
+    for($i = 0; $i < $d['count']; $i++){
+        foreach ($d[$i] as $key => $val) {
+            $whitelist = _hcomplearn_fields();
+            if(!in_array($key,$whitelist)){
+                unset($d[$i][$key]);
+            }
+        }
+    }
     //when we pretend that the draft we just loaded is a submission
     //(by passing false) hdata_cl_save automagically converts and saves
     //it as a full-fledged submission.
@@ -240,11 +252,11 @@ function _hcomplearn_saveandredirect(&$form_state,$data,$page){
     //DEBUG
     //drupal_set_message('saveandredirect: redirecting to '.$page,'warning');
     _hcomplearn_redirect($form_state,$page);
-} 
+}
 
 /*
  * The redirect helper.
- * 
+ *
  * Not actually a true redirect because the page doesn't change, but
  * will reload the form to the $page requested.  If $page is false,
  * the current page of the form is reloaded.
@@ -263,8 +275,8 @@ function _hcomplearn_redirect(&$form_state,$page='>',$message=true){
             $page = false;
         }
     }
-    
-    //message could be better.    
+
+    //message could be better.
     if($page){
         $form_state['storage']['page'] = $page;
         if($message){drupal_set_message(t('Data saved successfully'));}
@@ -272,6 +284,12 @@ function _hcomplearn_redirect(&$form_state,$page='>',$message=true){
         $form_state['redirect'] = false;
         if($message){drupal_set_message(t('Failed to save data.').$page,'error');}
     }
+}
+
+//helper function for validation and default values
+function _hcomplearn_fields(){
+    //remember to change this if the field names change
+    return array('type','hours','name','desc','time','contact','comment');
 }
 
 /*
@@ -343,15 +361,14 @@ function _hcomplearn_page_n($n,&$form,$data){
       '#type' => 'submit',
       '#value' => t('Next Page >'),
     );
-    
+
     $form['hours']['#default_value'] = $data[$n]['hours'];
     if(isset($data[$n]['type'])){
-        //this one already has a default_value, so we don't want to
-        //accidentally overwrite it
+        //this one already has a default_value, so we only want to overwrite
+        //it when we have a type stored in $data.
         $form['type']['#default_value'] = $data[$n]['type'];
     }
-    //TODO: don't hard code this array
-    $fields = array('type','hours','name','desc','time','contact','comment');
+    $fields = _hcomplearn_fields();
     foreach($fields as $f){
         $form[$f]['#default_value'] = $data[$n][$f];
     }
@@ -364,14 +381,13 @@ function _hcomplearn_page_last(&$form,$huser,$data){
      */
     //DEBUG
     //if(!$huser) drupal_set_message('page_last: no user','warning');
-    
+
     // Loop through the data array to get total hours
     $hours = 0;
     for($i = 1; $i <= $data['count']; $i++){
         $hours += $data[$i]['hours'];
     }
-    //TODO: don't hard code numbers!
-    if($hours < 20) {
+    if($hours < hcomplearn_minhours()) {
         drupal_set_message(t('You need more than !h hours',array('!h'=>$hours)),'warning');
         $maysubmitmsg = $maysubmit = false;
     }elseif(($submitwarning = hcomplearn_submit_allowed($huser)) != 'ok'){
@@ -387,23 +403,23 @@ function _hcomplearn_page_last(&$form,$huser,$data){
         $maysubmit = true;
     }
     $genericmessage = t('Your responses have been saved as a draft.
-        They will be stored for up to @time.', 
+        They will be stored for up to @time.',
         array('@time' => hcomplearn_timetosave() ) );
-    
+
     $form['page'] = array(
         '#type' => 'value',
         '#value' => 'last',
-    );    
+    );
     $form['info1'] = array(
         '#value' => $genericmessage,
         '#prefix' => '<p>',
         '#suffix' => '</p>',
-    );    
+    );
     $form['info2'] = array(
         '#value' => $maysubmitmsg,
         '#prefix' => '<p>',
         '#suffix' => '</p>',
-    );    
+    );
     $form['info3'] = array(
         '#value' => $submitwarning,
         '#prefix' => '<p><strong>',
@@ -448,7 +464,7 @@ function hcomplearn_submit_allowed($huser){
         return 'ok';
     }
 }
-    
+
 
 //this gets done often enough that it needs it's own helper function
 function _hcomplearn_loaddata(){
