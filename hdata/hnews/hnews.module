@@ -1,0 +1,80 @@
+<?php
+/*
+ * This module is not going to be plug-and-play.  In fact, it is going
+ * to be a holy terror of hack.  It will require the user making a content
+ * type with custom fields via CCK, and then it will just piggy back on
+ * top of them to work.  Sounds fun right?
+ */
+//send mail via cron
+function hnews_cron(){
+    // find nodes with a cck field that says they aren't sent
+    // check their send date
+    // if it is ready to send, load the node and send based on the taxonomy terms
+    
+    //these should all be settings
+    $sent_fieldname = 'field_mail_sent';
+    $date_fieldname = 'field_mail_date';
+    $maxsent = 1;
+    
+    //The following functions are defined by the CCK module
+    //look up more info on them at
+    // http://drupalcontrib.org/api/drupal/contributions!cck!content.module/function/content_database_info/6
+    $sent = content_fields($sent_fieldname);
+    $date = content_fields($date_fieldname);
+    $date_info = content_database_info($date);
+    $sent_info = content_database_info($sent);
+    $sent_tbl = $sent_info['table'];
+    $date_tbl = $date_info['table'];
+    $sent_column = $sent_info['columns']['value']['column'];
+    $date_column = $date_info['columns']['value']['column'];
+    
+    //I hope this constant is defined for me...
+    //if not I know that it should be 1
+    if ($sent['db_storage'] == CONTENT_DB_STORAGE_PER_CONTENT_TYPE){
+        //The date and the sent fields are in the same table.  That makes
+        //our job pretty easy.
+        
+        //select only the nodes we want to send
+        $result = db_query("SELECT vid FROM {%s} WHERE %s=0 AND %s <= %d",
+                $sent_tbl, $sent_column, $date_column, time());
+                
+        //loop through as many as we can and send them.
+        //if we don't send them all, we can get to them later.
+        for($i = 0; $i < $maxsent; $i++){
+            $vid = db_result($result);
+            _hnews_send_mail($vid);
+        }
+    }else{
+        //the date and the sent fields are in different tables. -_-
+        
+        //get all the nodes that aren't sent
+        $rs1 = db_query("SELECT vid FROM {%s} WHERE %s=0",
+                $sent_tbl, $sent_column);
+                
+        //loop through them to find the ones that should be sent now        
+        $now = time(); $sent = 0;
+        while(($vid = db_result($rs1))){
+            //look up the date on the node we found
+            $rs2 = db_query("SELECT %s FROM {%s} WHERE vid=%d",
+                    $date_column, $date_tbl, $vid);
+                    
+            //if the date is in the past, send it!
+            if(($date = db_result($rs2)) <= $now){
+                _hnews_send_mail($vid);
+                //make sure we don't swamp the server
+                $sent++;
+                if($sent == $maxsent){ break; }
+            }
+        }
+    }
+}
+
+//this will need a settings page at some point
+function hnews_menu(){
+    return array();
+}
+
+function _hnews_send_mail($vid){
+    //load the node and send it
+    //use the function mimemail()
+}

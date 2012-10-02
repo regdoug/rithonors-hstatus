@@ -1,0 +1,15 @@
+; hnews.info
+; Created 9/30/12 by Reginald Pierce
+
+name = hNews
+description = Email module for the Honors website.  Created by the RIT Honors Tech Committee
+
+; Group with other honors modules on the modules page
+package = Honors
+
+; required
+core = 6.x
+
+; dependancies
+dependencies[] = cck
+dependancies[] = mimemail

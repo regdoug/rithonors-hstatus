@@ -1,0 +1,38 @@
+<?php
+/*
+ * This is hnews.install
+ * This file is a bit strange because usually all database code
+ * goes into hdata (right?) but I think this is a better decision
+ * because 
+ *  1. this data shouldn't really need to be accessed by other modules
+ *  2. it doesn't use legacy databases
+ * 
+ * Another reason is that when we upgrade to D7, this table can be trashed.
+ * (really most of this module can be due to the Field API)
+ */
+ 
+//THEN AGAIN, I MAY HAVE JUST CHANGED MY MIND ENTIRELY
+//This may be totally unnecessary!!
+
+function hnews_install(){
+    //install table
+}
+
+function hnews_uninstall(){
+    //uninstall table
+}
+
+function hnews_schema(){
+    /*
+     * Need one table and it needs to contain
+     *  a) node id (nid)
+     *  b) when to send (UNIX time)
+     *  c) who to send it to (gid)
+     *  d) whether we sent it yet (1 or 0)
+     * 
+     * PRIMARY KEY:
+     *  nid/gid combination
+     * INDEX:
+     *  whether it was sent
+     */
+}
