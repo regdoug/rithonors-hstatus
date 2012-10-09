@@ -193,9 +193,51 @@ function _hdata_user_load_continuation($username){
     }
 }
 function _hdata_user_load_points($username){
-    //I don't like the way this used to be done.
-    //It needs a redo.
-    return null;
+    $rs = db_query("
+	SELECT explanation,
+	       submittedTime,
+		   submittedBy,
+		   approved,
+		   approvedBy,
+		   approvedTime,
+		   declinedReason,
+		   numPoints
+    FROM {h_students_points} WHERE username = '%s'", $username);
+	
+	// Get multiple possible rows
+	while ($row =  db_fetch_array($rs))
+	{
+	   $arry[] = $row;
+	}
+	
+	// Turn those rows into a big associative array
+	if (isset($arry))
+	{
+		$total = 0;
+
+		foreach ($arry as $arr)
+		{
+			$ret[] = array(
+				'explanation' => $arr['explanation'],
+				'submittedTime' => $arr['submittedTime'],
+				'submittedBy' => $arr['submittedBy'],
+				'approved' => $arr['approved'],
+				'approvedBy' => $arr['approvedBy'],
+				'approvedTime' => $arr['approvedTime'],
+				'declinedReason' => $arr['declinedReason'],
+				'numPoints' => $arr['numPoints'],
+			);
+
+			$total += $arr['numPoints'];
+		}
+		
+		$ret['total'] = $total;
+		return $ret;
+	}
+	else
+	{
+		return false;
+	}
 }
 /*
  * Grabs most recent comp learning submission and indicates whether
