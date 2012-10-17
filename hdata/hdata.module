@@ -192,17 +192,22 @@ function _hdata_user_load_continuation($username){
         return false;
     }
 }
+
+/*
+ * Collects info from h_students_points table
+ */
+
 function _hdata_user_load_points($username){
-    $rs = db_query("
-	SELECT explanation,
-	       submittedTime,
-		   submittedBy,
-		   approved,
-		   approvedBy,
-		   approvedTime,
-		   declinedReason,
-		   numPoints
-    FROM {h_students_points} WHERE username = '%s'", $username);
+	$rs = db_query("
+		SELECT explanation,
+			submittedTime,
+			submittedBy,
+			approved,
+			approvedBy,
+			approvedTime,
+			declinedReason,
+			numPoints
+		FROM {h_students_points} WHERE username = '%s'", $username);
 	
 	// Get multiple possible rows
 	while ($row =  db_fetch_array($rs))
@@ -210,35 +215,25 @@ function _hdata_user_load_points($username){
 	   $arry[] = $row;
 	}
 	
-	// Turn those rows into a big associative array
+	// Calculate total points and then return the array
 	if (isset($arry))
 	{
 		$total = 0;
 
 		foreach ($arry as $arr)
 		{
-			$ret[] = array(
-				'explanation' => $arr['explanation'],
-				'submittedTime' => $arr['submittedTime'],
-				'submittedBy' => $arr['submittedBy'],
-				'approved' => $arr['approved'],
-				'approvedBy' => $arr['approvedBy'],
-				'approvedTime' => $arr['approvedTime'],
-				'declinedReason' => $arr['declinedReason'],
-				'numPoints' => $arr['numPoints'],
-			);
-
 			$total += $arr['numPoints'];
 		}
 		
-		$ret['total'] = $total;
-		return $ret;
+		$arry['total'] = $total;
+		return $arry;
 	}
 	else
 	{
 		return false;
 	}
 }
+
 /*
  * Grabs most recent comp learning submission and indicates whether
  * a draft is in progress
