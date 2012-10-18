@@ -14,6 +14,7 @@ function hnews_cron(){
     //these should all be settings
     $sent_fieldname = 'field_mail_sent';
     $date_fieldname = 'field_mail_date';
+    $to_fieldname = 'field_mail_to';
     $maxsent = 1;
     
     //The following functions are defined by the CCK module
@@ -35,14 +36,14 @@ function hnews_cron(){
         //our job pretty easy.
         
         //select only the nodes we want to send
-        $result = db_query("SELECT vid FROM {%s} WHERE %s=0 AND %s <= %d",
-                $sent_tbl, $sent_column, $date_column, time());
+        $result = db_query("SELECT nid,vid FROM {%s} WHERE %s = 0 AND %s <= NOW()",$sent_tbl, $sent_column, $date_column);
+        //watchdog('hnews', sprintf("SELECT nid FROM {%s} WHERE %s = 0 AND %s <= NOW()",$sent_tbl, $sent_column, $date_column));
                 
         //loop through as many as we can and send them.
         //if we don't send them all, we can get to them later.
         for($i = 0; $i < $maxsent; $i++){
-            $vid = db_result($result);
-            _hnews_send_mail($vid);
+            $n = db_fetch_array($result);
+            _hnews_send_mail($n['nid'],$n['vid'],$to_fieldname);
         }
     }else{
         //the date and the sent fields are in different tables. -_-
@@ -53,14 +54,15 @@ function hnews_cron(){
                 
         //loop through them to find the ones that should be sent now        
         $now = time(); $sent = 0;
-        while(($vid = db_result($rs1))){
-            //look up the date on the node we found
-            $rs2 = db_query("SELECT %s FROM {%s} WHERE vid=%d",
-                    $date_column, $date_tbl, $vid);
+        while(($vid = db_fetch_array($rs1))){
+            
+            //filter by date
+            $rs2 = db_query("SELECT nid FROM {%s} WHERE vid=%d AND %s <= NOW()",
+                    $date_tbl, $vid, $date_column);
                     
-            //if the date is in the past, send it!
-            if(($date = db_result($rs2)) <= $now){
-                _hnews_send_mail($vid);
+            //if we get a result, send it
+            if(($nid = db_result($rs2))){
+                _hnews_send_mail($nid,$vid,$to_fieldname);
                 //make sure we don't swamp the server
                 $sent++;
                 if($sent == $maxsent){ break; }
@@ -74,7 +76,83 @@ function hnews_menu(){
     return array();
 }
 
-function _hnews_send_mail($vid){
+function _hnews_send_mail($nid,$vid,$to){
+    $to_field = content_fields($date_fieldname);
+    $to_info = content_database_info($date);
+    $to_tbl = $date_info['table'];
+    $to_column = $sent_info['columns']['value']['column'];
+    
+    $to_result = db_query("SELECT %s FROM {%s} WHERE vid=%d",$to_column,$to_tbl,$vid);
+    
+    //To whom do we send it?
+    $all_students = false;  $faculty = false; $colleges = array();
+    while(($value = db_result($to_result))){
+        switch($value){
+            case 'all': $all_students = true; break;
+            case 'faculty': $faculty = true; break;
+            default: $colleges[] = $value;
+        }
+    }
+    
+    $recipients = array();
+    if($all_students){
+        //TODO: make this function
+        //TODO: add dependancy on hdata
+        $recipients = hdata_student_list();
+        if($faculty){
+            $recipients += hdata_faculty_list();
+        }
+    }else{
+        foreach($colleges as $college){
+            $recipients += hdata_student_list($college);
+            if($faculty){
+                $recipients += hdata_faculty_list($college);
+            }
+        }
+    }
+    array_walk($recipients,'_hnews_to_email');
+    
     //load the node and send it
-    //use the function mimemail()
+    $node = node_load($nid,$vid);
+    
+    $mail = mimemail('honors@rit.edu',$recipients,$node->title,$node->body);
+    
+    if($mail['result']){
+        watchdog('hnews', 'sent '.number_format($nid));
+    }else{
+        watchdog('hnews', 'failed to send '.number_format($nid));
+    }
+}
+
+function _hnews_to_email(&$element,$key){
+    $element .= '@rit.edu';
+}
+
+//Implements hook_mailengine (defined in mimemail.module)
+function hnews_mailengine($op, $message = array()) {
+    //I'm not sure if this function is needed.
+    return mimemail_mailengine($op, $message);
+}
+
+//Implements hook_mailengine_prepare message (defined in mimemail.module)
+function hnews_mailengine_prepare_message($sender, $recipient, $subject, $body, 
+        $plaintext = NULL, $headers = array(), $text = NULL, $attachments = array(), $mailkey = '') {
+    //this function is necessary b/c mimemail doesn't understand
+    //multiple recipients
+    
+    //Decode recipients
+    if(is_array($recipient)){
+        $bcc = '';
+        foreach($recipient as $address){
+            if(is_string($address) && valid_email_address($address)){
+                $bcc .= " $address ";
+            }
+        }
+        $headers['Bcc'] = $bcc;
+        $recipient = $sender;
+    }
+    
+    //or maybe not... I'm not sure how mimemail_prepare_message would react
+    //to an array of recipients
+    return mimemail_prepare_message($sender,$recipient,$subject,$body,$plaintext,$headers,$text,$attachments,$mailkey);
 }

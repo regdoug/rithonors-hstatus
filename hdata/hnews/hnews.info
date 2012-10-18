@@ -11,5 +11,5 @@ package = Honors
 core = 6.x
 
 ; dependancies
-dependencies[] = cck
+dependencies[] = content
 dependancies[] = mimemail

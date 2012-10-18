@@ -1,38 +1,18 @@
 <?php
-/*
- * This is hnews.install
- * This file is a bit strange because usually all database code
- * goes into hdata (right?) but I think this is a better decision
- * because 
- *  1. this data shouldn't really need to be accessed by other modules
- *  2. it doesn't use legacy databases
+
+/* hnews.install
  * 
- * Another reason is that when we upgrade to D7, this table can be trashed.
- * (really most of this module can be due to the Field API)
+ * Doesn't do much, but it is still necessary
  */
- 
-//THEN AGAIN, I MAY HAVE JUST CHANGED MY MIND ENTIRELY
-//This may be totally unnecessary!!
 
 function hnews_install(){
-    //install table
+    $oldengine = variable_get('mimemail_engine', 'mimemail');
+    variable_set('mimemail_engine', 'hnews');
+    variable_set('hnews_old_mailengine', $oldengine);
 }
 
 function hnews_uninstall(){
-    //uninstall table
-}
-
-function hnews_schema(){
-    /*
-     * Need one table and it needs to contain
-     *  a) node id (nid)
-     *  b) when to send (UNIX time)
-     *  c) who to send it to (gid)
-     *  d) whether we sent it yet (1 or 0)
-     * 
-     * PRIMARY KEY:
-     *  nid/gid combination
-     * INDEX:
-     *  whether it was sent
-     */
+    $oldengine = variable_get('hnews_old_mailengine', 'mimemail');
+    variable_set('mimemail_engine', $oldengine);
+    variable_del('hnews_old_mailengine');
 }
