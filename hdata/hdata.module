@@ -192,11 +192,48 @@ function _hdata_user_load_continuation($username){
         return false;
     }
 }
+
+/*
+ * Collects info from h_students_points table
+ */
+
 function _hdata_user_load_points($username){
-    //I don't like the way this used to be done.
-    //It needs a redo.
-    return null;
+	$rs = db_query("
+		SELECT explanation,
+			submittedTime,
+			submittedBy,
+			approved,
+			approvedBy,
+			approvedTime,
+			declinedReason,
+			numPoints
+		FROM {h_students_points} WHERE username = '%s'", $username);
+	
+	// Get multiple possible rows
+	while ($row =  db_fetch_array($rs))
+	{
+	   $arry[] = $row;
+	}
+	
+	// Calculate total points and then return the array
+	if (isset($arry))
+	{
+		$total = 0;
+
+		foreach ($arry as $arr)
+		{
+			$total += $arr['numPoints'];
+		}
+		
+		$arry['total'] = $total;
+		return $arry;
+	}
+	else
+	{
+		return false;
+	}
 }
+
 /*
  * Grabs most recent comp learning submission and indicates whether
  * a draft is in progress
