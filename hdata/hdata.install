@@ -198,6 +198,218 @@ $s['h_cl_data'] = array(
     ),
     'primary key' => array('id'),
 );
+
+//New Legacy Tables (for PeopleSoft)
+$s['h_students_peoplesoft'] = array(
+    'description' => t('Table of Honors students'),
+    'fields' => array(
+        'id' => array(
+            'description' => t('Drupal uid'),
+            'type' => 'int',
+            'not null' => true,
+        ),
+        'username' => array(
+            'description' => t('RIT DCE'),
+            'type' => 'varchar',
+            'not null' => true,
+            'length' => 20,
+        ),
+        'status' => array(
+            'description' => t('Honors Status -2=left RIT; -1=withdrawn,0=grad,1=active,2=prefrosh,3=Accepted LE,4=deferred'),
+            'type' => 'int',
+            'size' => 'tiny',
+            'not null' => true,
+        ),
+        'firstname' => array(
+            'description' => t('First name'),
+            'type' => 'varchar',
+            'length' => 50,
+            'not null' => true,
+        ),
+        'lastname' => array(
+            'description' => t('Last name'),
+            'type' => 'varchar',
+            'length' => 50,
+            'not null' => true,
+        ),
+        'college' => array(
+            'description' => t('College Abbreviation'),
+            'type' => 'varchar',
+            'length' => 10,
+            'default' => 'NODEG',
+            'not null' => true,
+        ),
+        'planid' => array(
+            'description' => t('Plan ID (see the plans table)'),
+            'type' => 'int',
+            'size' => 'small',
+        ),
+        'dept' => array(
+            'description' => t('Department code'),
+            'type' => 'varchar',
+            'length' => 10,
+        ),
+        'gender' => array(
+            'description' => t('gender (null means unreported)'),
+            //The true database type is enum, but Drupal doesn't
+            //understand enums, so I'll pretend it is a char
+            'type' => 'char',
+            'length' => 1,
+        ),
+        'yearlevel' => array(
+            'description' => t('Year level by credits'),
+            'type' => 'int',
+            'size' => 'tiny',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'enteredrit' => array(
+            'description' => t('Term entered RIT'),
+            'type' => 'int',
+            'size' => 'small',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'enteredhonors' => array(
+            'description' => t('Term entered Honors'),
+            'type' => 'int',
+            'size' => 'small',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'lefthonors' => array(
+            'description' => t('Term left Honors'),
+            'type' => 'int',
+            'size' => 'small',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'checkout' => array(
+            'description' => t('Expected graduation term'),
+            'type' => 'int',
+            'size' => 'small',
+            'not null' => true,
+            'default' => 0,
+        ),
+    ),
+    'primary key' => array('username'),
+);
+
+$s['h_plans'] = array(
+    'description' => t('Stores information about academic plans'),
+    'fields' => array(
+        'id' => array(
+            'description' => t('Plan id (auto increment)'),
+            'type' => 'serial',
+            'not null' => true,
+        ),
+        'college' => array(
+            'description' => t('College Abbreviation'),
+            'type' => 'varchar',
+            'length' => 7,
+            'not null' => true,
+        ),
+        'plan' => array(
+            'description' => t('Plan Code'),
+            'type' => 'varchar',
+            'length' => 20,
+            'not null' => true,
+        ),
+        'subplan' => array(
+            'description' => t('Subplan Code'),
+            'type' => 'varchar',
+            'length' => 20,
+        ),
+        'description' => array(
+            'description' => t('Human readable plan name e.g. "Mechanical Engineering (BS)"'),
+            'type' => 'text',
+            'size' => 'tiny',
+        ),
+    ),
+    'indexes' => array(
+    ),
+    'primary key' => array('id'),
+);
+
+$s['h_students_courses_peoplesoft'] = array(
+    'description' => t('Stores information about courses taken'),
+    'fields' => array(
+        'id' => array(
+            'description' => t('Auto Increment Primary key'),
+            'type' => 'serial',
+            'not null' => true,
+        ),
+        'key' => array(
+            'description' => t('Course key equivalent to $username.$course.$term'),
+            'type' => 'varchar',
+            'length' => 24,
+            'not null' => true,
+        ),
+        'username' => array(
+            'description' => t('RIT DCE'),
+            'type' => 'varchar',
+            'length' => 10,
+            'not null' => true,
+        ),
+        'course' => array(
+            'description' => t('Course number'),
+            'type' => 'varchar',
+            'length' => 9,
+            'not null' => true,
+        ),
+        'name' => array(
+            'description' => t('Course name'),
+            'type' => 'text',
+            'size' => 'tiny',
+            'not null' => true,
+        ),
+        'instructor' => array(
+            'description' => t('Course instructor'),
+            'type' => 'text',
+            'size' => 'tiny',
+            'not null' => true,
+        ),
+        'term' => array(
+            'description' => t('Term taken'),
+            'type' => 'varchar',
+            'length' => 5,
+            'not null' => true,
+        ),
+        'grade' => array(
+            'description' => t("Grade (one of 'A', 'B', 'C', 'D', 'F', 'S', 'W')"),
+            'type' => 'varchar',
+            'length' => 1,
+            'not null' => true,
+        ),
+        'credits' => array(
+            'description' => t('Number of credits'),
+            'type' => 'varchar',
+            'length' => 2,
+            'not null' => true,
+        ),
+        'honors'=> array(
+            'description' => t('whether the course counts for honors points'),
+            //fake Y/N enum
+            'type' => 'char',
+            'length' => 1,
+            'not null' => true,
+            'default' => 'N',
+        ),
+        'quartercourse'=> array(
+            'description' => t('whether the course was taken under quarters'),
+            //fake Y/N enum
+            'type' => 'char',
+            'length' => 1,
+            'not null' => true,
+            'default' => 'N',
+        ),
+    ),
+    'indexes' => array(
+    ),
+    'primary key' => array('id'),
+);
+    
+        
     
 //All the old tables: students, students_courses, students_gpa, students_points
 //students_waivers, complearning, continuation, notes.  (All prefixed)
@@ -316,10 +528,10 @@ $s['h_students_gpa'] = array(
         ),
         'gpa' => array(
             'description' => t(''),
-            'type' => 'numeric',
+            'type' => 'int',
+            'size' => 'small',
             'not null' => true,
-            'default' => 0.000,
-            'scale' => 3,
+            'default' => 0,
         ),
     ),
     'primary key' => array('username'),
@@ -449,14 +661,14 @@ $s['h_complearning'] = array(
         ),
         'dce' => array(
             'description' => t('RIT DCE'),
-            'type' => 'varchar',
+            'type' => 'text',
             'not null' => true,
-            'length' => 7,
+            'size' => 'tiny',
         ),
         'title' => array(
             'description' => t('No one is really sure why there is a title'),
             'type' => 'varchar',
-            'length' => 40,
+            'length' => 100,
         ),
         'date' => array(
             'description' => t('The time commitment'),
@@ -493,6 +705,12 @@ $s['h_complearning'] = array(
         'submitted_time' => array(
             'description' => t(''),
             'type' => 'datetime',
+        ),
+        'submitted_by' => array(
+            'description' => t('DCE of submitter'),
+            'type' => 'varchar',
+            'length' => 7,
+            'not null' => true,
         ),
         'reviewed' => array(
             'description' => t('status. 1=approved, 0=denied, -1=deleted, -2=pending'),
