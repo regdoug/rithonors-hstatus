@@ -94,7 +94,12 @@ function _hdata_user_load($userinfo, $reset = false){
         $user = user_load($userinfo);
         $uid = $user->uid;
         $username = $user->name;
-        if(!($username && $uid)) return false; //not found
+		
+		//try to find in the honors table; if this user is not there, then
+		//we don't want to cache them
+		$q = "SELECT h.status FROM {students_peoplesoft} h WHERE h.uid=%d";
+		$rs = db_query($q,$uid);
+        if(!($username && $uid && $rs)) return false; //not found
     }
 
     //allows short-term caching (within each page load)
@@ -141,6 +146,10 @@ function _hdata_user_load($userinfo, $reset = false){
  * gpa, and status
  */
 function _hdata_user_load_basic($username){
+	//EDIT: (Connor Pierce, 12/15/2012)
+	//$q_basic used to refer to the table {h_students} and {h_students_gpa},
+	//but according to the database specs that I have it should be
+	//{students_peoplesoft} and {students_gpa}, respectively
     $q_basic =
     "SELECT
         student.firstname fname,
@@ -150,8 +159,8 @@ function _hdata_user_load_basic($username){
         student.program program,
         student.active active,
         gpas.gpa gpa
-     FROM {h_students} student
-     JOIN {h_students_gpa} gpas
+     FROM {students_peoplesoft} student
+     JOIN {students_gpa} gpas
         ON student.username = gpas.username
      WHERE student.username = '%s'
      LIMIT 1";
@@ -177,9 +186,12 @@ function _hdata_user_load_basic($username){
  * Collects info from h_continuation table
  */
 function _hdata_user_load_continuation($username){
+	//NOTE: (Connor Pierce, 12/15/2012)
+	//I changed {h_continuation} to {continuation} because that's what
+	//my copy of the database specs seem to imply
     $q_continue =
     "SELECT status, comp_learn, college, courses, gpa
-     FROM {h_continuation}
+     FROM {continuation}
      WHERE username = '%s'
      LIMIT 1";
     $rs = db_query($q_continue, $username);
@@ -202,6 +214,9 @@ function _hdata_user_load_continuation($username){
  */
 
 function _hdata_user_load_points($username){
+	//NOTE: (Connor Pierce, 12/15/2012)
+	//My database specs make it appear that there is no table
+	//named {h_students_points)
 	$rs = db_query("
 		SELECT explanation,
 			submittedTime,
@@ -243,8 +258,11 @@ function _hdata_user_load_points($username){
  * a draft is in progress
  */
 function _hdata_user_load_submissions($uid){
+	//EDIT: (Connor Pierce, 12/15/2012)
+	//Changed table {h_cl} to {complearning}, as per the DB specs that
+	//I have
     $rs = db_query('SELECT id, status, hours, submit_date, review_date
-                    FROM {h_cl} WHERE uid=%d
+                    FROM {complearning} WHERE uid=%d
                     ORDER BY submit_date DESC LIMIT 1', $uid);
     return array(
         'complearn' =>  $rs?db_fetch_array($rs):false,
@@ -266,7 +284,9 @@ function _hdata_user_save($user){
 }
 
 function _hdata_user_save_basic($user){
-    $q = "UPDATE {h_students}
+	//EDIT: (Connor Pierce, 12/15/2012)
+	//Changed table {h_students} to {students_peoplesoft}
+    $q = "UPDATE {students_peoplesoft}
     SET firstname='%s', lastname='%s', college='%s', department='%s', program='%s', active=%d
     WHERE username='%s'";
     $b = $user['basic'];
@@ -278,7 +298,9 @@ function _hdata_user_save_basic($user){
     }
 }
 function _hdata_user_save_continuation($user){
-    $q = "UPDATE {h_continuation}
+	//EDIT: (Connor Pierce, 12/15/2012)
+	//Changed {h_continuation} to {continuation} in $q
+    $q = "UPDATE {continuation}
     SET status=%d, comp_learn=%d, college=%d, courses=%d, gpa=%d
     WHERE username='%s'";
     $c = $user['continuation'];
@@ -324,8 +346,10 @@ function _hdata_cl_load($id,$draft){
             return $submissions[$id];
         }
         $data = _hdata_cl_data_by_id($id);
+		//EDIT: (Connor Pierce, 12/15/2012)
+		//Changed {h_cl} to {complearning} in the query string
         $rs = db_query('SELECT id, uid, status, hours, types, submit_date, review_date, reviewer_uid
-                        FROM {h_cl} WHERE id=%d',
+                        FROM {complearning} WHERE id=%d',
                         $id);
         if($rs){
             $info = db_fetch_array($rs);
@@ -344,7 +368,9 @@ function _hdata_cl_save($sub,$draft){
     }else if(!$draft && !$sub['draft']){
         //saving a submission as a submission
         //only certain fields are supposed to be mutable
-        $q = "UPDATE {h_cl} SET status=%d, reviewed_date=%d, reviewer_uid=%d WHERE id=%d";
+		//EDIT: (Connor Pierce, 12/15/2012)
+		//Changed {h_cl} to {complearning}, as per my DB spec spreadsheet
+        $q = "UPDATE {complearning} SET status=%d, reviewed_date=%d, reviewer_uid=%d WHERE id=%d";
         return (bool)db_query($q,$sub['status'],$sub['reviewed_date'],$sub['reviewer_uid'],$sub['id']);
     }else if(!$draft && $sub['draft']){
         //saving a draft as a submission
@@ -368,9 +394,13 @@ function _hdata_cl_save($sub,$draft){
         if($info['hours'] < hcomplearn_minhours()) return false;
 
         //perform queries
-        $q = "INSERT INTO {h_cl} (id, uid, hours, types, submit_date) VALUES (%d, %d, %d, '%s', %d)";
+		//EDIT: (Connor Pierce, 12/15/2012)
+		//in $q: {h_cl} replaced with {complearning} as per the specs I have
+        $q = "INSERT INTO {complearning} (id, uid, hours, types, submit_date) VALUES (%d, %d, %d, '%s', %d)";
         if(db_query($q, $sub['id'], $sub['uid'], $info['hours'], $info['types'], time())){
             //there is no longer a draft, just a full-fledged submission
+			//NOTE: (Connor Pierce, 12/15/2012) The current database specs
+			//that I possess make no mention of a table {h_cl_drafts}
             return (bool)db_query("DELETE FROM {h_cl_drafts} WHERE id=%d",$sub['id']);
         }else{
             return false;
@@ -407,6 +437,12 @@ function _hdata_cldraft_load($uid, $expire = '1 year'){
         return $cldrafts[$uid];
     }
 
+	//NOTE: (Connor Pierce, 12/15/2012)
+	//I don't see any mention of a table {h_cldrafts} in my DB specs.  Or
+	//anything similar, for that matter.  In addition, the name {h_cldrafts}
+	//is not consistent with {h_cl_drafts} as used in _hdata_cl_save (see
+	//line 398ish).  Also, the specs don't seem to show any tables with names
+	//similar to {h_cl_data}
     $q =
     "SELECT data.submission, data.id
     FROM {h_cldrafts} draft
@@ -442,6 +478,9 @@ function _hdata_cldraft_save($uid,$data){
     static $cldrafts;
     $cldrafts[$uid] = $data;
 
+	//NOTE: (Connor Pierce, 12/15/2012)
+	//see NOTE in _hdata_cldraft_load around line 435, regarding table
+	//{h_cldrafts}
     $rs = db_query("SELECT uid, id FROM {h_cldrafts} WHERE uid=%d",$uid);
     if($rs){
         $result = db_fetch_array($rs);
@@ -467,6 +506,12 @@ function _hdata_cldraft_save($uid,$data){
         //DEBUG
         //drupal_set_message('hdata_cldraft_save: saving new draft','warning');
         //this probably only works for MySQL...
+		
+		//NOTE: (Connor Pierce, 12/15/2012)
+		//Someone who knows more about this than I do needs to check into
+		//table names. My copy of the specs, which may or may not be correct,
+		//makes no indication that there is a table called {h_cl_data} or
+		//{h_cldrafts}
         db_query('INSERT INTO {h_cl_data} (submission) VALUES (%b)',serialize($data));
         db_query('INSERT INTO {h_cldrafts} (uid,updatetime,id) VALUES (%d,%d,LAST_INSERT_ID())',$uid,time());
         return true;
@@ -477,6 +522,8 @@ function _hdata_cldraft_save($uid,$data){
  * Get complearning submission data by submission id
  */
 function _hdata_cl_data_by_id($sid){
+	//NOTE (Connor Pierce, 12/15/2012)
+	//table name
     $result = db_query('SELECT submission FROM {h_cl_data} WHERE id = %d',$sid);
     if(!$result) return null;
     $obj = db_fetch_object($result);
@@ -488,14 +535,77 @@ function _hdata_cl_data_by_id($sid){
 }
 
 //TODO: implement list functions
+/**
+ * Loads student data from the table {h_students}. If $college is not null, only
+ * students from that college are loaded. If $active is true, only students
+ * with the status 'active' (1) are loaded. Otherwise, students of all statuses
+ * are loaded.
+ * 
+ * Returns an array containing student data. The student data is contained in an
+ * associate array with the following keys:
+ *   KEY            VALUE FOR
+ *   drupalid       Drupal user ID
+ *   fname          first name
+ *   lname          last name
+ *   ritid          RIT DCE
+ *   status         Honors status
+ *   college        college
+ *   planid         planid (see plans table)
+ *   dept           academic department
+ *   gender         gender
+ *   yearlevel      year level (by credits)
+ *   entered_rit    term the student entered RIT
+ *   entered_honors term the student entered Honors
+ *   left_honors    term the student left (withdrawn/graduated) Honors
+ *   checkout       expected graduation
+ */
 function _hdata_student_list($college,$active){
-    //if college is null, load all colleges
-    //if active is false, load all statuses
+    if($college == null) { //if college is null, load all colleges
+        $colleges = "('KGCOE', 'COLA', 'CIAS', 'CAST', 'CHST', 'NTID', 'GCCIS')";
+    } else {
+        $colleges = "('$college')";
+    }
+    
+    if(!$active) { //if active is false, load all statuses
+        $statuses = "(-2, -1, 0, 1, 2, 3, 4)";
+    } else {
+        $statuses = "(1)";
+    }
     
     //will need to query table {h_students}
-    return array();
+	
+	//NOTE: (Connor Pierce, 12/15/2012)
+	//I believe the comment above was written by Reggie, or whoever laid
+	//out the structure of this module. According to my database specs, it
+	//should read "will need to query table {students_peoplesoft}"
+    $result = db_query("SELECT 
+            student.id drupalid,
+            student.firstname fname,
+            student.lastname  lname,
+            student.username ritid,
+            student.status status,
+            student.college college,
+            student.planid planid,
+            student.dept dept,
+            student.gender gender,
+            student.yearlevel yearlevel,
+            student.enteredrit entered_rit,
+            student.enteredhonors entered_honors
+            student.lefthonors left_honors
+            student.checkout checkout
+            FROM {students_peoplesoft} student
+            WHERE student.college IN %s AND student.status IN %s",
+            $colleges, $statuses);
+    $arry;
+    while($row = db_fetch_object($result))
+    {
+        $arry[] = $row;
+    }
+    return $arry;
 }
 function _hdata_faculty_list($college){
     //I don't even know how we are going to do faculty on the new site
+    
+    //In that case, I guess I don't, either.
     return array();
 }
