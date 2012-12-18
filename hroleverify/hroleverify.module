@@ -9,8 +9,8 @@ function hroleverify_block( $op = 'list', $delta = 0, $edit = array() ) {
         //Authenticated user
         $u = user_load($user->uid);
         
-        if(_hroleverify_ishonors($u->uid) && !in_array("Honors",$u->roles)) {
-            //Only show if the user is Honors but doesn't have the role "Honors"
+        if( !in_array("Honors",$u->roles) ) {
+            //Only show if the user doesn't have the role "Honors"
             if($op == 'list') {
                 $block = array();
                 $block[0]['info'] = t("Honors Role Verification");
@@ -20,10 +20,10 @@ function hroleverify_block( $op = 'list', $delta = 0, $edit = array() ) {
                 //Generate block
                 if($delta == 0) {
                     $block = array(
-                            'subject'=>'In Honors?',
-                            'content'=>"It appears that you are an RIT Honors Student.  However, your current access " . 
-                            "permissions do not identify you as such. Please click <a href='".$base_url."/verify_role/'</a>here</a>" . 
-                            " to fix your permissions."
+                        'subject'=>'In Honors?',
+                        'content'=>"Your access permissions do not identify you as an Honors student. If " . 
+							"you are in Honors, please click <a href='".$base_url."/verify_role/'</a>here</a>" . 
+							" to fix your permissions."
                     );
                     return $block;
                 }
@@ -43,7 +43,7 @@ function hroleverify_block( $op = 'list', $delta = 0, $edit = array() ) {
 
 function _hroleverify_ishonors($uid) {
     $q = "SELECT s.username
-        FROM {students_peoplesoft} s
+        FROM {h_students_peoplesoft} s
         WHERE s.id=%d AND s.status=%d";
     $rs = db_query($q,$uid,'1');
     if(db_fetch_array($rs)){
@@ -81,15 +81,7 @@ function _hroleverify_addrole() {
     }
     
     global $base_url;
-    echo '<!DOCTYPE html>' .
-        '<html>' .
-        '<head>' .
-        '<meta http-equiv="Refresh" content="3;url='.$base_url.'">' .
-        '</head>' .
-        '<body>' .
-        '<p>Redirecting to homepage... <a href="'.$base_url.'">Home</a></p>' .
-        '<p>If you see this message for more than 5 seconds, please click on the link above!</p>' .
-        '</body>';
+    drupal_goto($base_url);
 }
 
 //The following function and comments copied from haddrole
