@@ -1,0 +1,15 @@
+;hrole_verify
+;Created December 1, 2012 by Connor Pierce, for the website
+;of the Honors Program at RIT.
+
+name = hRoleVerify
+
+description = Assigns the role "Honors" to logged-in users if they are members of the Honors program.
+
+package = Honors
+
+core = 6.x
+
+;Requires the hdata module.
+
+;dependencies[] = hdata

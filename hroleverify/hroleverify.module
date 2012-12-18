@@ -1,0 +1,109 @@
+<?php
+
+//Generate module block
+function hroleverify_block( $op = 'list', $delta = 0, $edit = array() ) {
+    global $user;
+    global $base_url;
+    
+    if($user->uid != 0) {
+        //Authenticated user
+        $u = user_load($user->uid);
+        
+        if( !in_array("Honors",$u->roles) ) {
+            //Only show if the user doesn't have the role "Honors"
+            if($op == 'list') {
+                $block = array();
+                $block[0]['info'] = t("Honors Role Verification");
+                $block[0]['weight'] = -50;
+                return $block;
+            } elseif($op == 'view') {
+                //Generate block
+                if($delta == 0) {
+                    $block = array(
+                        'subject'=>'In Honors?',
+                        'content'=>"Your access permissions do not identify you as an Honors student. If " . 
+							"you are in Honors, please click <a href='".$base_url."/verify_role/'</a>here</a>" . 
+							" to fix your permissions."
+                    );
+                    return $block;
+                }
+            } else {
+                //$op is either 'save' or 'configure' -- do nothing
+                return array();
+            }
+        } else {
+            return array();
+        }
+        
+    } else {
+        //Anonymous user -- do nothing
+        return array();
+    }
+}
+
+function _hroleverify_ishonors($uid) {
+    $q = "SELECT s.username
+        FROM {h_students_peoplesoft} s
+        WHERE s.id=%d AND s.status=%d";
+    $rs = db_query($q,$uid,'1');
+    if(db_fetch_array($rs)){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+function hroleverify_menu() {
+    $items['verify_role'] = array(
+        'title' => 'Adding role...',
+        'type' => MENU_CALLBACK,
+        'access callback' => '_hroleverify_canaccess',
+        'page callback' => '_hroleverify_addrole'
+    );
+    return $items;
+}
+
+function _hroleverify_canaccess() {
+    global $user;
+    return _hroleverify_ishonors($user->uid);
+}
+
+function _hroleverify_addrole() {
+    global $user;
+    if(_hroleverify_ishonors($user->uid)) {
+        $u = user_load($user->uid);
+        $rid = _hroleverify_rid();
+        $u->roles[$rid] = 'Honors';
+        
+        watchdog('haddrole','Adding role "Honors" to user @name',array('@name' => $u->name));
+        
+        user_save($u, array('roles'=>$u->roles));
+    }
+    
+    global $base_url;
+    drupal_goto($base_url);
+}
+
+//The following function and comments copied from haddrole
+//on 12/14/2012:
+
+//private function to get the role id.
+//purpose is purely for code clarity.
+function _hroleverify_rid(){
+	//variable_get retrieves system variables.  here we retrieve our variable 'haddrole_rid'
+	$rid = variable_get('hroleverify_rid',0);
+	
+	//the variable wasn't set in the database
+	//this means that we haven't ever tried to retrieve the role.
+	if ($rid == 0){ 
+		$rs = db_query("SELECT rid FROM {role} WHERE name = '%s'",'Honors');
+		if($result = db_fetch_object($rs)){
+			$rid = $result->rid;
+		}else{//there is no role called 'Honors'
+			//set rid to -1 so that we don't check again.
+			$rid = -1;
+		}
+		variable_set('hroleverify_rid',$rid);
+	}
+	return $rid;
+}
