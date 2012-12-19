@@ -1,6 +1,8 @@
-h1. Annotations
+Annotations
+==
 
-h2. hdata/hnews/hnews.module
+hdata/hnews/hnews.module
+--
 
 ```
   99	:        //TODO: make this function
@@ -10,7 +12,8 @@ h2. hdata/hnews/hnews.module
  103	-            $recipients += hdata_faculty_list();
 ```
 
-h2. hdata/hcomplearn/hcomplearn.module
+hdata/hcomplearn/hcomplearn.module
+--
 
 ```
   34	:    //TODO: write docs
@@ -24,7 +27,8 @@ h2. hdata/hcomplearn/hcomplearn.module
  148	-    $id = $submission['id'];
 ```
 
-h2. hdata/hcomplearn/hcomplearn.form.inc
+hdata/hcomplearn/hcomplearn.form.inc
+--
 
 ```
   20	: //TODO: add field 'hours' and field 'type'
@@ -43,7 +47,8 @@ h2. hdata/hcomplearn/hcomplearn.form.inc
  399	-        $submitwarning = '<p><strong>'.
 ```
 
-h2. hdata/hdata.module
+hdata/hdata.module
+--
 
 ```
   19	://WARNING:  THIS MODULE DOES NOT DO PERMISSION CHECKS!
