@@ -126,7 +126,17 @@ function _hdata_user_load($userinfo, $reset = false){
 
     $u['name'] = $username;
     $u['uid'] = $uid;
-    $u['basic'] = _hdata_user_load_basic($username);
+	
+	/* Load basic people from peoplesoft table. If that fails, read from legacy table. */
+	if (($u['basic'] = _hdata_user_load_basic_peoplesoft($username)) == false)
+	{
+		if (($u['basic'] = _hdata_user_load_basic($username)) == false)
+		{
+			/* If both fail, then there's no point in continuing */
+			return false;
+		}
+	}
+	
     $u['continuation'] = _hdata_user_load_continuation($username);
     $u['points'] = _hdata_user_load_points($username);
     $u['submissions'] = _hdata_user_load_submissions($uid);
