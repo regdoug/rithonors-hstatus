@@ -2,11 +2,7 @@ h1. Annotations
 
 h2. hdata/hnews/hnews.module
 
-<<<<<<< HEAD
 ```
-=======
-```php
->>>>>>> d24715ae4bac3d3c1030a2f299a8d1e590c9a855
   99	:        //TODO: make this function
  100	:        //TODO: add dependancy on hdata
  101	-        $recipients = hdata_student_list();
@@ -16,11 +12,7 @@ h2. hdata/hnews/hnews.module
 
 h2. hdata/hcomplearn/hcomplearn.module
 
-<<<<<<< HEAD
 ```
-=======
-```php
->>>>>>> d24715ae4bac3d3c1030a2f299a8d1e590c9a855
   34	:    //TODO: write docs
   35	-
   36	-    //AJAX callback
@@ -34,11 +26,7 @@ h2. hdata/hcomplearn/hcomplearn.module
 
 h2. hdata/hcomplearn/hcomplearn.form.inc
 
-<<<<<<< HEAD
 ```
-=======
-```php
->>>>>>> d24715ae4bac3d3c1030a2f299a8d1e590c9a855
   20	: //TODO: add field 'hours' and field 'type'
   21	-function hcomplearn_forms_cl(&$form_state,$page){
   22	-    if(isset($form_state['storage']['page'])
@@ -57,11 +45,7 @@ h2. hdata/hcomplearn/hcomplearn.form.inc
 
 h2. hdata/hdata.module
 
-<<<<<<< HEAD
 ```
-=======
-```php
->>>>>>> d24715ae4bac3d3c1030a2f299a8d1e590c9a855
   19	://WARNING:  THIS MODULE DOES NOT DO PERMISSION CHECKS!
   20	-
   21	-/* Returns a user array. $user = array('uid => 0, 'name => '') */
