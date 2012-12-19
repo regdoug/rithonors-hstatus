@@ -19,6 +19,7 @@
 //WARNING:  THIS MODULE DOES NOT DO PERMISSION CHECKS!
 
 /* Returns a user array. $user = array('uid => 0, 'name => '') */
+//TODO: second argument "true" only for testing
 function hdata_user_load($user){return _hdata_user_load($user,true);}
 /* Saves the basic and continuation elements.  $user is a modified
  * object from hdata_user_load */
@@ -44,7 +45,7 @@ function hdata_faculty_list($college = null){return _hdata_faculty_list($college
 
 
 /**
- * hdata_user load
+ * hdata_user_load
  *
  * Arguments:
  *  1. $user - array with either $user['name'] or $user['uid'] set.
@@ -88,8 +89,9 @@ function hdata_faculty_list($college = null){return _hdata_faculty_list($college
 
 function _hdata_user_load($userinfo, $reset = false){
     //get the username and uid
-    if(isset($user['name']) && isset($user['uid'])){
-        //do nothing
+    if(isset($userinfo['name']) && isset($userinfo['uid'])){
+        $username = $userinfo['name'];
+        $uid = $userinfo['uid'];
     }else{
         $user = user_load($userinfo);
         $uid = $user->uid;
