@@ -205,10 +205,14 @@ function _hdata_user_load_basic_peoplesoft($username){
         student.college college,
         student.dept dpt,
         student.status active,
+		student.planid planid,
         gpas.gpa gpa
+		plans.description program,
      FROM {h_students_peoplesoft} student
      JOIN {h_students_gpa} gpas
         ON student.username = gpas.username
+	 JOIN {h_plans} plans
+	    ON student.planid = plans.id
      WHERE student.username = '%s'
      LIMIT 1";
      $rs = db_query($q_basic, $username);
@@ -222,7 +226,8 @@ function _hdata_user_load_basic_peoplesoft($username){
              'active' => $arry['active'],
              'college' => $arry['college'],
              'department' => $arry['dpt'],
-			 //'program' => $arry['program'],
+			 'program' => $arry['program'],
+			 'planid' => $arry['planid']
              'gpa' => $arry['gpa'],
          );
      }else{
