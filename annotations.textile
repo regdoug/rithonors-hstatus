@@ -1,0 +1,155 @@
+h1. Annotations
+h2. annotations.txt
+```php
+   4	:   2	:hdata/hnews/hnews.module:99:        //TODO: make this function
+   5	:   3	:hdata/hnews/hnews.module:100:        //TODO: add dependancy on hdata
+   6	-   4	-hdata/hnews/hnews.module-101-        $recipients = hdata_student_list();
+   7	-   5	-hdata/hnews/hnews.module-102-        if($faculty){
+   8	-   6	---
+--
+  10	:   8	:hdata/hcomplearn/hcomplearn.module:34:    //TODO: write docs
+  11	-   9	-hdata/hcomplearn/hcomplearn.module-35-
+  12	-  10	-hdata/hcomplearn/hcomplearn.module-36-    //AJAX callback
+  13	-  11	---
+--
+  15	:  13	:hdata/hcomplearn/hcomplearn.module:145://TODO: add permissions checks for approve and reject
+  16	-  14	-hdata/hcomplearn/hcomplearn.module-146-
+  17	-  15	-hdata/hcomplearn/hcomplearn.module-147-function hcomplearn_approve_cl_action($submission){
+  18	-  16	---
+--
+  20	:  18	:hdata/hcomplearn/hcomplearn.form.inc:20: //TODO: add field 'hours' and field 'type'
+  21	-  19	-hdata/hcomplearn/hcomplearn.form.inc-21-function hcomplearn_forms_cl(&$form_state,$page){
+  22	-  20	-hdata/hcomplearn/hcomplearn.form.inc-22-    if(isset($form_state['storage']['page'])
+  23	-  21	---
+--
+  25	:  23	:hdata/hcomplearn/hcomplearn.form.inc:309:        //TODO: make this configurable
+  26	-  24	-hdata/hcomplearn/hcomplearn.form.inc-310-        '#options' => array(
+  27	-  25	-hdata/hcomplearn/hcomplearn.form.inc-311-            'om' => 'OM',
+  28	-  26	---
+--
+  30	:  28	:hdata/hcomplearn/hcomplearn.form.inc:396:        //TODO: make this configurable
+  31	-  29	-hdata/hcomplearn/hcomplearn.form.inc-397-        $maysubmitmsg = t('If you are satisfied with your submission,
+  32	-  30	-hdata/hcomplearn/hcomplearn.form.inc-398-            you may submit the form now by clicking the button below.');
+  33	-  31	---
+--
+  35	:  33	:hdata/hdata.module:22://TODO: second argument "true" only for testing
+  36	-  34	-hdata/hdata.module-23-function hdata_user_load($user){return _hdata_user_load($user,true);}
+  37	-  35	-hdata/hdata.module-24-/* Saves the basic and continuation elements.  $user is a modified
+  38	-  36	---
+--
+  40	:  38	:hdata/hdata.module:28://TODO: make this a system variable
+  41	-  39	-hdata/hdata.module-29-function hdata_user_cache_life(){return '1 month';}
+  42	-  40	-hdata/hdata.module-30-
+  43	-  41	---
+--
+  45	:  43	:hdata/hdata.module:492://TODO: implement list functions
+  46	-  44	-hdata/hdata.module-493-function _hdata_student_list($college,$active){
+  47	-  45	-hdata/hdata.module-494-    //if college is null, load all colleges
+  48	-  46	---
+--
+  52	:  99	:        //TODO: make this function
+  53	: 100	:        //TODO: add dependancy on hdata
+  54	- 101	-        $recipients = hdata_student_list();
+  55	- 102	-        if($faculty){
+  56	- 103	-            $recipients += hdata_faculty_list();
+--
+  60	:  34	:    //TODO: write docs
+  61	-  35	-
+  62	-  36	-    //AJAX callback
+  63	-  37	-    $items['hcomplearn/submission/%'] = array(
+--
+  65	: 145	://TODO: add permissions checks for approve and reject
+  66	- 146	-
+  67	- 147	-function hcomplearn_approve_cl_action($submission){
+  68	- 148	-    $id = $submission['id'];
+--
+  72	:  20	: //TODO: add field 'hours' and field 'type'
+  73	-  21	-function hcomplearn_forms_cl(&$form_state,$page){
+  74	-  22	-    if(isset($form_state['storage']['page'])
+  75	-  23	-            && isset($form_state['storage']['data']['count'])){
+--
+  77	: 309	:        //TODO: make this configurable
+  78	- 310	-        '#options' => array(
+  79	- 311	-            'om' => 'OM',
+  80	- 312	-            'ra' => 'RA',
+--
+  82	: 396	:        //TODO: make this configurable
+  83	- 397	-        $maysubmitmsg = t('If you are satisfied with your submission,
+  84	- 398	-            you may submit the form now by clicking the button below.');
+  85	- 399	-        $submitwarning = '<p><strong>'.
+--
+  89	:  19	://WARNING:  THIS MODULE DOES NOT DO PERMISSION CHECKS!
+  90	-  20	-
+  91	-  21	-/* Returns a user array. $user = array('uid => 0, 'name => '') */
+  92	:  22	://TODO: second argument "true" only for testing
+  93	-  23	-function hdata_user_load($user){return _hdata_user_load($user,true);}
+  94	-  24	-/* Saves the basic and continuation elements.  $user is a modified
+  95	-  25	- * object from hdata_user_load */
+--
+  97	:  28	://TODO: make this a system variable
+  98	-  29	-function hdata_user_cache_life(){return '1 month';}
+  99	-  30	-
+ 100	-  31	-/* id should be uid if $draft is true */
+--
+ 102	: 492	://TODO: implement list functions
+ 103	- 493	-function _hdata_student_list($college,$active){
+ 104	- 494	-    //if college is null, load all colleges
+ 105	- 495	-    //if active is false, load all statuses
+```
+h2. hdata/hnews/hnews.module
+```php
+  99	:        //TODO: make this function
+ 100	:        //TODO: add dependancy on hdata
+ 101	-        $recipients = hdata_student_list();
+ 102	-        if($faculty){
+ 103	-            $recipients += hdata_faculty_list();
+```
+h2. hdata/hcomplearn/hcomplearn.module
+```php
+  34	:    //TODO: write docs
+  35	-
+  36	-    //AJAX callback
+  37	-    $items['hcomplearn/submission/%'] = array(
+--
+ 145	://TODO: add permissions checks for approve and reject
+ 146	-
+ 147	-function hcomplearn_approve_cl_action($submission){
+ 148	-    $id = $submission['id'];
+```
+h2. hdata/hcomplearn/hcomplearn.form.inc
+```php
+  20	: //TODO: add field 'hours' and field 'type'
+  21	-function hcomplearn_forms_cl(&$form_state,$page){
+  22	-    if(isset($form_state['storage']['page'])
+  23	-            && isset($form_state['storage']['data']['count'])){
+--
+ 309	:        //TODO: make this configurable
+ 310	-        '#options' => array(
+ 311	-            'om' => 'OM',
+ 312	-            'ra' => 'RA',
+--
+ 396	:        //TODO: make this configurable
+ 397	-        $maysubmitmsg = t('If you are satisfied with your submission,
+ 398	-            you may submit the form now by clicking the button below.');
+ 399	-        $submitwarning = '<p><strong>'.
+```
+h2. hdata/hdata.module
+```php
+  19	://WARNING:  THIS MODULE DOES NOT DO PERMISSION CHECKS!
+  20	-
+  21	-/* Returns a user array. $user = array('uid => 0, 'name => '') */
+  22	://TODO: second argument "true" only for testing
+  23	-function hdata_user_load($user){return _hdata_user_load($user,true);}
+  24	-/* Saves the basic and continuation elements.  $user is a modified
+  25	- * object from hdata_user_load */
+--
+  28	://TODO: make this a system variable
+  29	-function hdata_user_cache_life(){return '1 month';}
+  30	-
+  31	-/* id should be uid if $draft is true */
+--
+ 492	://TODO: implement list functions
+ 493	-function _hdata_student_list($college,$active){
+ 494	-    //if college is null, load all colleges
+ 495	-    //if active is false, load all statuses
+```
