@@ -134,7 +134,17 @@ function _hdata_user_load($userinfo, $reset = false){
 
     $u['name'] = $username;
     $u['uid'] = $uid;
-    $u['basic'] = _hdata_user_load_basic($username);
+	
+	/* Load basic people from peoplesoft table. If that fails, read from legacy table. */
+	if (($u['basic'] = _hdata_user_load_basic_peoplesoft($username)) == false)
+	{
+		if (($u['basic'] = _hdata_user_load_basic($username)) == false)
+		{
+			/* If both fail, then there's no point in continuing */
+			return false;
+		}
+	}
+	
     $u['continuation'] = _hdata_user_load_continuation($username);
     $u['points'] = _hdata_user_load_points($username);
     $u['submissions'] = _hdata_user_load_submissions($uid);
@@ -183,6 +193,51 @@ function _hdata_user_load_basic($username){
          return false;
      }
 }
+
+/*
+ * Gathers basic student data from the new h_students_peoplesoft table and
+ * h_students_gpa table.
+*/
+function _hdata_user_load_basic_peoplesoft($username){
+	/*
+		This query is almost the same, with a few changes:
+			-The tables have been changed
+			-"active" has been changed to "status"
+			-"department" has been changed to "dept"
+			-"program" has been removed
+	*/
+    $q_basic =
+    "SELECT
+        student.firstname fname,
+        student.lastname lname,
+        student.college college,
+        student.dept dpt,
+        student.status active,
+        gpas.gpa gpa
+     FROM {h_students_peoplesoft} student
+     JOIN {h_students_gpa} gpas
+        ON student.username = gpas.username
+     WHERE student.username = '%s'
+     LIMIT 1";
+     $rs = db_query($q_basic, $username);
+     $arry = db_fetch_array($rs);
+     if($arry){
+         return array(
+             'name' => array(
+                 'firstname' => $arry['fname'],
+                 'lastname' => $arry['lname'],
+             ),
+             'active' => $arry['active'],
+             'college' => $arry['college'],
+             'department' => $arry['dpt'],
+			 //'program' => $arry['program'],
+             'gpa' => $arry['gpa'],
+         );
+     }else{
+         return false;
+     }
+}
+
 /*
  * Collects info from h_continuation table
  */
