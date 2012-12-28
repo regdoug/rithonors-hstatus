@@ -179,6 +179,7 @@ function _hdata_user_load_basic($username){
      $arry = db_fetch_array($rs);
      if($arry){
          return array(
+             'legacy' => true,
              'name' => array(
                  'firstname' => $arry['fname'],
                  'lastname' => $arry['lname'],
@@ -208,16 +209,23 @@ function _hdata_user_load_basic_peoplesoft($username){
 	*/
     $q_basic =
     "SELECT
-        student.firstname fname,
-        student.lastname lname,
-        student.college college,
-        student.dept dpt,
-        student.status active,
+        s.firstname fname,
+        s.lastname lname,
+        s.college college,
+        s.dept dpt,
+        s.status active,
+        s.planid,
+        s.enteredhonors,
+        s.enteredrit,
+        s.lefthonors,
+        plan.description program,
         gpas.gpa gpa
-     FROM {h_students_peoplesoft} student
+     FROM {h_students_peoplesoft} s
      JOIN {h_students_gpa} gpas
-        ON student.username = gpas.username
-     WHERE student.username = '%s'
+        ON s.username = gpas.username
+     JOIN {h_plans} plan
+        ON plan.id = s.planid
+     WHERE s.username = '%s'
      LIMIT 1";
      $rs = db_query($q_basic, $username);
      $arry = db_fetch_array($rs);
@@ -230,8 +238,12 @@ function _hdata_user_load_basic_peoplesoft($username){
              'active' => $arry['active'],
              'college' => $arry['college'],
              'department' => $arry['dpt'],
-			 //'program' => $arry['program'],
+			 'program' => $arry['program'],
+             'planid' => $arry['planid'],
              'gpa' => $arry['gpa'],
+             'enteredhonors' => $arry['enteredhonors'],
+             'enteredrit' => $arry['enteredrit'],
+             'lefthonors' => $arry['lefthonors'],
          );
      }else{
          return false;
@@ -342,6 +354,11 @@ function _hdata_user_save($user){
     if(!(isset($user['uid']) && isset($user['name']))){
         return false;
     }
+    //Legacy users cannot be saved.
+    if($user['basic']['legacy']){
+        return false;
+    }
+    
     $success = _hdata_user_save_basic($user) || _hdata_user_save_continuation($user);
     if($success){
         cache_set("hdata_user:$username", serialize($u), 'cache_honors',
@@ -351,12 +368,14 @@ function _hdata_user_save($user){
 }
 
 function _hdata_user_save_basic($user){
-    $q = "UPDATE {h_students}
-    SET firstname='%s', lastname='%s', college='%s', department='%s', program='%s', active=%d
-    WHERE username='%s'";
+    $q = "UPDATE {h_students_peoplesoft}
+        SET uid=%d, firstname='%s', lastname='%s', college='%s', dept='%s', planid='%s', 
+                status=%d, enteredrit=%d, enteredhonors=%d, lefthonors=%d
+        WHERE username='%s'";
     $b = $user['basic'];
-    if(db_query($q,$b['name']['firstname'],$b['name']['lastname'],
-            $b['college'], $b['department'], $b['program'],$b['active'],$user['name'])){
+    if(db_query($q,$user['uid'],$b['name']['firstname'],$b['name']['lastname'],
+            $b['college'], $b['department'], $b['planid'],$b['active'],
+            $b['enteredrit'],$b['enteredhonors'],$b['lefthonors'],$user['name'])){
         return true;
     }else{
         return false;
