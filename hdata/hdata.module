@@ -43,6 +43,14 @@ function hdata_student_list($college = null, $active = true){return _hdata_stude
 /* Gets a list of faculty usernames */
 function hdata_faculty_list($college = null){return _hdata_faculty_list($college);}
 
+/*Loads all the notes for the user specified. An empty array means no
+ * notes.  FALSE means an error occured (possibly no such user). */
+function hdata_load_notes($username){ return _hdata_user_load_notes($username); }
+/*Loads a single note.  FALSE on failure. */
+function hdata_load_note($id){ return _hdata_load_note($id); }
+/*Saves a note to $username.  If $note['id'] is unset, a new note is created.
+ * Returns the note on success, FALSE on failure*/
+function hdata_save_note($note, $username){ return _hdata_save_note($note, $username); }
 
 /**
  * hdata_user_load
@@ -252,6 +260,26 @@ function _hdata_user_load_submissions($uid){
         'complearn' =>  $rs?db_fetch_array($rs):false,
         'cldraft' => (bool)_hdata_cldraft_load($uid,hdata_cl_draft_life()),
     );
+}
+
+function _hdata_user_load_notes($username){
+    //Make sure that username is composed of 3 letters and 4 numbers
+    if(preg_match('/[a-z]{3}[0-9]{4}/',$username)){
+        //find all the notes associated with that user
+        $rs = db_query('SELECT id FROM {h_notes} WHERE dce=\'%s\'',$username);
+        //on error, return false
+        if($rs === FALSE) return false;
+        //if no error, fetch the notes
+        $notes = array();
+        while(($row = db_fetch_array($rs))){
+            //append each note to the notes array.
+            $notes[] = _hdata_load_note($row['id']);
+        }
+        return $notes;
+    }else{
+        //return false if the username couldn't possibly be valid
+        return false;
+    }
 }
 
 function _hdata_user_save($user){
@@ -486,6 +514,40 @@ function _hdata_cl_data_by_id($sid){
         return unserialize($obj->submission);
     }else{
         return null;
+    }
+}
+
+function _hdata_load_note($id){
+    if(!isnumeric($id)){
+        //return false, this can't possibly be right.
+        return false;
+    }
+    //note that the query is structured so that the returned array will
+    //already be in the format we want.
+    $q = 'SELECT id, title, note AS body, posted_by AS author, date, cont_id AS year FROM {h_notes} WHERE id=%d';
+    $rs = db_query($q,$id);
+    if($rs){
+        return db_fetch_array($rs);
+    }else{
+        return false;
+    }
+}
+function _hdata_save_note($note, $username){
+    if(isset($note['id'])){
+        $q = "UPDATE {h_notes} SET 
+                title='%s', note='%s', date='%s', cont_id='%s', dce='%s'";
+        $rs = db_query($q,$note['title'],$note['body'],$note['date'],$note['cont_id'],$username);
+    }else{
+        $q = "INSERT INTO {h_notes} (dce,title,note,date,posted_by,cont_id)
+                         VALUES ('%s','%s','%s','%s','%s','%s')";
+        $rs = db_query($q,$username,$note['title'],$note['body'],$note['date'],$note['author'],$note['cont_id']);
+        //set the id of the note array so that the caller will have it for future reference.
+        $note['id'] = db_last_insert_id('h_notes','id');
+    }
+    if($rs === FALSE){
+        return false;
+    }else{
+        return $note;
     }
 }
 
