@@ -4,48 +4,35 @@
 function hroleverify_block( $op = 'list', $delta = 0, $edit = array() ) {
     global $user;
     global $base_url;
+    $block = array();
     
-    if($user->uid != 0) {
-        //Authenticated user
-        $u = user_load($user->uid);
-        
-        if( !in_array("Honors",$u->roles) ) {
-            //Only show if the user doesn't have the role "Honors"
-            if($op == 'list') {
-                $block = array();
-                $block[0]['info'] = t("Honors Role Verification");
-                $block[0]['weight'] = -50;
-                return $block;
-            } elseif($op == 'view') {
-                //Generate block
-                if($delta == 0) {
-                    $block = array(
-                        'subject'=>'In Honors?',
-                        'content'=>"Your access permissions do not identify you as an Honors student. If " . 
-							"you are in Honors, please click <a href='".$base_url."/verify_role/'</a>here</a>" . 
-							" to fix your permissions."
-                    );
-                    return $block;
-                }
-            } else {
-                //$op is either 'save' or 'configure' -- do nothing
-                return array();
+    //Only show if the user doesn't have the role "Honors"
+    if($op == 'list') {
+        $block[0]['info'] = t("Honors Role Verification");
+        $block[0]['weight'] = -50;
+    } elseif($op == 'view') {
+        //Generate block only if it is block 0 and the user is logged in.
+        if($delta == 0 && $user->uid != 0) {
+            $u = user_load($user->uid);
+            if( !in_array("Honors",$u->roles) ) {
+                $block['subject']='In Honors?';
+                $block['content']="Your access permissions do not identify you as an Honors student. If " . 
+                        "you are an Honors student, please click <a href='".$base_url."/verify_role/'</a>here</a>" . 
+                        " to fix your permissions.";
             }
-        } else {
-            return array();
         }
-        
-    } else {
-        //Anonymous user -- do nothing
-        return array();
     }
+    return $block;
 }
 
 function _hroleverify_ishonors($uid) {
+    //This query uses username as the key to search by b/c uid
+    //won't be set if the user has never come here before.
     $q = "SELECT s.username
         FROM {h_students_peoplesoft} s
-        WHERE s.id=%d AND s.status=%d";
-    $rs = db_query($q,$uid,'1');
+        WHERE s.username='%s' AND s.status=1";
+    $userObj = user_load($uid);
+    $rs = db_query($q,$userObj->name);
     if(db_fetch_array($rs)){
         return true;
     }else{
@@ -63,9 +50,10 @@ function hroleverify_menu() {
     return $items;
 }
 
+//allow all logged in users to click the link
 function _hroleverify_canaccess() {
     global $user;
-    return _hroleverify_ishonors($user->uid);
+    return ($user-uid != 0);
 }
 
 function _hroleverify_addrole() {
