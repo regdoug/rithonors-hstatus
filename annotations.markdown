@@ -5,46 +5,25 @@ hdata/hnews/hnews.module
 --
 
 ```
- 154	:        //TODO: make this function
- 155	:        //TODO: add dependancy on hdata
- 156	-        $recipients = hdata_student_list();
- 157	-        if($faculty){
- 158	-            $recipients += hdata_faculty_list();
-```
-
-hdata/hcomplearn/hcomplearn.module
+ 164	:    //TODO: (Maybe) make a way for users to opt out of certain types of mailings.
+ 165	-    array_walk($recipients,'_hnews_to_email');
+ 166	-    
+ 167	-    //load the node and send it
 --
-
-```
-  34	:    //TODO: write docs
-  35	-
-  36	-    //AJAX callback
-  37	-    $items['hcomplearn/submission/%'] = array(
---
- 145	://TODO: add permissions checks for approve and reject
- 146	-
- 147	-function hcomplearn_approve_cl_action($submission){
- 148	-    $id = $submission['id'];
+ 180	:    //TODO: (Maybe) add a way to have users input a preferred email address
+ 181	-    $element .= '@rit.edu';
+ 182	-}
+ 183	-
 ```
 
 hdata/hcomplearn/hcomplearn.form.inc
 --
 
 ```
-  20	: //TODO: add field 'hours' and field 'type'
-  21	-function hcomplearn_forms_cl(&$form_state,$page){
-  22	-    if(isset($form_state['storage']['page'])
-  23	-            && isset($form_state['storage']['data']['count'])){
---
- 309	:        //TODO: make this configurable
- 310	-        '#options' => array(
- 311	-            'om' => 'OM',
- 312	-            'ra' => 'RA',
---
- 396	:        //TODO: make this configurable
- 397	-        $maysubmitmsg = t('If you are satisfied with your submission,
- 398	-            you may submit the form now by clicking the button below.');
- 399	-        $submitwarning = '<p><strong>'.
+ 393	:        //TODO: make this configurable
+ 394	-        $maysubmitmsg = t('If you are satisfied with your submission,
+ 395	-            you may submit the form now by clicking the button below.');
+ 396	-        $submitwarning = '<p><strong>'.
 ```
 
 hdata/hdata.module
