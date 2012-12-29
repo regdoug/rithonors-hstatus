@@ -21,15 +21,23 @@ function hdata_menu(){
             'type' => MENU_NORMAL_ITEM,
             'title' => 'Test hData',
             'page callback' => 'hdata_testcases_page',
+            'access callback' => true,
             'file' => 'hdata.testcases.inc',
         ),
-        'testhdata/ajax' => array(
+        'testhdata/ajax/%' => array(
             'type' => MENU_CALLBACK,
             'title' => 'AJAX functions for the hdata test page',
             'page callback' => 'hdata_testcases_ajax',
+            'page arguments' => array(2),
+            'access callback' => true,
             'file' => 'hdata.testcases.inc',
         ),
     );
+}
+
+//DEBUG:  this function is only for debugging
+function hdata_init(){
+    //menu_rebuild();
 }
             
 
@@ -56,7 +64,7 @@ function hdata_user_load($userinfo,$reset=false){
     return _hdata_user_load($userinfo,$reset);
 }
 /* Quick function to determine if the user is an active student */
-function hdata_user_is_active_student($userinfo){ return _hdata_isactivestudent($userinfo['username'],$userinfo['uid']); }
+function hdata_user_is_active_student($userinfo){ return _hdata_isactivestudent($userinfo); }
 /* Saves the basic and continuation elements.  $user is a modified
  * object from hdata_user_load */
 function hdata_user_save($user){return _hdata_user_save($user);}
@@ -163,8 +171,7 @@ function _hdata_user_load($userinfo, $reset = false){
     if(!$reset && ($cache = cache_get("hdata_user:$username",'cache_honors'))) {
         if(!empty($cache->data) && $cache->expire > time()){
             // get from long term cache
-            // all cached data in the db cache is serialized.
-            $husers[$username] = unserialize($cache->data);
+            $husers[$username] = $cache->data;
             return $husers[$username];
         }
     }
@@ -186,7 +193,7 @@ function _hdata_user_load($userinfo, $reset = false){
     $u['points'] = _hdata_user_load_points($username);
     $u['submissions'] = _hdata_user_load_submissions($uid);
 
-    cache_set("hdata_user:$username", serialize($u), 'cache_honors',
+    cache_set("hdata_user:$username", $u, 'cache_honors',
         strtotime('+'.hdata_user_cache_life()));
     $husers[$username] = $u;  //update static variable for future calls
 
@@ -398,7 +405,7 @@ function _hdata_user_save($user){
     
     $success = _hdata_user_save_basic($user) || _hdata_user_save_continuation($user);
     if($success){
-        cache_set("hdata_user:$username", serialize($u), 'cache_honors',
+        cache_set("hdata_user:$username", $u, 'cache_honors',
         strtotime('+'.hdata_user_cache_life()));
         return true;
     }else{ return false; }
@@ -629,7 +636,7 @@ function _hdata_cl_data_by_id($sid){
 }
 
 function _hdata_load_note($id){
-    if(!isnumeric($id)){
+    if(!is_numeric($id)){
         //return false, this can't possibly be right.
         return false;
     }
@@ -723,18 +730,18 @@ function _hdata_faculty_list($college,$type=0){
     return $arry;
 }
 
-function _hdata_isactivestudent($username,$uid){
-    if(empty($username) && empty($uid)){
+function _hdata_isactivestudent($userinfo){
+    if(empty($userinfo['name']) && empty($userinfo['uid'])){
         return false;
     }
-    if(empty($username)){
-        $userObj = user_load($uid);
-        $username = $userObj->name;
+    if(empty($userinfo['name'])){
+        $userObj = user_load($userinfo);
+        $userinfo['name'] = $userObj->name;
     }
     $q = "SELECT s.username
         FROM {h_students_peoplesoft} s
         WHERE s.username='%s' AND s.status=1";
-    $rs = db_query($q,$username);
+    $rs = db_query($q,$userinfo['name']);
     if(db_fetch_array($rs)){
         return true;
     }else{
