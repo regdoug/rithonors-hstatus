@@ -19,6 +19,10 @@ function hcomplearn_timetosave(){return '6 months';}
  */
 function hcomplearn_minhours(){return 20;}
 
+/*--------------Defaults-------------*/
+define('HCOMPLEARN_SUBMIT_MSG','If you are satisfied with your submission, you may submit the form now by clicking the button below.');
+define('HCOMPLEARN_SUBMIT_WARN','Be aware that submitting this form will prevent you from making further submissions until this submission has been reviewed.');
+
 /**
  * Implements hook_menu
  *
@@ -55,6 +59,7 @@ function hcomplearn_menu(){
     //Settings Page
     $items['admin/settings/hcomplearn'] = array(
         'title' => 'hComplearn Settings',
+        'description' => 'Adjust the complearning form and control the open and closed dates.',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('hcomplearn_admin_settings'),
         'file' => 'hcomplearn.admin.inc',

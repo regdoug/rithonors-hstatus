@@ -16,8 +16,8 @@ Committee.
 - To report general website issues (non-code specific) use the
 [Google Code](http://code.google.com/p/rit-honors-tech/issues/list) issue tracker.
 - To report code issues, use the GitHub issue tracker here.
-- Additionally, the file [annotations.markdown](annotations.markdown)
-will contain any tags from the code which are of the form "\\TAG:"
+- Additionally, the file **annotations.markdown**
+will contain any tags from the code which are of the form "`//TAG:`"
 
 
 CONTACT

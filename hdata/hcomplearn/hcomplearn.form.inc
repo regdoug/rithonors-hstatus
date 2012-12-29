@@ -390,13 +390,8 @@ function _hcomplearn_page_last(&$form,$huser,$data){
     }elseif(($submitwarning = hcomplearn_submit_allowed($huser)) != 'ok'){
         $maysubmitmsg = $maysubmit = false;
     }else{
-        //TODO: make this configurable
-        $maysubmitmsg = t('If you are satisfied with your submission,
-            you may submit the form now by clicking the button below.');
-        $submitwarning = '<p><strong>'.
-            t('Be aware that submitting this form will
-            prevent you from making further submissions until this
-            submission has been reviewed.').'</strong></p>';
+        $maysubmitmsg = variable_get('hcomplearn_form_submitmsg',HCOMPLEARN_SUBMIT_MSG);
+        $submitwarning = '<p><strong>'.variable_get('hcomplearn_form_submitwarn',HCOMPLEARN_SUBMIT_WARN).'</strong></p>';
         $maysubmit = true;
     }
     $genericmessage = t('Your responses have been saved as a draft.

@@ -24,6 +24,24 @@ function hcomplearn_admin_settings(){
         '#element_validate' => array('hcomplearn_admin_settings_form_type_options_validate'),
         '#required' => true,
     );
+    $form['submitmessages'] = array(
+        '#type' => 'fieldset',
+        '#title' => 'Submission Messages',
+        '#description' => t('The following messages will be shown on the final page of the submission form.'),
+    );
+    $form['submitmessages']['hcomplearn_form_submitmsg'] = array(
+        '#type' => 'textarea',
+        '#title' => 'Message',
+        '#description' => t('What do you want to tell students before they submit their complearning?'),
+        '#default_value' => variable_get('hcomplearn_form_submitmsg',HCOMPLEARN_SUBMIT_MSG),
+    );
+    $form['submitmessages']['hcomplearn_form_submitwarn'] = array(
+        '#type' => 'textarea',
+        '#title' => 'Warning',
+        '#description' => t('The warning is to tell the student that they may only recieve one chance to submit.'),
+        '#default_value' => variable_get('hcomplearn_form_submitwarn',HCOMPLEARN_SUBMIT_WARN),
+    );
+        
     return system_settings_form($form);
 }
 
