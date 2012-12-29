@@ -5,7 +5,11 @@
  */
 
 function hcomplearn_build_clform(){
-    return drupal_get_form('hcomplearn_forms_cl',(func_num_args() > 0)?func_get_arg(0):'first');
+    if(hcomplearn_form_is_open()){
+        return drupal_get_form('hcomplearn_forms_cl',(func_num_args() > 0)?func_get_arg(0):'first');
+    }else{
+        return "The form is not currently open.  Please check back at a later date.";
+    }
 }
 
 /**
@@ -17,7 +21,6 @@ function hcomplearn_build_clform(){
  *  3. the activity count   ['count']
  */
 
- //TODO: add field 'hours' and field 'type'
 function hcomplearn_forms_cl(&$form_state,$page){
     if(isset($form_state['storage']['page'])
             && isset($form_state['storage']['data']['count'])){
@@ -306,13 +309,7 @@ function _hcomplearn_page_n($n,&$form,$data){
     $form['type'] = array(
         '#title' => t('Type of Activity'),
         '#type' => 'select',
-        //TODO: make this configurable
-        '#options' => array(
-            'om' => 'OM',
-            'ra' => 'RA',
-            'eboard' => 'Club E-Board',
-            'other' => 'Other',
-        ),
+        '#options' => hcomplearn_get_type_options(),
         '#default_value' => 'other',
     );
     $form['hours'] = array(
