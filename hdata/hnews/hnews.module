@@ -4,7 +4,21 @@
  * to be a holy terror of hack.  It will require the user making a content
  * type with custom fields via CCK, and then it will just piggy back on
  * top of them to work.  Sounds fun right?
+ * 
+ * WHY??
+ * -----
+ * The logical follow-up question to the above paragraph is "Why?"
+ * The answer is simple:  Soon Drupal 7 will come along and make this
+ * approach hopelessly obsolete.  We shouldn't work to hard on something
+ * that will soon be obsolete.
  */
+ 
+ /* DEFAULT SETTINGS */
+function _default_sent_fieldname(){ return 'field_mail_sent'; }
+function _default_date_fieldname(){ return 'field_mail_date'; }
+function _default_to_fieldname(){ return 'field_mail_to'; }
+function _default_maxsent(){ return 1; }
+ 
 //send mail via cron
 function hnews_cron(){
     // find nodes with a cck field that says they aren't sent
@@ -12,10 +26,11 @@ function hnews_cron(){
     // if it is ready to send, load the node and send based on the taxonomy terms
     
     //these should all be settings
-    $sent_fieldname = 'field_mail_sent';
-    $date_fieldname = 'field_mail_date';
-    $to_fieldname = 'field_mail_to';
-    $maxsent = 1;
+    
+    $sent_fieldname = variable_get('hnews_mail_sent',_default_sent_fieldname());
+    $date_fieldname = variable_get('hnews_mail_date',_default_date_fieldname());
+    $to_fieldname = variable_get('hnews_mail_to',_default_to_fieldname());
+    $maxsent = variable_get('hnews_maxsent',_default_maxsent());
     
     //The following functions are defined by the CCK module
     //look up more info on them at
@@ -71,9 +86,48 @@ function hnews_cron(){
     }
 }
 
-//this will need a settings page at some point
+function hnews_perm(){
+    return array('administer hnews');
+}
+
 function hnews_menu(){
-    return array();
+    return array(
+        'admin/settings/hnews' => array(
+            'title' => 'hNews Settings',
+            'type' => MENU_NORMAL_ITEM,
+            'access callback' => 'user_access',
+            'access arguments' => array('administer hnews'),
+            'page callback' => 'hnews_admin_settings',
+        ),
+    );
+}
+
+function hnews_admin_settings(){
+    $form['hnews_sent_fieldname'] = array(
+        '#type' => 'textfield',
+        '#title' => t('"Sent" Field'),
+        '#description' => t('Enter the name of the "Sent" field'),
+        '#default_value' => variable_get('hnews_sent_fieldname',_default_sent_fieldname()),
+    );
+    $form['hnews_date_fieldname'] = array(
+        '#type' => 'textfield',
+        '#title' => t('"Date" Field'),
+        '#description' => t('Enter the name of the "Date" field'),
+        '#default_value' => variable_get('hnews_date_fieldname',_default_date_fieldname()),
+    );
+    $form['hnews_to_fieldname'] = array(
+        '#type' => 'textfield',
+        '#title' => t('"To" Field'),
+        '#description' => t('Enter the name of the "To" field'),
+        '#default_value' => variable_get('hnews_to_fieldname',_default_to_fieldname()),
+    );
+    $form['hnews_maxsent'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Max Emails To Send'),
+        '#description' => t('Each email node is one email.'),
+        '#default_value' => variable_get('hnews_maxsent',_default_maxsent()),
+    );
+    return system_settings_form($form);
 }
 
 function _hnews_send_mail($nid,$vid,$to){

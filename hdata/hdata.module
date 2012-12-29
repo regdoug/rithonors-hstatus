@@ -626,14 +626,62 @@ function _hdata_save_note($note, $username){
 }
 
 //TODO: implement list functions
-function _hdata_student_list($college,$active){
+function _hdata_student_list($college,$active = true){
     //if college is null, load all colleges
     //if active is false, load all statuses
-    
-    //will need to query table {h_students}
-    return array();
+    if($active){
+        return _hdata_student_list_peoplesoft($college,$active);
+    }else{
+        $old = _hdata_student_list_legacy($college,$active);
+        $new = _hdata_student_list_peoplesoft($college,$active);
+        return array_unique(array_merge($old,$new);
+    }
 }
-function _hdata_faculty_list($college){
-    //I don't even know how we are going to do faculty on the new site
-    return array();
+function _hdata_student_list_peoplesoft($college,$active){
+    //part of the "WHERE" clause for the active flag
+    if($active){
+        $active_clause = "AND status=1";
+    }
+    //Note that in the case where college is null, the "WHERE" clause will
+    //say college LIKE %, which will match all colleges
+    $rs = db_query("SELECT username FROM {h_students_peoplesoft} WHERE college LIKE '%s%%' $active_clause",$college);
+    $arry = array();
+    if($rs){
+        while(($username = db_result($rs))){
+            //append each username to the return array
+            $arry[] = $username;
+        }
+    }
+    return $arry;
+}
+function _hdata_student_list_legacy($college,$active){
+    if($active){
+        $active_clause = "AND active=1";
+    }
+    //the college is the Peoplesoft Group, so we need to JOIN the h_colleges table.
+    //  h_students only has the legacy 1-letter college code.
+    $rs = db_query("SELECT s.username FROM {h_students} s
+        JOIN {h_colleges} c ON c.college = s.college
+        WHERE c.psgroup LIKE '%s%%' $active_clause",$college);
+    $arry = array();
+    if($rs){
+        while(($username = db_result($rs))){
+            $arry[] = $username;
+        }
+    }
+    return $arry;
+}
+function _hdata_faculty_list($college,$type=0){
+    if($type != 0){
+        $type_clause = "AND type=%d";
+    }
+    $rs = db_query("SELECT username FROM {h_faculty}
+            WHERE college LIKE '%s%%' $type_clause",$college,$type);
+    $arry = array();
+    if($rs){
+        while(($username = db_result($rs))){
+            $arry[] = $username;
+        }
+    }
+    return $arry;
 }
