@@ -14,10 +14,10 @@
  */
  
  /* DEFAULT SETTINGS */
-function _default_sent_fieldname(){ return 'field_mail_sent'; }
-function _default_date_fieldname(){ return 'field_mail_date'; }
-function _default_to_fieldname(){ return 'field_mail_to'; }
-function _default_maxsent(){ return 1; }
+function _hdata_default_sent_fieldname(){ return 'field_mail_sent'; }
+function _hdata_default_date_fieldname(){ return 'field_mail_date'; }
+function _hdata_default_to_fieldname(){ return 'field_mail_to'; }
+function _hdata_default_maxsent(){ return 1; }
  
 //send mail via cron
 function hnews_cron(){
@@ -25,12 +25,10 @@ function hnews_cron(){
     // check their send date
     // if it is ready to send, load the node and send based on the taxonomy terms
     
-    //these should all be settings
-    
-    $sent_fieldname = variable_get('hnews_mail_sent',_default_sent_fieldname());
-    $date_fieldname = variable_get('hnews_mail_date',_default_date_fieldname());
-    $to_fieldname = variable_get('hnews_mail_to',_default_to_fieldname());
-    $maxsent = variable_get('hnews_maxsent',_default_maxsent());
+    $sent_fieldname = variable_get('hnews_mail_sent',_hdata_default_sent_fieldname());
+    $date_fieldname = variable_get('hnews_mail_date',_hdata_default_date_fieldname());
+    $to_fieldname = variable_get('hnews_mail_to',_hdata_default_to_fieldname());
+    $maxsent = variable_get('hnews_maxsent',_hdata_default_maxsent());
     
     //The following functions are defined by the CCK module
     //look up more info on them at
@@ -108,34 +106,34 @@ function hnews_admin_settings(){
         '#type' => 'textfield',
         '#title' => t('"Sent" Field'),
         '#description' => t('Enter the name of the "Sent" field'),
-        '#default_value' => variable_get('hnews_sent_fieldname',_default_sent_fieldname()),
+        '#default_value' => variable_get('hnews_sent_fieldname',_hdata_default_sent_fieldname()),
     );
     $form['hnews_date_fieldname'] = array(
         '#type' => 'textfield',
         '#title' => t('"Date" Field'),
         '#description' => t('Enter the name of the "Date" field'),
-        '#default_value' => variable_get('hnews_date_fieldname',_default_date_fieldname()),
+        '#default_value' => variable_get('hnews_date_fieldname',_hdata_default_date_fieldname()),
     );
     $form['hnews_to_fieldname'] = array(
         '#type' => 'textfield',
         '#title' => t('"To" Field'),
         '#description' => t('Enter the name of the "To" field'),
-        '#default_value' => variable_get('hnews_to_fieldname',_default_to_fieldname()),
+        '#default_value' => variable_get('hnews_to_fieldname',_hdata_default_to_fieldname()),
     );
     $form['hnews_maxsent'] = array(
         '#type' => 'textfield',
         '#title' => t('Max Emails To Send'),
         '#description' => t('Each email node is one email.'),
-        '#default_value' => variable_get('hnews_maxsent',_default_maxsent()),
+        '#default_value' => variable_get('hnews_maxsent',_hdata_default_maxsent()),
     );
     return system_settings_form($form);
 }
 
 function _hnews_send_mail($nid,$vid,$to){
-    $to_field = content_fields($date_fieldname);
-    $to_info = content_database_info($date);
-    $to_tbl = $date_info['table'];
-    $to_column = $sent_info['columns']['value']['column'];
+    $to_field = content_fields($to);
+    $to_info = content_database_info($to_field);
+    $to_tbl = $to_info['table'];
+    $to_column = $to_info['columns']['value']['column'];
     
     $to_result = db_query("SELECT %s FROM {%s} WHERE vid=%d",$to_column,$to_tbl,$vid);
     
@@ -151,8 +149,6 @@ function _hnews_send_mail($nid,$vid,$to){
     
     $recipients = array();
     if($all_students){
-        //TODO: make this function
-        //TODO: add dependancy on hdata
         $recipients = hdata_student_list();
         if($faculty){
             $recipients += hdata_faculty_list();
@@ -165,13 +161,14 @@ function _hnews_send_mail($nid,$vid,$to){
             }
         }
     }
+    //TODO: (Maybe) make a way for users to opt out of certain types of mailings.
     array_walk($recipients,'_hnews_to_email');
     
     //load the node and send it
     $node = node_load($nid,$vid);
-    
     $mail = mimemail('honors@rit.edu',$recipients,$node->title,$node->body);
     
+    //log all sent messags in the Drupal built-in logger.
     if($mail['result']){
         watchdog('hnews', 'sent '.number_format($nid));
     }else{
@@ -180,12 +177,13 @@ function _hnews_send_mail($nid,$vid,$to){
 }
 
 function _hnews_to_email(&$element,$key){
+    //TODO: (Maybe) add a way to have users input a preferred email address
     $element .= '@rit.edu';
 }
 
 //Implements hook_mailengine (defined in mimemail.module)
+//I'm not sure if this function is needed, but just in case...
 function hnews_mailengine($op, $message = array()) {
-    //I'm not sure if this function is needed.
     return mimemail_mailengine($op, $message);
 }
 
@@ -200,14 +198,15 @@ function hnews_mailengine_prepare_message($sender, $recipient, $subject, $body,
         $bcc = '';
         foreach($recipient as $address){
             if(is_string($address) && valid_email_address($address)){
+                // the Bcc header of an email address is a list of
+                // addresses separated by spaces
                 $bcc .= " $address ";
             }
         }
+        //we don't need to worry about header line length and leading/trailing
+        //spaces b/c mimemail_prepare_message will take care of that.
         $headers['Bcc'] = $bcc;
         $recipient = $sender;
     }
-    
-    //or maybe not... I'm not sure how mimemail_prepare_message would react
-    //to an array of recipients
     return mimemail_prepare_message($sender,$recipient,$subject,$body,$plaintext,$headers,$text,$attachments,$mailkey);
 }

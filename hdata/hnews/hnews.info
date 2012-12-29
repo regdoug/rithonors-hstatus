@@ -12,4 +12,5 @@ core = 6.x
 
 ; dependancies
 dependencies[] = content
-dependancies[] = mimemail
+dependencies[] = mimemail
+dependencies[] = hdata
