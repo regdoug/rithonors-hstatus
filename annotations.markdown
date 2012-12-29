@@ -5,11 +5,11 @@ hdata/hnews/hnews.module
 --
 
 ```
-  99	:        //TODO: make this function
- 100	:        //TODO: add dependancy on hdata
- 101	-        $recipients = hdata_student_list();
- 102	-        if($faculty){
- 103	-            $recipients += hdata_faculty_list();
+ 154	:        //TODO: make this function
+ 155	:        //TODO: add dependancy on hdata
+ 156	-        $recipients = hdata_student_list();
+ 157	-        if($faculty){
+ 158	-            $recipients += hdata_faculty_list();
 ```
 
 hdata/hcomplearn/hcomplearn.module
@@ -51,21 +51,27 @@ hdata/hdata.module
 --
 
 ```
-  19	://WARNING:  THIS MODULE DOES NOT DO PERMISSION CHECKS!
-  20	-
-  21	-/* Returns a user array. $user = array('uid => 0, 'name => '') */
-  22	://TODO: second argument "true" only for testing
-  23	-function hdata_user_load($user){return _hdata_user_load($user,true);}
-  24	-/* Saves the basic and continuation elements.  $user is a modified
-  25	- * object from hdata_user_load */
+  38	://DEBUG:  this function is only for debugging
+  39	-function hdata_init(){
+  40	-    //menu_rebuild();
+  41	-}
 --
-  28	://TODO: make this a system variable
-  29	-function hdata_user_cache_life(){return '1 month';}
-  30	-
-  31	-/* id should be uid if $draft is true */
+  52	://WARNING:  THIS MODULE DOES NOT DO PERMISSION CHECKS!
+  53	-
+  54	-/* Returns a user array. $userinfo = array('uid => 0, 'name => '') */
+  55	-function hdata_user_load($userinfo,$reset=false){
+  56	:    //DEBUG: check the calling function
+  57	-    $trace=debug_backtrace();
+  58	-    $caller=array_shift($trace);
+  59	-    $caller=array_shift($trace);
 --
- 492	://TODO: implement list functions
- 493	-function _hdata_student_list($college,$active){
- 494	-    //if college is null, load all colleges
- 495	-    //if active is false, load all statuses
+  72	://TODO: make this a system variable
+  73	-function hdata_user_cache_life(){return '1 month';}
+  74	-
+  75	-/* id should be uid if $draft is true */
+--
+ 672	://TODO: implement list functions
+ 673	-function _hdata_student_list($college,$active = true){
+ 674	-    //if college is null, load all colleges
+ 675	-    //if active is false, load all statuses
 ```
