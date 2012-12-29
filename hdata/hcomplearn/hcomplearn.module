@@ -190,10 +190,7 @@ function _hcomplearn_static_access(){ return true; }
 function _hcomplearn_form_cl_access(){
     global $user;
     if(user_access('submit complementary learning')){
-        $huser = hdata_user_load(array('uid'=>$user->uid,'name'=>$user->name));
-        $status = $huser['continuation']['status'];
-        // active in Honors.
-        return $status <= 2;
+        return hdata_user_is_active_student(array('uid' => $user->uid));
     }else{
         return false;
     }

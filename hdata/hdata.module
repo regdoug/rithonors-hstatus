@@ -7,6 +7,31 @@
  *  - It keeps the code cleaner in the other files.
  *  - It gives more flexibility if we should change the db structure.
  */
+ 
+/*
+ * Implemented Hooks
+ * 
+ * hdata doesn't implement many hooks, because it is primarily an API
+ * module.
+ */
+ 
+function hdata_menu(){
+    return array(
+        'testhdata' => array(
+            'type' => MENU_NORMAL_ITEM,
+            'title' => 'Test hData',
+            'page callback' => 'hdata_testcases_page',
+            'file' => 'hdata.testcases.inc',
+        ),
+        'testhdata/ajax' => array(
+            'type' => MENU_CALLBACK,
+            'title' => 'AJAX functions for the hdata test page',
+            'page callback' => 'hdata_testcases_ajax',
+            'file' => 'hdata.testcases.inc',
+        ),
+    );
+}
+            
 
 /*
  * Public Functions
@@ -18,9 +43,20 @@
 
 //WARNING:  THIS MODULE DOES NOT DO PERMISSION CHECKS!
 
-/* Returns a user array. $user = array('uid => 0, 'name => '') */
-//TODO: second argument "true" only for testing
-function hdata_user_load($user){return _hdata_user_load($user,true);}
+/* Returns a user array. $userinfo = array('uid => 0, 'name => '') */
+function hdata_user_load($userinfo,$reset=false){
+    //DEBUG: check the calling function
+    $trace=debug_backtrace();
+    $caller=array_shift($trace);
+    $caller=array_shift($trace);
+    drupal_set_message("hdata_user_load called by {$caller['function']}");
+    $caller=array_shift($trace);
+    drupal_set_message("which was called by {$caller['function']}");
+    
+    return _hdata_user_load($userinfo,$reset);
+}
+/* Quick function to determine if the user is an active student */
+function hdata_user_is_active_student($userinfo){ return _hdata_isactivestudent($userinfo['username'],$userinfo['uid']); }
 /* Saves the basic and continuation elements.  $user is a modified
  * object from hdata_user_load */
 function hdata_user_save($user){return _hdata_user_save($user);}
@@ -125,10 +161,11 @@ function _hdata_user_load($userinfo, $reset = false){
     }
 
     if(!$reset && ($cache = cache_get("hdata_user:$username",'cache_honors'))) {
-        if(!(empty($cache->data) || $data->expire < time())){
+        if(!empty($cache->data) && $cache->expire > time()){
             // get from long term cache
             // all cached data in the db cache is serialized.
-            return unserialize($cache->data);
+            $husers[$username] = unserialize($cache->data);
+            return $husers[$username];
         }
     }
 
@@ -634,7 +671,7 @@ function _hdata_student_list($college,$active = true){
     }else{
         $old = _hdata_student_list_legacy($college,$active);
         $new = _hdata_student_list_peoplesoft($college,$active);
-        return array_unique(array_merge($old,$new);
+        return array_unique(array_merge($old,$new));
     }
 }
 function _hdata_student_list_peoplesoft($college,$active){
@@ -684,4 +721,23 @@ function _hdata_faculty_list($college,$type=0){
         }
     }
     return $arry;
+}
+
+function _hdata_isactivestudent($username,$uid){
+    if(empty($username) && empty($uid)){
+        return false;
+    }
+    if(empty($username)){
+        $userObj = user_load($uid);
+        $username = $userObj->name;
+    }
+    $q = "SELECT s.username
+        FROM {h_students_peoplesoft} s
+        WHERE s.username='%s' AND s.status=1";
+    $rs = db_query($q,$username);
+    if(db_fetch_array($rs)){
+        return true;
+    }else{
+        return false;
+    }
 }
