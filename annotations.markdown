@@ -1,16 +1,6 @@
 Annotations
 ==
 
-README.markdown
---
-
-```
-  20	:will contain any tags from the code which are of the form "`//TAG:`"
-  21	-
-  22	-
-  23	-CONTACT
-```
-
 hdata/hnews/hnews.module
 --
 
