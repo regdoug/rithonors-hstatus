@@ -1,6 +1,16 @@
 Annotations
 ==
 
+README.markdown
+--
+
+```
+  20	:will contain any tags from the code which are of the form "`//TAG:`"
+  21	-
+  22	-
+  23	-CONTACT
+```
+
 hdata/hnews/hnews.module
 --
 
@@ -14,16 +24,6 @@ hdata/hnews/hnews.module
  181	-    $element .= '@rit.edu';
  182	-}
  183	-
-```
-
-hdata/hcomplearn/hcomplearn.form.inc
---
-
-```
- 393	:        //TODO: make this configurable
- 394	-        $maysubmitmsg = t('If you are satisfied with your submission,
- 395	-            you may submit the form now by clicking the button below.');
- 396	-        $submitwarning = '<p><strong>'.
 ```
 
 hdata/hdata.module
