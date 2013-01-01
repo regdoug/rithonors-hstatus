@@ -42,21 +42,26 @@ function hnews_cron(){
     $sent_column = $sent_info['columns']['value']['column'];
     $date_column = $date_info['columns']['value']['column'];
     
+    //UTC datetime
+    $now = gmdate('Y-m-d H:i:s');
     //I hope this constant is defined for me...
     //if not I know that it should be 1
-    if ($sent['db_storage'] == CONTENT_DB_STORAGE_PER_CONTENT_TYPE){
+    if ($sent['db_storage'] == CONTENT_DB_STORAGE_PER_CONTENT_TYPE 
+            && $date['db_storage'] == CONTENT_DB_STORAGE_PER_CONTENT_TYPE){
         //The date and the sent fields are in the same table.  That makes
         //our job pretty easy.
         
         //select only the nodes we want to send
-        $result = db_query("SELECT nid,vid FROM {%s} WHERE %s = 0 AND %s <= NOW()",$sent_tbl, $sent_column, $date_column);
+        $result = db_query("SELECT nid,vid FROM {%s} WHERE %s = 0 AND %s <= '%s' LIMIT %d",
+                $sent_tbl, $sent_column, $date_column,$now,$maxsent);
         //watchdog('hnews', sprintf("SELECT nid FROM {%s} WHERE %s = 0 AND %s <= NOW()",$sent_tbl, $sent_column, $date_column));
                 
         //loop through as many as we can and send them.
         //if we don't send them all, we can get to them later.
-        for($i = 0; $i < $maxsent; $i++){
-            $n = db_fetch_array($result);
-            _hnews_send_mail($n['nid'],$n['vid'],$to_fieldname);
+        while(($n = db_fetch_array($result))){
+            if(_hnews_send_mail($n['nid'],$n['vid'],$to_fieldname)){
+                db_query("UPDATE {%s} SET `%s`=1 WHERE vid=%d",$sent_tbl,$sent_column,$n['vid']);
+            }
         }
     }else{
         //the date and the sent fields are in different tables. -_-
@@ -75,10 +80,12 @@ function hnews_cron(){
                     
             //if we get a result, send it
             if(($nid = db_result($rs2))){
-                _hnews_send_mail($nid,$vid,$to_fieldname);
+                if(_hnews_send_mail($nid,$vid,$to_fieldname)){
+                    db_query("UPDATE {%s} SET `%s`=1 WHERE vid=%d",$sent_tbl,$sent_column,$vid);
+                }
                 //make sure we don't swamp the server
                 $sent++;
-                if($sent == $maxsent){ break; }
+                if($sent >= $maxsent){ break; }
             }
         }
     }
@@ -161,6 +168,10 @@ function _hnews_send_mail($nid,$vid,$to){
             }
         }
     }
+    if(count($recipients) < 1){
+        //we sent it to everyone on the list already!
+        return true;
+    }
     //TODO: (Maybe) make a way for users to opt out of certain types of mailings.
     array_walk($recipients,'_hnews_to_email');
     
@@ -171,8 +182,10 @@ function _hnews_send_mail($nid,$vid,$to){
     //log all sent messags in the Drupal built-in logger.
     if($mail['result']){
         watchdog('hnews', 'sent '.number_format($nid));
+        return true;
     }else{
         watchdog('hnews', 'failed to send '.number_format($nid));
+        return false;
     }
 }
 
@@ -184,15 +197,17 @@ function _hnews_to_email(&$element,$key){
 //Implements hook_mailengine (defined in mimemail.module)
 //I'm not sure if this function is needed, but just in case...
 function hnews_mailengine($op, $message = array()) {
-    return mimemail_mailengine($op, $message);
+    switch($op){
+        case 'name': return "hNews Extension";
+        case 'description': return 'Extends Mime Mail to provide Bcc support';
+        default: return mimemail_mailengine($op, $message);
+    }
 }
 
-//Implements hook_mailengine_prepare message (defined in mimemail.module)
-function hnews_mailengine_prepare_message($sender, $recipient, $subject, $body, 
+//Implements hook_prepare message (defined in mimemail.module)
+//this function is necessary b/c mimemail doesn't understand multiple recipients
+function hnews_prepare_message($sender, $recipient, $subject, $body, 
         $plaintext = NULL, $headers = array(), $text = NULL, $attachments = array(), $mailkey = '') {
-    //this function is necessary b/c mimemail doesn't understand
-    //multiple recipients
-    
     //Decode recipients
     if(is_array($recipient)){
         $bcc = '';
@@ -206,6 +221,7 @@ function hnews_mailengine_prepare_message($sender, $recipient, $subject, $body,
         //we don't need to worry about header line length and leading/trailing
         //spaces b/c mimemail_prepare_message will take care of that.
         $headers['Bcc'] = $bcc;
+        watchdog('hnews','Bcc header is '.$bcc);
         $recipient = $sender;
     }
     return mimemail_prepare_message($sender,$recipient,$subject,$body,$plaintext,$headers,$text,$attachments,$mailkey);
