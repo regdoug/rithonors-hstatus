@@ -191,6 +191,7 @@ function _hnews_send_mail($nid,$vid,$to){
 
 function _hnews_to_email(&$element,$key){
     //TODO: (Maybe) add a way to have users input a preferred email address
+    //NOTE: This is probably a must for faculty... not so much students.
     $element .= '@rit.edu';
 }
 

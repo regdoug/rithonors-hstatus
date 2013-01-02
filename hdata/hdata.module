@@ -7,38 +7,10 @@
  *  - It keeps the code cleaner in the other files.
  *  - It gives more flexibility if we should change the db structure.
  */
- 
-/*
- * Implemented Hooks
- * 
- * hdata doesn't implement many hooks, because it is primarily an API
- * module.
- */
- 
-function hdata_menu(){
-    return array(
-        'testhdata' => array(
-            'type' => MENU_NORMAL_ITEM,
-            'title' => 'Test hData',
-            'page callback' => 'hdata_testcases_page',
-            'access callback' => true,
-            'file' => 'hdata.testcases.inc',
-        ),
-        'testhdata/ajax/%' => array(
-            'type' => MENU_CALLBACK,
-            'title' => 'AJAX functions for the hdata test page',
-            'page callback' => 'hdata_testcases_ajax',
-            'page arguments' => array(2),
-            'access callback' => true,
-            'file' => 'hdata.testcases.inc',
-        ),
-    );
-}
 
-//DEBUG:  this function is only for debugging
-function hdata_init(){
-    //menu_rebuild();
-}
+//WARNING. THIS MODULE DOES NOT DO PERMISSION CHECKS!
+
+
             
 
 /*
@@ -49,17 +21,21 @@ function hdata_init(){
  * interface is visible at-a-glance.
  */
 
-//WARNING:  THIS MODULE DOES NOT DO PERMISSION CHECKS!
 
 /* Returns a user array. $userinfo = array('uid => 0, 'name => '') */
 function hdata_user_load($userinfo,$reset=false){
-    //DEBUG: check the calling function
+    /*
+     * uncomment the following lines (or move them to other functions)
+     * if you want to investigate performance issues.
+     */
+    /*
     $trace=debug_backtrace();
     $caller=array_shift($trace);
     $caller=array_shift($trace);
     drupal_set_message("hdata_user_load called by {$caller['function']}");
     $caller=array_shift($trace);
     drupal_set_message("which was called by {$caller['function']}");
+    */
     
     return _hdata_user_load($userinfo,$reset);
 }
@@ -96,8 +72,43 @@ function hdata_load_note($id){ return _hdata_load_note($id); }
  * Returns the note on success, FALSE on failure*/
 function hdata_save_note($note, $username){ return _hdata_save_note($note, $username); }
 
+/*
+ * Implemented Hooks
+ * 
+ * hdata doesn't implement many hooks, because it is primarily an API
+ * module.
+ */
+ 
+function hdata_menu(){
+    return array(
+        'testhdata' => array(
+            'type' => MENU_NORMAL_ITEM,
+            'title' => 'Test hData',
+            'page callback' => 'hdata_testcases_page',
+            'access callback' => true,
+            'file' => 'hdata.testcases.inc',
+        ),
+        'testhdata/ajax/%' => array(
+            'type' => MENU_CALLBACK,
+            'title' => 'AJAX functions for the hdata test page',
+            'page callback' => 'hdata_testcases_ajax',
+            'page arguments' => array(2),
+            'access callback' => true,
+            'file' => 'hdata.testcases.inc',
+        ),
+    );
+}
+/*
+ *uncomment the following code to rebuild the menu structure on each page load
+ *WATCH OUT! This will *really* slow down your site!
+ *If you do it, just do it for one page load and then comment it out again.
+ */
+//function hdata_init(){
+    //menu_rebuild();
+//}
+
 /**
- * hdata_user_load
+ * _hdata_user_load
  *
  * Arguments:
  *  1. $user - array with either $user['name'] or $user['uid'] set.
@@ -669,9 +680,18 @@ function _hdata_save_note($note, $username){
     }
 }
 
-//TODO: implement list functions
+/**
+ * This function will provide a username list of students based on the
+ * 'college' and 'active' criteria.
+ * 
+ * @param college If null, load all colleges, otherwise load the college
+ * @param active (Optional) If true, load only active students
+ */
 function _hdata_student_list($college,$active = true){
     //if college is null, load all colleges
+    if(is_null($college)){
+        $college = '%';
+    }
     //if active is false, load all statuses
     if($active){
         return _hdata_student_list_peoplesoft($college,$active);
@@ -706,7 +726,7 @@ function _hdata_student_list_legacy($college,$active){
     //  h_students only has the legacy 1-letter college code.
     $rs = db_query("SELECT s.username FROM {h_students} s
         JOIN {h_colleges} c ON c.college = s.college
-        WHERE c.psgroup LIKE '%s%%' $active_clause",$college);
+        WHERE c.psgroup LIKE '%s' $active_clause",$college);
     $arry = array();
     if($rs){
         while(($username = db_result($rs))){
@@ -715,12 +735,24 @@ function _hdata_student_list_legacy($college,$active){
     }
     return $arry;
 }
-function _hdata_faculty_list($college,$type=0){
-    if($type != 0){
+/**
+ * This function will provide a username list of faculty based on the
+ * 'college' and 'type' criteria supplied.  Type refers to the faculty
+ * account type, which is generally the position which a faculty member
+ * holds.  See h_faculty_types
+ * 
+ * @param college If null, load all colleges, otherwise load the college
+ * @param type If less than zero, load all types, otherwise load only specified
+ */
+function _hdata_faculty_list($college,$type=-1){
+    if(is_null($college)){
+        $college = '%';
+    }
+    if($type >= 0){
         $type_clause = "AND type=%d";
     }
     $rs = db_query("SELECT username FROM {h_faculty}
-            WHERE college LIKE '%s%%' $type_clause",$college,$type);
+            WHERE college LIKE '%s' $type_clause",$college,$type);
     $arry = array();
     if($rs){
         while(($username = db_result($rs))){
@@ -730,6 +762,9 @@ function _hdata_faculty_list($college,$type=0){
     return $arry;
 }
 
+/**
+ * Simply checks to see if a student is active in the Honors program.
+ */
 function _hdata_isactivestudent($userinfo){
     if(empty($userinfo['name']) && empty($userinfo['uid'])){
         return false;
