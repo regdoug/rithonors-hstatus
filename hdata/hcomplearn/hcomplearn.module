@@ -189,18 +189,33 @@ function hcomplearn_get_type_options(){
     $lines = explode("\r\n",$options_setting);
     $options = array();
     foreach($lines as $line){
-        $line = trim(line);
+        $line = trim($line);
         $tokens = explode('|',$line);
         if(count($tokens) == 2){
             $options[$tokens[0]] = $tokens[1];
         }else{
-            watchdog('hcomplearn','Malformed type options',null,WATCHDOG_WARNING);
+            watchdog('hcomplearn','Malformed type options '.$line,null,WATCHDOG_WARNING);
         }
     }
     return $options;
 }
 function _hcomplearn_default_type_options(){
     return "other | Other";
+}
+/**
+ * Helper function for whitelist/blacklist
+ */
+function hcomplearn_get_whitelist_nid(){
+    $setting = variable_get('hcomplearn_whitelist_node','');
+    //The setting string will be formatted like "Title of Node [nid: 99]"
+    if($setting){
+        $pos = strpos($setting, 'nid:');
+        //clever use of PHP type coercion.
+        $nid = substr($setting,$pos+4) + 0.0;
+        //if the substr wasn't actually a number, $nid will be 0
+        if($nid > 0){ return $nid; }
+    }
+    return '';
 }
 
 /**

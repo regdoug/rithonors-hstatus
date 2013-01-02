@@ -24,6 +24,14 @@ function hcomplearn_admin_settings(){
         '#element_validate' => array('hcomplearn_admin_settings_form_type_options_validate'),
         '#required' => true,
     );
+    $form['hcomplearn_whitelist_node'] = array(
+        '#title' => t('White/Blacklist'),
+        '#description' => t('Please type the node title or NID.'),
+        '#type' => 'textfield',
+        '#maxlength' => 512,
+        '#autocomplete_path' => 'ctools/autocomplete/node',
+        '#default_value' => variable_get('hcomplearn_whitelist_node',''),
+    );
     $form['submitmessages'] = array(
         '#type' => 'fieldset',
         '#title' => 'Submission Messages',

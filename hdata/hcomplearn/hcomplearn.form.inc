@@ -306,6 +306,12 @@ function _hcomplearn_page_n($n,&$form,$data){
     $form['heading'] = array(
         '#value' => '<h3>'.t('Activity !n',array('!n'=>$n)).'</h3>',
     );
+    $whitelist_nid = hcomplearn_get_whitelist_nid();
+    if(is_numeric($whitelist_nid)){
+        $form['whitelist'] = array(
+            '#value' => l('Whitelist/Blacklist','node/'.$whitelist_nid),
+        );
+    }
     $form['type'] = array(
         '#title' => t('Type of Activity'),
         '#type' => 'select',
