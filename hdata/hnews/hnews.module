@@ -54,7 +54,6 @@ function hnews_cron(){
         //select only the nodes we want to send
         $result = db_query("SELECT nid,vid FROM {%s} WHERE %s = 0 AND %s <= '%s' LIMIT %d",
                 $sent_tbl, $sent_column, $date_column,$now,$maxsent);
-        //watchdog('hnews', sprintf("SELECT nid FROM {%s} WHERE %s = 0 AND %s <= NOW()",$sent_tbl, $sent_column, $date_column));
                 
         //loop through as many as we can and send them.
         //if we don't send them all, we can get to them later.
@@ -222,7 +221,6 @@ function hnews_prepare_message($sender, $recipient, $subject, $body,
         //we don't need to worry about header line length and leading/trailing
         //spaces b/c mimemail_prepare_message will take care of that.
         $headers['Bcc'] = $bcc;
-        watchdog('hnews','Bcc header is '.$bcc);
         $recipient = $sender;
     }
     return mimemail_prepare_message($sender,$recipient,$subject,$body,$plaintext,$headers,$text,$attachments,$mailkey);

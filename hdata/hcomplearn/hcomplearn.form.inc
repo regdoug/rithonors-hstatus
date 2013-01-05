@@ -137,14 +137,11 @@ function hcomplearn_forms_cl_submit($form, &$form_state){
         _hcomplearn_newentry($form_state);
     }elseif($page == 'last'){
         if($back){
-            drupal_set_message('going back to '.$form_state['storage']['count']);
             _hcomplearn_redirect($form_state,$form_state['storage']['count'],false);
         }else{
             _hcomplearn_savefinal($form_state);
         }
     }else{
-        //DEBUG
-        //drupal_set_message('cl_submit redirecting','warning');
         _hcomplearn_redirect($form_state,false,false);
     }
 }
@@ -252,8 +249,6 @@ function _hcomplearn_saveandredirect(&$form_state,$data,$page){
     $success = hdata_cl_save($sub,true);
     if($success)$form_state['storage']['data'] = $data;
     $page = ($success)?$page:false;
-    //DEBUG
-    //drupal_set_message('saveandredirect: redirecting to '.$page,'warning');
     _hcomplearn_redirect($form_state,$page);
 }
 
@@ -382,8 +377,6 @@ function _hcomplearn_page_last(&$form,$huser,$data){
      * This function is mostly validation to make sure the user is allowed
      * to submit a complearning submission.  Most of these checks are in
      */
-    //DEBUG
-    //if(!$huser) drupal_set_message('page_last: no user','warning');
 
     // Loop through the data array to get total hours
     $hours = 0;
@@ -423,12 +416,6 @@ function _hcomplearn_page_last(&$form,$huser,$data){
         '#prefix' => '<p><strong>',
         '#suffix' => '</strong></p>',
     );
-    //DEBUG
-    $form['user'] = array(
-        '#prefix' => '<pre>',
-        '#value' => print_r($huser,true),
-        '#suffix' => '</pre>',
-    );
     $form['back'] = array(
       '#type' => 'submit',
       '#value' => t('< Prev Page'),
@@ -442,8 +429,6 @@ function _hcomplearn_page_last(&$form,$huser,$data){
 }
 
 function hcomplearn_submit_allowed($huser){
-    //DEBUG
-    //drupal_set_message('hcomplearn_submit allowed: '.$huser['name'],'warning');
     if(!$huser){
         return t('Failed to load your profile.');
     }elseif($huser['continuation']['comp_learn'] == 1){

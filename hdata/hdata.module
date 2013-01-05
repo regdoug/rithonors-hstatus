@@ -2,16 +2,13 @@
 /**
  * @file hdata.module
  * Manages the database queries for the Honors modules.
+ * 
+ * WARNING. THIS MODULE DOES NOT DO PERMISSION CHECKS!
  *
  * I chose to put this in a separate module for two reasons.
  *  - It keeps the code cleaner in the other files.
  *  - It gives more flexibility if we should change the db structure.
  */
-
-//WARNING. THIS MODULE DOES NOT DO PERMISSION CHECKS!
-
-
-            
 
 /*
  * Public Functions
@@ -21,24 +18,8 @@
  * interface is visible at-a-glance.
  */
 
-
 /* Returns a user array. $userinfo = array('uid => 0, 'name => '') */
-function hdata_user_load($userinfo,$reset=false){
-    /*
-     * uncomment the following lines (or move them to other functions)
-     * if you want to investigate performance issues.
-     */
-    /*
-    $trace=debug_backtrace();
-    $caller=array_shift($trace);
-    $caller=array_shift($trace);
-    drupal_set_message("hdata_user_load called by {$caller['function']}");
-    $caller=array_shift($trace);
-    drupal_set_message("which was called by {$caller['function']}");
-    */
-    
-    return _hdata_user_load($userinfo,$reset);
-}
+function hdata_user_load($userinfo,$reset=false){ return _hdata_user_load($userinfo,$reset); }
 /* Quick function to determine if the user is an active student */
 function hdata_user_is_active_student($userinfo){ return _hdata_isactivestudent($userinfo); }
 /* Saves the basic and continuation elements.  $user is a modified
@@ -457,8 +438,6 @@ function _hdata_cl_load($id,$draft){
         if(isset($drafts[$id])){
             return $drafts[$id];
         }
-        //DEBUG
-        //drupal_set_message('hdata_cl_load: loading draft','warning');
         $data = _hdata_cldraft_load($id,hdata_cl_draft_life());
 
         if($data){
@@ -466,8 +445,6 @@ function _hdata_cl_load($id,$draft){
             unset($data['id']);
         }else{
             $sid = false;
-            //DEBUG
-            //drupal_set_message('hdata_cl_load: no data in draft','warning');
         }
         $retval = array(
             'uid' => $id,
@@ -608,8 +585,6 @@ function _hdata_cldraft_save($uid,$data){
     }
 
     if($id >= 0){
-        //DEBUG
-        //drupal_set_message('hdata_cldraft_save: saving existing draft','warning');
         $dataobj = new stdClass();
         $dataobj->id = $id;
         $dataobj->submission = serialize($data);
@@ -623,8 +598,6 @@ function _hdata_cldraft_save($uid,$data){
 
         return drupal_write_record('h_cldrafts',$draftobj,'uid');
     }else{
-        //DEBUG
-        //drupal_set_message('hdata_cldraft_save: saving new draft','warning');
         //this probably only works for MySQL...
         db_query('INSERT INTO {h_cl_data} (submission) VALUES (%b)',serialize($data));
         db_query('INSERT INTO {h_cldrafts} (uid,updatetime,id) VALUES (%d,%d,LAST_INSERT_ID())',$uid,time());
