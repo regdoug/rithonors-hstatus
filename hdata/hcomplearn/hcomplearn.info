@@ -13,5 +13,6 @@ core = 6.x
 ; Dependencies
 dependencies[] = hdata
 dependencies[] = views
+dependencies[] = views_bulk_operations
 dependencies[] = colorbox
 dependencies[] = ctools

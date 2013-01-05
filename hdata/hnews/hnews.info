@@ -10,7 +10,7 @@ package = Honors
 ; required
 core = 6.x
 
-; dependancies
+; dependencies
 dependencies[] = content
 dependencies[] = mimemail
 dependencies[] = hdata
