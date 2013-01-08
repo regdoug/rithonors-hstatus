@@ -196,7 +196,6 @@ function _hdata_user_load_basic_peoplesoft($username){
 			-The tables have been changed
 			-"active" has been changed to "status"
 			-"department" has been changed to "dept"
-			-"program" has been removed
 	*/
     $q_basic =
     "SELECT
@@ -227,7 +226,7 @@ function _hdata_user_load_basic_peoplesoft($username){
              'college' => $arry['college'],
              'department' => $arry['dpt'],
 			 'program' => $arry['program'],
-			 'planid' => $arry['planid']
+			 'planid' => $arry['planid'],
              'gpa' => $arry['gpa'],
          );
      }else{
