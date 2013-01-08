@@ -205,8 +205,8 @@ function _hdata_user_load_basic_peoplesoft($username){
         student.dept dpt,
         student.status active,
 		student.planid planid,
-        gpas.gpa gpa
-		plans.description program,
+        gpas.gpa gpa,
+		plans.description program
      FROM {h_students_peoplesoft} student
      JOIN {h_students_gpa} gpas
         ON student.username = gpas.username
