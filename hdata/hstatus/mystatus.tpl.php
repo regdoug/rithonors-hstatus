@@ -34,7 +34,7 @@ if($displaynone):
 <h2>You are not in the Honors Database</h2>
 <?php else: ?>
 
-<h2>Honors Status for <?php print $username; ?></h2>
+<h2><?php t('Honor Status for @user',array('@user'=>$username)); ?></h2>
 <table>
     <thead>
         <tr><td>Fullname</td>
