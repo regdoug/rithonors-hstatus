@@ -19,6 +19,10 @@ function hcomplearn_timetosave(){return '6 months';}
  */
 function hcomplearn_minhours(){return 20;}
 
+/*--------------Defaults-------------*/
+define('HCOMPLEARN_SUBMIT_MSG','If you are satisfied with your submission, you may submit the form now by clicking the button below.');
+define('HCOMPLEARN_SUBMIT_WARN','Be aware that submitting this form will prevent you from making further submissions until this submission has been reviewed.');
+
 /**
  * Implements hook_menu
  *
@@ -30,10 +34,8 @@ function hcomplearn_minhours(){return 20;}
  * can visit it (throws a 403 on false)
  */
 function hcomplearn_menu(){
-
-    //TODO: write docs
-
     //AJAX callback
+    //see docs for hcomplearn_cl_submission
     $items['hcomplearn/submission/%'] = array(
         'title' => 'CL submission',
         'page callback' => 'hcomplearn_cl_submission',
@@ -45,14 +47,25 @@ function hcomplearn_menu(){
     );
 
     //complearning form
-    //note that even though no % is in the path, anything postfixing
-    //the path gets passed as an argument
+    //note that even though no % is in the path, anything following 'submitcl' gets passed as an argument.
+    //(This is true of all menu entries with blank type)
     $items['hcomplearn/submitcl'] = array(
         'title' => 'Comp Learning Form',
         'page callback' => 'hcomplearn_build_clform',
         'file' => 'hcomplearn.form.inc',
         'access callback' => '_hcomplearn_form_cl_access',
     );
+    
+    //Settings Page
+    $items['admin/settings/hcomplearn'] = array(
+        'title' => 'hComplearn Settings',
+        'description' => 'Adjust the complearning form and control the open and closed dates.',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('hcomplearn_admin_settings'),
+        'file' => 'hcomplearn.admin.inc',
+        'access arguments' => array('administer honors status'),
+    );
+    
     return $items;
 }
 
@@ -142,19 +155,98 @@ function hcomplearn_action_info(){
   );
 }
 
-//TODO: add permissions checks for approve and reject
-
+/**
+ * Performs a database update to approve a Complearning submission,
+ * provided that the user has the appropriate permissions.
+ */
 function hcomplearn_approve_cl_action($submission){
-    $id = $submission['id'];
-    db_query('UPDATE {h_cl} SET status=1 WHERE id=%d',$id);
+    if(user_access('review complementary learning')){
+        $id = $submission['id'];
+        db_query('UPDATE {h_cl} SET status=1 WHERE id=%d',$id);
+    }else{
+        drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
+    }
 }
+/**
+ * Performs a database update to reject a Complearning submission,
+ * provided that the user has the appropriate permissions.
+ */
 function hcomplearn_reject_cl_action($submission){
-    $id = $submission['id'];
-    db_query('UPDATE {h_cl} SET status=2 WHERE id=%d',$id);
+    if(user_access('review complementary learning')){
+        $id = $submission['id'];
+        db_query('UPDATE {h_cl} SET status=2 WHERE id=%d',$id);
+    }else{
+        drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
+    }
+}
+
+/**
+ * Helper function to get type options
+ */
+function hcomplearn_get_type_options(){
+    $options_setting = variable_get('hcomplearn_form_type_options',_hcomplearn_default_type_options());
+    //use CR+LF line ending b/c that how textarea text is formatted.
+    $lines = explode("\r\n",$options_setting);
+    $options = array();
+    foreach($lines as $line){
+        $line = trim($line);
+        $tokens = explode('|',$line);
+        if(count($tokens) == 2){
+            $options[$tokens[0]] = $tokens[1];
+        }else{
+            watchdog('hcomplearn','Malformed type options '.$line,null,WATCHDOG_WARNING);
+        }
+    }
+    return $options;
+}
+function _hcomplearn_default_type_options(){
+    return "other | Other";
+}
+/**
+ * Helper function for whitelist/blacklist
+ */
+function hcomplearn_get_whitelist_nid(){
+    $setting = variable_get('hcomplearn_whitelist_node','');
+    //The setting string will be formatted like "Title of Node [nid: 99]"
+    if($setting){
+        $pos = strpos($setting, 'nid:');
+        //clever use of PHP type coercion.
+        $nid = substr($setting,$pos+4) + 0.0;
+        //if the substr wasn't actually a number, $nid will be 0
+        if($nid > 0){ return $nid; }
+    }
+    return '';
+}
+
+/**
+ * Checks the settings to determine whether or not the complearning form
+ * is currently open
+ */
+function hcomplearn_form_is_open(){
+    $open = variable_get('hcomplearn_date_open',null);
+    $close = variable_get('hcomplearn_date_close',null);
+    if($open){
+        $openstr = "{$open['year']}-{$open['month']}-{$open['day']} 00:00:00";
+        $opentime = strtotime($openstr);
+        drupal_set_message("Form opens on $openstr ($opentime)");
+    }else{
+        $open = 0;
+    }
+    if($close){
+        $closestr = "{$close['year']}-{$close['month']}-{$close['day']} 23:59:00";
+        $closetime = strtotime($closestr);
+        drupal_set_message("Form closes on $closestr ($closetime)");
+    }else{
+        $close = PHP_INT_MAX;
+    }
+    return (time() > $opentime) && (time() < $closetime);
 }
 
 /*
  * Implements hook_views_bulk_operations_object_info
+ * 
+ * This hook tells Views Bulk Operations (VBO) that bulk operations
+ * are supported for the 'complearning' type and how to access the table.
  */
 function hcomplearn_views_bulk_operations_object_info(){
     return array(
@@ -171,6 +263,8 @@ function hcomplearn_views_bulk_operations_object_info(){
 
 /**
  * Implements hook_views_api
+ * 
+ * This tells Views that hcomplearn has a views.inc file.
  */
 function hcomplearn_views_api(){
     return array('api'=>2);
@@ -178,27 +272,23 @@ function hcomplearn_views_api(){
 
 /*----------------Access Callbacks------------------*/
 
-
-/*
- * for when you just need to signify unlimited access
- */
-function _hcomplearn_static_access(){ return true; }
-
-/*
- * _hcomplearn_form_cl_access
+/**
+ * Allows access if the user is an active student and has permission to
+ * submit comp learning.
  */
 function _hcomplearn_form_cl_access(){
     global $user;
     if(user_access('submit complementary learning')){
-        $huser = hdata_user_load(array('uid'=>$user->uid,'name'=>$user->name));
-        $status = $huser['continuation']['status'];
-        // active in Honors.
-        return $status <= 2;
+        return hdata_user_is_active_student(array('uid' => $user->uid));
     }else{
         return false;
     }
 }
 
+/**
+ * Allows access to the reviewing pages if the user has the
+ * 'review complementary learning' permission or is the superuser (UID 1)
+ */
 function _hcomplearn_cl_review_access($op,$submission=null,$account=null){
     if(is_numeric($op)){
         $account = user_load($op);

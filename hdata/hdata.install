@@ -199,7 +199,112 @@ $s['h_cl_data'] = array(
     'primary key' => array('id'),
 );
 
+$s['h_faculty'] = array(
+    'description' => t('Table of Honors Faculty'),
+    'fields' => array(
+        'uid' => array(
+            'description' => t('Drupal uid'),
+            'type' => 'int',
+            'not null' => true,
+        ),
+        'username' => array(
+            'description' => t('RIT DCE'),
+            'type' => 'varchar',
+            'not null' => true,
+            'length' => 20,
+        ),
+        'firstname' => array(
+            'description' => t('First name'),
+            'type' => 'varchar',
+            'length' => 50,
+            'not null' => true,
+        ),
+        'lastname' => array(
+            'description' => t('Last name'),
+            'type' => 'varchar',
+            'length' => 50,
+            'not null' => true,
+        ),
+        'college' => array(
+            'description' => t('College Abbreviation'),
+            'type' => 'varchar',
+            'length' => 10,
+            'default' => null,
+        ),
+        'department' => array(
+            'description' => t('Department Code'),
+            'type' => 'varchar',
+            'length' => 10,
+            'default' => null,
+        ),
+        'phone' => array(
+            'description' => t('Phone'),
+            'type' => 'varchar',
+            'length' => 25,
+            'default' => null,
+        ),
+        'email' => array(
+            'description' => t('Preferred Email Address'),
+            'type' => 'varchar',
+            'length' => 30,
+            'default' => null,
+        ),
+        'office' => array(
+            'description' => t('Office Location'),
+            'type' => 'varchar',
+            'length' => 30,
+            'default' => null,
+        ),
+        'website' => array(
+            'description' => t('Personal Website (If applicable)'),
+            'type' => 'varchar',
+            'length' => 40,
+            'default' => null,
+        ),
+        'account_type' => array(
+            'description' => t('Account Type (see h_faculty_types)'),
+            'type' => 'int',
+            'size' => 'tiny',
+            'not null' => true,
+            'default' => 0,
+        ),
+    ),
+    'primary key' => array('username'),
+);
+$s['h_faculty_types'] = array(
+    'description' => t('types for h_faculty'),
+    'fields' => array(
+        'id' => array(
+            'description' => t('Account Type (see h_faculty_types)'),
+            'type' => 'int',
+            'size' => 'tiny',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'code' => array(
+            'description' => t('Machine Readable Name'),
+            'type' => 'varchar',
+            'length' => 10,
+            'not null' => true,
+        ),
+        'name' => array(
+            'description' => t('Human Readable Name'),
+            'type' => 'varchar',
+            'length' => 25,
+            'not null' => true,
+        ),
+        'description' => array(
+            'description' => t('Description'),
+            'type' => 'varchar',
+            'length' => 140,
+            'default' => null,
+        ),
+    ),
+    'primary key' => array('id'),
+);
+
 //New Legacy Tables (for PeopleSoft)
+// ^^ haha, the phrase "New Legacy" looks funny (but it is right)
 $s['h_students_peoplesoft'] = array(
     'description' => t('Table of Honors students'),
     'fields' => array(

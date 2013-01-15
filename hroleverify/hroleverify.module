@@ -4,48 +4,49 @@
 function hroleverify_block( $op = 'list', $delta = 0, $edit = array() ) {
     global $user;
     global $base_url;
+    $block = array();
     
-    if($user->uid != 0) {
-        //Authenticated user
-        $u = user_load($user->uid);
-        
-        if( !in_array("Honors",$u->roles) ) {
-            //Only show if the user doesn't have the role "Honors"
-            if($op == 'list') {
-                $block = array();
-                $block[0]['info'] = t("Honors Role Verification");
-                $block[0]['weight'] = -50;
-                return $block;
-            } elseif($op == 'view') {
-                //Generate block
-                if($delta == 0) {
-                    $block = array(
-                        'subject'=>'In Honors?',
-                        'content'=>"Your access permissions do not identify you as an Honors student. If " . 
-							"you are in Honors, please click <a href='".$base_url."/verify_role/'</a>here</a>" . 
-							" to fix your permissions."
-                    );
-                    return $block;
-                }
-            } else {
-                //$op is either 'save' or 'configure' -- do nothing
-                return array();
+    //Only show if the user doesn't have the role "Honors"
+    if($op == 'list') {
+        $block[0]['info'] = t("Honors Role Verification");
+        $block[0]['weight'] = -50;
+    } elseif($op == 'view') {
+        //Generate block only if it is block 0 and the user is logged in.
+        if($delta == 0 && $user->uid != 0) {
+            $u = user_load($user->uid);
+            if( !in_array("Honors",$u->roles) && !in_array("Faculty",$u->roles)) {
+                $block['subject']='In Honors?';
+                $block['content']="Your access permissions do not identify you as an Honors student. If " . 
+                        "you are an Honors student, please click <a href='".$base_url."/verify_role/'</a>here</a>" . 
+                        " to fix your permissions.";
             }
-        } else {
-            return array();
         }
-        
-    } else {
-        //Anonymous user -- do nothing
-        return array();
+    }
+    return $block;
+}
+
+function _hroleverify_ishonors($username) {
+    //This query uses username as the key to search by b/c id
+    //won't be set if the user has never come here before.
+    $q = "SELECT s.username
+        FROM {h_students_peoplesoft} s
+        WHERE s.username='%s' AND s.status=1";
+    $rs = db_query($q,$username);
+    if(db_fetch_array($rs)){
+        return true;
+    }else{
+        return false;
     }
 }
 
-function _hroleverify_ishonors($uid) {
-    $q = "SELECT s.username
-        FROM {h_students_peoplesoft} s
-        WHERE s.id=%d AND s.status=%d";
-    $rs = db_query($q,$uid,'1');
+function _hroleverify_isfaculty($uid) {
+    //This query uses username as the key to search by b/c uid
+    //won't be set if the user has never come here before.
+    $q = "SELECT username
+        FROM {h_faculty}
+        WHERE username='%s'";
+    $userObj = user_load($uid);
+    $rs = db_query($q,$userObj->name);
     if(db_fetch_array($rs)){
         return true;
     }else{
@@ -63,24 +64,55 @@ function hroleverify_menu() {
     return $items;
 }
 
+//allow all logged in users to click the link
 function _hroleverify_canaccess() {
     global $user;
-    return _hroleverify_ishonors($user->uid);
+    return ($user->uid != 0);
 }
 
 function _hroleverify_addrole() {
     global $user;
-    if(_hroleverify_ishonors($user->uid)) {
-        $u = user_load($user->uid);
-        $rid = _hroleverify_rid();
-        $u->roles[$rid] = 'Honors';
-        
-        watchdog('haddrole','Adding role "Honors" to user @name',array('@name' => $u->name));
-        
-        user_save($u, array('roles'=>$u->roles));
+    global $base_url;
+    
+    if(!$user->name){
+	$user = user_load($user);
     }
     
-    global $base_url;
+    if(_hroleverify_ishonors($user->name)) {
+	$role = 'Honors';
+        $rid = _hroleverify_rid($role);
+	if($rid < 0){
+	    drupal_set_message("Your system seems to be misconfigured...",'error');
+	    drupal_goto($base_url);
+	    return;
+	}
+        $user->roles[$rid] = $role;
+	
+        watchdog('haddrole','Adding role "%role" to user @name',array('@name' => $user->name,'%role'=>$role));
+        
+        user_save($user, array('roles'=>$user->roles));
+	
+	//save the UID to the h_students_peoplesoft table
+	db_query("UPDATE {h_students_peoplesoft} SET id=%d WHERE username='%s'",$user->uid,$user->name);
+    }
+    elseif(_hroleverify_isfaculty($user->name)) {
+	$role = 'Faculty';
+        $rid = _hroleverify_rid($role);
+	if($rid < 0){
+	    drupal_set_message("Your system seems to be misconfigured...",'error');
+	    drupal_goto($base_url);
+	    return;
+	}
+        $user->roles[$rid] = $role;
+        
+        watchdog('haddrole','Adding role "%role" to user @name',array('@name' => $user->name,'%role'=>$role));
+        
+        user_save($user, array('roles'=>$user->roles));
+	
+	//save the UID to the h_students_peoplesoft table
+	db_query("UPDATE {h_faculty} SET uid=%d WHERE username='%s'",$user->uid,$user->name);
+    }
+    
     drupal_goto($base_url);
 }
 
@@ -89,21 +121,26 @@ function _hroleverify_addrole() {
 
 //private function to get the role id.
 //purpose is purely for code clarity.
-function _hroleverify_rid(){
+function _hroleverify_rid($role){
+    if(!preg_match('/^[\\w\\s]+$/',$role)){
+	return -1;
+    }else{
+	$variable = 'hroleverify_rid_'.strtolower(str_replace(' ', '_', $role));
 	//variable_get retrieves system variables.  here we retrieve our variable 'haddrole_rid'
-	$rid = variable_get('hroleverify_rid',0);
+	$rid = variable_get($variable,0);
 	
 	//the variable wasn't set in the database
 	//this means that we haven't ever tried to retrieve the role.
 	if ($rid == 0){ 
-		$rs = db_query("SELECT rid FROM {role} WHERE name = '%s'",'Honors');
+		$rs = db_query("SELECT rid FROM {role} WHERE name = '%s'",$role);
 		if($result = db_fetch_object($rs)){
 			$rid = $result->rid;
-		}else{//there is no role called 'Honors'
+		}else{//there is no role called '$role'
 			//set rid to -1 so that we don't check again.
 			$rid = -1;
 		}
-		variable_set('hroleverify_rid',$rid);
+		variable_set($variable,$rid);
 	}
 	return $rid;
+    }
 }

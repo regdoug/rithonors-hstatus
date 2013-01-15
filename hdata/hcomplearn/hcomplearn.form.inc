@@ -5,7 +5,11 @@
  */
 
 function hcomplearn_build_clform(){
-    return drupal_get_form('hcomplearn_forms_cl',(func_num_args() > 0)?func_get_arg(0):'first');
+    if(hcomplearn_form_is_open()){
+        return drupal_get_form('hcomplearn_forms_cl',(func_num_args() > 0)?func_get_arg(0):'first');
+    }else{
+        return "The form is not currently open.  Please check back at a later date.";
+    }
 }
 
 /**
@@ -17,7 +21,6 @@ function hcomplearn_build_clform(){
  *  3. the activity count   ['count']
  */
 
- //TODO: add field 'hours' and field 'type'
 function hcomplearn_forms_cl(&$form_state,$page){
     if(isset($form_state['storage']['page'])
             && isset($form_state['storage']['data']['count'])){
@@ -303,16 +306,16 @@ function _hcomplearn_page_n($n,&$form,$data){
     $form['heading'] = array(
         '#value' => '<h3>'.t('Activity !n',array('!n'=>$n)).'</h3>',
     );
+    $whitelist_nid = hcomplearn_get_whitelist_nid();
+    if(is_numeric($whitelist_nid)){
+        $form['whitelist'] = array(
+            '#value' => l('Whitelist/Blacklist','node/'.$whitelist_nid),
+        );
+    }
     $form['type'] = array(
         '#title' => t('Type of Activity'),
         '#type' => 'select',
-        //TODO: make this configurable
-        '#options' => array(
-            'om' => 'OM',
-            'ra' => 'RA',
-            'eboard' => 'Club E-Board',
-            'other' => 'Other',
-        ),
+        '#options' => hcomplearn_get_type_options(),
         '#default_value' => 'other',
     );
     $form['hours'] = array(
@@ -393,13 +396,8 @@ function _hcomplearn_page_last(&$form,$huser,$data){
     }elseif(($submitwarning = hcomplearn_submit_allowed($huser)) != 'ok'){
         $maysubmitmsg = $maysubmit = false;
     }else{
-        //TODO: make this configurable
-        $maysubmitmsg = t('If you are satisfied with your submission,
-            you may submit the form now by clicking the button below.');
-        $submitwarning = '<p><strong>'.
-            t('Be aware that submitting this form will
-            prevent you from making further submissions until this
-            submission has been reviewed.').'</strong></p>';
+        $maysubmitmsg = variable_get('hcomplearn_form_submitmsg',HCOMPLEARN_SUBMIT_MSG);
+        $submitwarning = '<p><strong>'.variable_get('hcomplearn_form_submitwarn',HCOMPLEARN_SUBMIT_WARN).'</strong></p>';
         $maysubmit = true;
     }
     $genericmessage = t('Your responses have been saved as a draft.
