@@ -6,18 +6,17 @@
  */
 //TODO: change number values for points.
 //  we'll also need one for points type. (this means another file)
-class hpoints_views_handler_field_status extends views_handler_field {
+class hpoints_views_handler_field_type extends views_handler_field {
     function render($values) {
         $value = intval($values->{$this->field_alias});
-        switch ($value) {
-            case 0: return 'Pending';
-            case 1: return 'Approved';
-            case -1: return 'Rejected';
-            default: return strval($value);
+        //TODO: load h_points_menu table into $types
+        if($types[$value]){
+            return($types[$value]);
+        }else{
+            return number_format($value,0);
         }
     }
     function allow_advanced_render() {
         return false;
     }
 }
-        
