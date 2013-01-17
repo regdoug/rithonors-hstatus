@@ -1,6 +1,5 @@
 <?php
 
-//REWITE: whole file
 /**
  * Implements hook_views_handlers to register our handlers with Views
  */
@@ -12,6 +11,10 @@ function hpoints_views_handlers(){
             'parent' => 'views_handler_field',
             //the file our handler is located in
             'file' => 'hpoints_views_handler_field_status.inc',
+        ),
+        'hpoints_views_handler_field_type' => array(
+            'parent' => 'views_handler_field',
+            'file' => 'hpoints_views_handler_field_type.inc',
         ),
         'hpoints_views_handler_filter_cl_status' => array(
             'parent' => 'views_handler_filter_in_operator',
@@ -29,11 +32,11 @@ function hpoints_views_handlers(){
  * get forgotten in hdata.
  */
 function hpoints_views_data(){
-    $group = t('Complearning');
+    $group = t('Honors');
     $base = array(
         'field' => 'id',
-        'title' => t('Complearning Entries'),
-        'help' => t('Current year complearning submissions'),
+        'title' => t('Points Submissions'),
+        'help' => t('Honors points submissions'),
         'weight' => 0,
     );
     $fields = array(
@@ -45,65 +48,39 @@ function hpoints_views_data(){
                 'click sortable' => false,
             ),
         ),
-        'uid' => array(
-            'title' => t('Submitter'),
-            'help' => t('The user who submitted this entry'),
+        //TODO: test that this works
+        'username' => array(
+            'title' => t('User'),
+            'help' => t('The user to whom these points belong.'),
             'relationship' => array(
                 'base' => 'user',
-                'base field' => 'uid',
+                'base field' => 'name',
                 // 'field' => 'uid' apparently not needed.
                 'handler' => 'views_handler_relationship',
-                'label' => t('Submitter'),
-                'title' => t('Submitter'),
-                'help' => t('The user that submitted the entry.'),
+                'label' => t('User'),
+                'title' => t('User'),
+                'help' => t('This the user who owns the submission.'),
             ),
         ),
-        //Note the custom handler to translate the numbers to status strings.
-        'status' => array(
-            'title' => t('Submission Status'),
+        //Note the custom handlers to translate the numbers to status strings.
+        'pointID' => array(
+            'title' => t('Submission Type'),
             'field' => array(
-                'handler' => 'hpoints_views_handler_field_status',
+                'handler' => 'hpoints_views_handler_field_type',
                 'click sortable' => TRUE,
-            ),
-            'filter' => array(
-                'handler' => 'hpoints_views_handler_filter_cl_status',
             ),
             'sort' => array(
                 'handler' => 'views_handler_sort',
             ),
         ),
-        'hours' => array(
-            'title' => t('Total hours spent'),
-            'help' => t('Sum of the hours spent on each activity'),
-            'field' => array(
-                'handler' => 'views_handler_field_numeric',
-                'click sortable' => TRUE,
-            ),
-            'filter' => array(
-                'handler' => 'views_handler_filter_numeric',
-            ),
-            'sort' => array(
-                'handler' => 'views_handler_sort',
-            ),
-        ),
-        'types' => array(
-            'title' => t('Types of activities performed'),
-            'help' => t('Types of activities as whitespace separated tags'),
+        'explanation' => array(
+            'title' => t('Description'),
+            'help' => t('Why the points should granted.'),
             'field' => array(
                 'handler' => 'views_handler_field',
-                'click sortable' => true,
-            ),
-            'sort' => array(
-                'handler' => 'views_handler_sort',
-            ),
-            'filter' => array(
-                'handler' => 'views_handler_filter_string',
-            ),
-            'argument' => array(
-                'handler' => 'views_handler_argument_string',
             ),
         ),
-        'submit_date' => array(
+        'submitted' => array(
             'title' => t('Date Submitted'),
             'field' => array(
                 'handler' => 'views_handler_field_date',
@@ -116,7 +93,46 @@ function hpoints_views_data(){
                 'handler' => 'views_handler_filter_date',
             ),
         ),
-        'review_date' => array(
+        'submittedBy' => array(
+            'title' => t('Submitter'),
+            'help' => t('User who created this submission.  May be different than User.'),
+            'relationship' => array(
+                'base' => 'user',
+                'base field' => 'name',
+                // 'field' => 'uid' apparently not needed.
+                'handler' => 'views_handler_relationship',
+                'label' => t('Submitter'),
+                'title' => t('Submitter'),
+                'help' => t('The user that submitted the entry.'),
+            ),
+        ),
+        'approved' => array(
+            'title' => t('Submission Status'),
+            'field' => array(
+                'handler' => 'hpoints_views_handler_field_status',
+                'click sortable' => TRUE,
+            ),
+            'filter' => array(
+                'handler' => 'hpoints_views_handler_filter_cl_status',
+            ),
+            'sort' => array(
+                'handler' => 'views_handler_sort',
+            ),
+        ),
+        'approvedBy' => array(
+            'title' => t('Reviewer'),
+            'help' => t('The user who reviewed this submission.'),
+            'relationship' => array(
+                'base' => 'user',
+                'base field' => 'name',
+                // 'field' => 'uid' apparently not needed.
+                'handler' => 'views_handler_relationship',
+                'label' => t('Reviewer'),
+                'title' => t('Reviewer'),
+                'help' => t('The user that reviewed this submission.'),
+            ),
+        ),
+        'approvedTime' => array(
             'title' => t('Date Reviewed'),
             'field' => array(
                 'handler' => 'views_handler_field_date',
@@ -129,22 +145,29 @@ function hpoints_views_data(){
                 'handler' => 'views_handler_filter_date',
             ),
         ),
-        'reviewer_uid' => array(
-            'title' => t('Reviewer'),
-            'help' => t('The user who reviewed this entry'),
-            'relationship' => array(
-                'base' => 'user',
-                'base field' => 'uid',
-                // 'field' => 'uid' apparently not needed.
-                'handler' => 'views_handler_relationship',
-                'label' => t('Reviewer'),
-                'title' => t('Reviewer'),
-                'help' => t('The user that reviewed the entry.'),
+        'declinedReason' => array(
+            'title' => t('Reason'),
+            'help' => t('Why the points were not approved.'),
+            'field' => array(
+                'handler' => 'views_handler_field',
             ),
         ),
-    );
-    $data['h_cl'] = $fields;
-    $data['h_cl']['table']['base'] = $base;
-    $data['h_cl']['table']['group'] = $group;
+        'numPoints' => array(
+            'title' => t('Points Granted'),
+            'help' => t('Number of credits awarded to this submission'),
+            'field' => array(
+                'handler' => 'views_handler_field_numeric',
+                'click sortable' => TRUE,
+            ),
+            'filter' => array(
+                'handler' => 'views_handler_filter_numeric',
+            ),
+            'sort' => array(
+                'handler' => 'views_handler_sort',
+            ),
+        ),
+    $data['h_students_points'] = $fields;
+    $data['h_students_points']['table']['base'] = $base;
+    $data['h_students_points']['table']['group'] = $group;
     return $data;
 }

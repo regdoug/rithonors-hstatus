@@ -37,13 +37,15 @@ switch($submission['status']){
 <?php if ($color): ?>
 <fieldset>
     <legend>Status</legend>
-    <?php //TODO: print reviewer, reason, etc ?>
+    <p><?php print t('@activity',array('@activity'=>$activity)); ?></p>
+    <aside><?php print t('Reviewed by %user on @date',array('%user'=>$activity['reviewer'],
+            '@date'=>strftime('%B %e, %G',strtotime($activity['review_date'])))); ?></aside>
 </fieldset>
 <?php else: ?>
 <fieldset>
     <legend>Status</legend>
     <?php print 'Pending'; ?>
 </fieldset>
-<?php endif; ?>
+<?php endif; //End of color?>
+</div>
 
-</div> <!-- End of color -->

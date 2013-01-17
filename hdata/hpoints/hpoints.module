@@ -149,7 +149,7 @@ function hpoints_action_info(){
  * provided that the user has the appropriate permissions.
  */
 function hpoints_approve_cl_action($submission){
-    if(user_access('review complementary learning')){
+    if(user_access('administer points submissions') || user_access('review points submissions')){
         $id = $submission['id'];
         db_query('UPDATE {h_cl} SET status=1 WHERE id=%d',$id);
     }else{
@@ -161,9 +161,9 @@ function hpoints_approve_cl_action($submission){
  * provided that the user has the appropriate permissions.
  */
 function hpoints_reject_cl_action($submission){
-    if(user_access('review complementary learning')){
+    if(user_access('administer points submissions') || user_access('review points submissions')){
         $id = $submission['id'];
-        db_query('UPDATE {h_cl} SET status=2 WHERE id=%d',$id);
+        db_query('UPDATE {h_cl} SET status=-1 WHERE id=%d',$id);
     }else{
         drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
     }
@@ -174,64 +174,16 @@ function hpoints_reject_cl_action($submission){
  * 
  * //VERDICT: keep this function,but read from h_points_menu
  *      (and let's add some columns to h_points_menu, shall we?
+ * //OPTION: move to hdata.
  */
 function hpoints_get_type_options(){
-    $options_setting = variable_get('hpoints_form_type_options',_hpoints_default_type_options());
-    //use CR+LF line ending b/c that how textarea text is formatted.
-    $lines = explode("\r\n",$options_setting);
+    $q = "SELECT id, title FROM {h_points_menu} WHERE enabled=1";
+    $rs = db_query($q);
     $options = array();
-    foreach($lines as $line){
-        $line = trim($line);
-        $tokens = explode('|',$line);
-        if(count($tokens) == 2){
-            $options[$tokens[0]] = $tokens[1];
-        }else{
-            watchdog('hcomplearn','Malformed type options '.$line,null,WATCHDOG_WARNING);
-        }
+    while(($row = db_fetch_array($rs))){
+        $options[$row['id']] = $row['title'];
     }
     return $options;
-}
-function _hpoints_default_type_options(){
-    return "other | Other";
-}
-/**
- * Helper function for whitelist/blacklist
- */
-function hpoints_get_whitelist_nid(){
-    $setting = variable_get('hpoints_whitelist_node','');
-    //The setting string will be formatted like "Title of Node [nid: 99]"
-    if($setting){
-        $pos = strpos($setting, 'nid:');
-        //clever use of PHP type coercion.
-        $nid = substr($setting,$pos+4) + 0.0;
-        //if the substr wasn't actually a number, $nid will be 0
-        if($nid > 0){ return $nid; }
-    }
-    return '';
-}
-
-/**
- * Checks the settings to determine whether or not the complearning form
- * is currently open
- */
-function hpoints_form_is_open(){
-    $open = variable_get('hpoints_date_open',null);
-    $close = variable_get('hpoints_date_close',null);
-    if($open){
-        $openstr = "{$open['year']}-{$open['month']}-{$open['day']} 00:00:00";
-        $opentime = strtotime($openstr);
-        drupal_set_message("Form opens on $openstr ($opentime)");
-    }else{
-        $open = 0;
-    }
-    if($close){
-        $closestr = "{$close['year']}-{$close['month']}-{$close['day']} 23:59:00";
-        $closetime = strtotime($closestr);
-        drupal_set_message("Form closes on $closestr ($closetime)");
-    }else{
-        $close = PHP_INT_MAX;
-    }
-    return (time() > $opentime) && (time() < $closetime);
 }
 
 /*
@@ -242,13 +194,14 @@ function hpoints_form_is_open(){
  */
 function hpoints_views_bulk_operations_object_info(){
     return array(
-        'complearning' => array(
-            'type' => 'complearning',
-            'base_table' => 'h_cl',
-            'load' => 'hdata_cl_load',
+        'hpoints' => array(
+            'type' => 'honorspoints',
+            'base_table' => 'h_students_points',
+            //TODO: make hdata_points_load
+            'load' => 'hdata_points_load',
             'oid' => 'id',
             'title' => 'id',
-            'access' => '_hpoints_cl_review_access',
+            'access' => '_hpoints_review_access',
         ),
     );
 }
@@ -280,11 +233,12 @@ function _hpoints_form_access(){
 }
 
 //VERDICT: why is this even in hcomplearn?
+//ANSWER: used for VBO
 /**
  * Allows access to the reviewing pages if the user has the
  * 'review complementary learning' permission or is the superuser (UID 1)
  */
-function _hpoints_cl_review_access($op,$submission=null,$account=null){
+function _hpoints_review_access($op,$submission=null,$account=null){
     if(is_numeric($op)){
         $account = user_load($op);
     }
