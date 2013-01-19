@@ -7,11 +7,10 @@
  * page.
  */
 
-
-
 /*--------------Defaults-------------*/
 define('HPOINTS_SUBMIT_MSG','Please describe the activity that you believe should earn you points.');
 define('HPOINTS_SUBMIT_WARN','Submissions will be reviewed and you will recieve an email when a decision is made.');
+define('HPOINTS_EMAIL_MSG','This type of submission requires a reference.');
 
 /**
  * Implements hook_menu
@@ -112,6 +111,12 @@ function hpoints_theme($existing, $type, $theme, $path){
             'arguments' => array('submission' => NULL),
             'template' => 'pointsubmission',
         ),
+        'hpoints_reference_email' => array(
+            'arguments' => array('student_name' => '','student_email'=>'',
+                                'reference_name' => '', 'reference_email' => '',
+                                'points_submission' => ''),
+            'template' => 'email.reference',
+        ),
     );
 }
 
@@ -120,14 +125,14 @@ function hpoints_theme($existing, $type, $theme, $path){
  */
 function hpoints_action_info(){
     return array(
-        'hpoints_approve_cl_action' => array(
-            'description' => t('Approve Comp Learning Submission'),
-            'type' => 'complearning',
+        'hpoints_approve_action' => array(
+            'description' => t('Approve Points Submission'),
+            'type' => 'hpoints',
             'configurable' => FALSE,
         ),
-        'hpoints_reject_cl_action' => array(
-            'description' => t('Reject Comp Learning Submission'),
-            'type' => 'complearning',
+        'hpoints_reject_action' => array(
+            'description' => t('Reject Points Submission'),
+            'type' => 'hpoints',
             'configurable' => FALSE,
         ),
     /* Example action -- taken from Drupal
@@ -148,10 +153,10 @@ function hpoints_action_info(){
  * Performs a database update to approve a Complearning submission,
  * provided that the user has the appropriate permissions.
  */
-function hpoints_approve_cl_action($submission){
+function hpoints_approve_action($submission){
     if(user_access('administer points submissions') || user_access('review points submissions')){
-        $id = $submission['id'];
-        db_query('UPDATE {h_cl} SET status=1 WHERE id=%d',$id);
+        $submission['status'] = 1;
+        hdata_points_save($submission);
     }else{
         drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
     }
@@ -160,10 +165,10 @@ function hpoints_approve_cl_action($submission){
  * Performs a database update to reject a Complearning submission,
  * provided that the user has the appropriate permissions.
  */
-function hpoints_reject_cl_action($submission){
+function hpoints_reject_action($submission){
     if(user_access('administer points submissions') || user_access('review points submissions')){
-        $id = $submission['id'];
-        db_query('UPDATE {h_cl} SET status=-1 WHERE id=%d',$id);
+        $submission['status'] = -1;
+        hdata_points_save($submission);
     }else{
         drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
     }
@@ -177,13 +182,15 @@ function hpoints_reject_cl_action($submission){
  * //OPTION: move to hdata.
  */
 function hpoints_get_type_options(){
-    $q = "SELECT id, title FROM {h_points_menu} WHERE enabled=1";
-    $rs = db_query($q);
-    $options = array();
-    while(($row = db_fetch_array($rs))){
-        $options[$row['id']] = $row['title'];
+    $list = hdata_points_type_list();
+    foreach($list as $type){
+        $options[$type['id']] = $type['title'];
     }
     return $options;
+}
+function hpoints_type_needs_email($typeid){
+    $list = hdata_points_type_list();
+    return $list[$typeid]['send_email'] == 1;
 }
 
 /*
@@ -195,9 +202,8 @@ function hpoints_get_type_options(){
 function hpoints_views_bulk_operations_object_info(){
     return array(
         'hpoints' => array(
-            'type' => 'honorspoints',
+            'type' => 'hpoints',
             'base_table' => 'h_students_points',
-            //TODO: make hdata_points_load
             'load' => 'hdata_points_load',
             'oid' => 'id',
             'title' => 'id',
@@ -242,10 +248,6 @@ function _hpoints_review_access($op,$submission=null,$account=null){
     if(is_numeric($op)){
         $account = user_load($op);
     }
-    if (empty($account)) {
-        $account = $GLOBALS['user'];
-    }
-    //TODO: different perms
-    return $account->uid == 1 || user_access('review complementary learning',$account) ||
-            user_access('administer honors status',$account);
+    return user_access('administer points submissions',$account) ||
+            user_access('review points submissions',$account);
 }

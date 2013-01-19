@@ -166,6 +166,7 @@ function hpoints_views_data(){
                 'handler' => 'views_handler_sort',
             ),
         ),
+    );
     $data['h_students_points'] = $fields;
     $data['h_students_points']['table']['base'] = $base;
     $data['h_students_points']['table']['group'] = $group;
