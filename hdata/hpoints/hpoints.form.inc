@@ -2,16 +2,16 @@
 
 //NOTES:
 //this is a quick todo list
-// 1 - append "email sent to..." to explanation field if email sent
-// 2 - create page to edit h_points_menu
+// 2 - create page to edit h_points_menu (this would be in hpoints.admin.inc)
 
 /**
  * Convenience function to build complearning form
  */
 
-function hpoints_build_clform(){
+function hpoints_build_form(){
     $arg = (func_num_args() > 0)?func_get_arg(0):'';
-    if($arg == 'admin' && user_access('bulk submit points')){
+    //DEBUG: (&& 1)
+    if($arg == 'admin' && 1 && user_access('bulk submit points')){
         return drupal_get_form('hpoints_form_bulk');
     }else{
         return drupal_get_form('hpoints_form');
@@ -19,26 +19,27 @@ function hpoints_build_clform(){
 }
 
 /**
- * Processes an input element from a plain textfield to an HTML5
- * "number" textfield
- * 
- * used on bulk submit form
+ * Processes an input element from a plain textfield to an HTML5 textfield
  */
 
-function hpoints_number($html,$elements){
+function hpoints_html5_number($html,$elements){
     $html = str_replace('type="text"','type="number"',$html);
+    return $html;
+}
+function hpoints_html5_email($html,$elements){
+    $html = str_replace('type="text"','type="email"',$html);
     return $html;
 }
 
 /**
- * Validates the credits field o the bulk submit form
+ * Validates a number as an integer
  */
-function hpoints_form_cl_int_validate($element, &$form_state){
+function hpoints_form_int_validate($element, &$form_state){
     //activites has to be a positive number
 	$v = trim($element['#value']);
     if(empty($v) || intval($v) < 1){
         //flags the field as incorrect
-        form_error($element, t('You must have a positive integer number of credits.'));
+        form_error($element, t('%element must be a positive integer.',array('%element'=>$element['#title'])));
     }
     //ensure it is actually an integer
     $integer = true;
@@ -47,7 +48,7 @@ function hpoints_form_cl_int_validate($element, &$form_state){
         //if there are decimal points, they will not be numeric.
         $integer = is_numeric($c);
         if(!$integer){
-            form_error($element, t('You must have a positive integer number of credits.'));
+            form_error($element, t('%element must be a positive integer.',array('%element'=>$element['#title'])));
             return;
         }
     }
@@ -61,14 +62,31 @@ function hpoints_form_cl_int_validate($element, &$form_state){
  * it on to helper functions.
  */
 
-//TODO: rewrite this!
-//needs new name too!
 function hpoints_form_submit($form, &$form_state){
-    //get type of submission
-    //check if email needed
-    //send email if necessary
-    //process explanation
-    //save submission
+    global $user;
+    if(!isset($user->name)){
+        $u = user_load($user);
+    }
+    if($form_state['storage']['email']){
+        $huser = hdata_user_load(array('uid'=>$u->uid,'name'=>$u->name));
+        $sub = $form_state['storage']['submission'];
+        _hpoints_send_email($form_state['values']['name'],$form_state['values']['email'],
+            implode(' ',$huser['basic']['name']),$sub);
+        $sub['explanation'] .= PHP_EOL.'Email sent to '.$form_state['values']['email'];
+        hdata_points_save($sub);
+        unset($form_state['storage']);
+    }else{
+        $type = intval($form_state['values']['type']);
+        $explanation = check_plain($form_state['values']['description']);
+        $username = $user->name;
+        $sub = array('username'=>$username,'type'=>$type,'explanation'=>$explanation);
+        $sub = hdata_points_save($sub);
+        
+        if(hpoints_type_needs_email($type)){
+            $form_state['storage']['email'] = true;
+            $form_state['storage']['submission'] = $sub;
+        }
+    }
 }
 
 function hpoints_form_bulk_submit($form, &$form_state){
@@ -184,33 +202,49 @@ function _hpoints_page_n($n,&$form,$data){
     }
 }
 
-
-function _hpoints_form(&$form,$huser,$data){
+function hpoints_form(&$form_state){
+    global $user;
+    $huser = hdata_user_load(array('uid'=>$user->uid,'name'=>$user->name));
+    
+    $form = array();
     if(($msg = hpoints_submit_allowed($huser)) != 'ok'){
-        return $form['info'] = array( '#value' => t('%msg',array('%msg'=>$msg)));
+        $form['error'] = array( '#value' => t('%msg',array('%msg'=>$msg)));
+        return $form;
     }
-    /*
-     * This function is mostly validation to make sure the user is allowed
-     * to submit a complearning submission.  Most of these checks are in
-     */
-    $submitmsg = variable_get('hpoints_form_submitmsg',HCOMPLEARN_SUBMIT_MSG);
-    $submitwarning = '<p><strong>'.variable_get('hpoints_form_submitwarn',HCOMPLEARN_SUBMIT_WARN).'</strong></p>';
-
-    $form['info2'] = array(
+    $submitmsg = variable_get('hpoints_form_submitmsg',HPOINTS_SUBMIT_MSG);
+    $form['info'] = array(
         '#value' => $submitmsg,
         '#prefix' => '<p>',
         '#suffix' => '</p>',
     );
+    
+    if($form_state['storage']['email']){
+        _hpoints_form_email($form,$huser);
+    }else{
+        _hpoints_form($form,$huser);
+    }
+    return $form;
+}
+        
+
+function _hpoints_form(&$form,$huser){
+    /*
+     * This function is mostly validation to make sure the user is allowed
+     * to submit a complearning submission.  Most of these checks are in
+     */
+    $submitwarning = '<p><strong>'.variable_get('hpoints_form_submitwarn',HPOINTS_SUBMIT_WARN).'</strong></p>';
+
+    
     $form['type'] = array(
+        '#title' => t('Activity Type'),
         '#type' => 'select',
-        '#options' => hpoints_get_type_options();
-        //TODO: finish
+        '#options' => hpoints_get_type_options(),
     );
     $form['description'] = array(
+        '#title' => t('Description'),
+        '#description' => t('Please describe what you did and why you deserve to earn points.'),
         '#type' => 'textarea',
-        //TODO: finish
     );
-    //TODO: AJAX elements for email?
     $form['info3'] = array(
         '#value' => $submitwarning,
         '#prefix' => '<p><strong>',
@@ -223,6 +257,65 @@ function _hpoints_form(&$form,$huser,$data){
     );
 }
 
+function _hpoints_form_email (&$form,$huser){
+    $msg = variable_get('hpoints_form_emailmsg',HPOINTS_EMAIL_MSG);
+    $form['info2'] = array(
+        '#value' => $msg,
+    );
+    $form['name'] = array(
+        '#title' => t('Reference'),
+        '#description' => t('Enter the name of your reference'),
+        '#type' => 'textfield',
+    );
+    $form['email'] = array(
+        '#title' => t('Email'),
+        '#description' => t('Enter the email address of the your reference'),
+        '#type' => 'textfield',
+        '#size' => 5,
+        '#maxlength' => 2,
+        '#required' => true,
+        '#element_validate' => array('hpoints_form_int_validate'),
+        //HTML5 attributes
+        '#attributes' => array('min' => '1', 'max' => '5', 'step' => '1'),
+        '#post_render' => array('hpoints_html5_email'),
+    );
+    $form['message'] = array(
+        '#title' => t('Message'),
+        '#description' => t('Enter a short message to accompany this email'),
+        '#type' => 'textarea',
+    );
+}
+
+function hpoints_form_bulk (&$form_state){
+    //TODO: we need some type of fancy AJAX user list
+    $form['type'] = array(
+        '#title' => t('Activity Type'),
+        '#type' => 'select',
+        '#options' => hpoints_get_type_options(),
+    );
+    $form['description'] = array(
+        '#title' => t('Description'),
+        '#description' => t('Describe the reason that points are being granted'),
+        '#type' => 'textarea',
+    );
+    $form['points'] = array(
+        '#title' => t('Credits Awarded'),
+        '#type' => 'textfield',
+        '#size' => 5,
+        '#maxlength' => 2,
+        '#required' => true,
+        '#element_validate' => array('hpoints_form_int_validate'),
+        //HTML5 attributes
+        '#attributes' => array('min' => '1', 'max' => '5', 'step' => '1'),
+        '#post_render' => array('hpoints_html5_number'),
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+    );
+    return $form;
+}
+
 function hpoints_submit_allowed($huser){
     //DEBUG
     //drupal_set_message('hpoints_submit allowed: '.$huser['name'],'warning');
@@ -233,4 +326,12 @@ function hpoints_submit_allowed($huser){
     }else{
         return 'ok';
     }
+}
+
+function _hpoints_send_email($name,$to,$studentname,$submission){
+    //TODO: use mime mail to send email.
+    $from = "{$submission['username']}@rit.edu";
+    $formatted_submission = theme('hpoints_submission',$submission);
+    $formatted_message = theme('hpoints_reference_email',$studentname,$from,$name,$to,$formatted_submission);
+    mimemail($from,$to,'Honors Points Submission',$formatted_message);
 }
