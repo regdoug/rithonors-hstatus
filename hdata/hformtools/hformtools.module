@@ -1,0 +1,47 @@
+<?php
+
+function hformtools_elements(){
+    // The following definitions were adapted from system_elements in system.module (line 164)
+    $type['hformtools_users'] = array(
+        '#input' => TRUE,
+        '#cols' => 60,
+        '#rows' => 5,
+        '#resizable' => TRUE,
+        '#process' => array('form_expand_ahah'),
+    );
+    $type['hformtools_html5_number'] = array(
+        '#input' => TRUE,
+        '#size' => 60,
+        '#maxlength' => 128,
+        '#autocomplete_path' => FALSE,
+        '#process' => array('form_expand_ahah'),
+    );
+    $type['hformtools_html5_email'] = array(
+        '#input' => TRUE,
+        '#size' => 60,
+        '#maxlength' => 128,
+        '#autocomplete_path' => FALSE,
+        '#process' => array('form_expand_ahah'),
+    );
+    return $type;
+}
+
+function hformtools_theme(){
+    $hooks['hformtools_users'] = array(
+        'template' => 'users/form-element.tpl.php',
+        'file' => 'users/hformtools_users.inc',
+        'arguments' => array('element' => null),
+    );
+    $hooks['hformtools_html5_number'] = array();
+    $hooks['hformtools_html5_email'] = array();
+}
+
+function hformtools_menu(){
+    $menu['hformtools/ajax/users/group/%'] = array(
+        'type' => MENU_CALLBACK,
+        'page callback' => 'hformtools_users_ajax_groups',
+        'page arguments' => array(4),
+        'access arguments' => true,
+        'file' => 'users/hformtools_users.inc',
+    );
+}

@@ -1,0 +1,21 @@
+.hformtools-users > .container {
+    border: 1px solid gray;
+    border-radius: 5px;
+    background-color: #eee;
+}
+.hformtools-users > .container .input {
+    display:inline-block;
+    width: 80px;
+    padding: 2px;
+    margin: 3px;
+}
+.hformtools-users > .container .group {
+    margin: 0px;
+    padding: 0px;
+}
+.hformtools-users > .container .group-label {
+    display:inline-block;
+    width: 80px;
+    padding: 2px;
+    margin: 3px;
+}
