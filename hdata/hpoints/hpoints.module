@@ -31,18 +31,17 @@ function hpoints_menu(){
         'page callback' => 'hpoints_submission',
         'page arguments' => array(2),
         'type' => MENU_CALLBACK,
-        //access callback defaults to user access
-        'access arguments' => array('review points submissions', 'administer points submissions'),
+        'access arguments' => array('review points submisstions'),
     );
 
-    //complearning form
+    //submission form
     //note that even though no % is in the path, anything following 'submitcl' gets passed as an argument.
     //(This is true of all menu entries with blank type)
     $items['hpoints/form'] = array(
         'title' => 'Honors Points Submission Form',
-        'page callback' => 'hpoints_build_clform',
+        'page callback' => 'hpoints_build_form',
         'file' => 'hpoints.form.inc',
-        'access arguments' => array('submit points', 'bulk submit points'),
+        'access callback' => '_hpoints_form_access',
     );
     
     //Settings Page
@@ -56,7 +55,24 @@ function hpoints_menu(){
         'access arguments' => array('administer points submissions'),
     );
     
+    //Bulk UI test
+    $items['hpoints/tests/bulkui'] = array(
+        'title' => 'Test hPoints Bulk UI',
+        'page callback' => 'hpoints_test_bulk_ui',
+        'access callback' => true,
+    );
+    
     return $items;
+}
+
+function hpoints_test_bulk_ui(){
+    $thispath = drupal_get_path('module','hpoints');
+    drupal_set_message("Adding {$thispath}/bulkui.js");
+    drupal_add_js($thispath.'/bulkui.js');
+    drupal_add_js(array('hpointsBasePath'=>base_path().$thispath),'setting');
+    drupal_set_message("Adding {$thispath}/bulkui.css");
+    drupal_add_css($thispath.'/bulkui.css');
+    return theme('hpoints_form_bulk_users');
 }
 
 /**
@@ -116,6 +132,10 @@ function hpoints_theme($existing, $type, $theme, $path){
                                 'reference_name' => '', 'reference_email' => '',
                                 'points_submission' => ''),
             'template' => 'email.reference',
+        ),
+        'hpoints_form_bulk_users' => array(
+            'arguments' => array('default_value' => ''),
+            'template' => 'bulkui',
         ),
     );
 }
@@ -223,6 +243,7 @@ function hpoints_views_api(){
 
 /*----------------Access Callbacks------------------*/
 
+
 /**
  * Allows access if the user is an active student and has permission to
  * submit comp learning.
@@ -230,12 +251,7 @@ function hpoints_views_api(){
 //VERDICT: unnecessary, replace with user_access
 //Has role Honors or Faculty is all that's needed.
 function _hpoints_form_access(){
-    global $user;
-    if($user->uid != 0){
-        return hdata_user_is_active_student(array('uid' => $user->uid));
-    }else{
-        return false;
-    }
+    return user_access('submit points') || user_access('bulk submit points');
 }
 
 //VERDICT: why is this even in hcomplearn?
