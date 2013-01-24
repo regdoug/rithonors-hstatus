@@ -1,9 +1,9 @@
 Drupal.behaviors.hFormToolsBulkUsersLoad = hBulkUsersLoad;
 Drupal.behaviors.hFormToolsBulkUsersAttachDelete = hBulkUsersAttachDelete;
 
-Drupal.theme.prototype.hpointsTags = function(username, type){
-    var modulepath = Drupal.settings.hpointsBasePath;
-    var classes = (type == 'input')?'input parent':'group-label';
+Drupal.theme.prototype.hFormToolsUsers = function(username, type){
+    var modulepath = Drupal.settings.hFormToolsBasePath;
+    var classes = (type == 'user')?'user parent':'group-label';
     return $('<span>' + username + ' <a class="del"href="#"><img src="' +
         modulepath + '/close.png" width=16 height=16 ></a></span>').addClass(classes);
 }
@@ -13,7 +13,7 @@ function hBulkUsersAttachDelete(context){
         e.preventDefault()
         $(this).closest('.parent').remove();
         //testing
-        $('.hformtools-users textarea').val($(".hformtools-users .dynamic .input").text());
+        $('.hformtools-users textarea').val($(".hformtools-users .dynamic .user").text());
     });
 }
 
@@ -25,11 +25,11 @@ function hBulkUsersLoad(context) {
             hpointsAddValues(groups[i].split(' '));
         }
     }
-    $('.hformtools-users').delegate('input:text', 'keypress', function(e) {
+    $('.hformtools-users input[type=textfield]').bind('keydown', function(e) {
         if (e.which === 13) { // keycode 13 is enter
             e.preventDefault(); // don't submit form
             var value = $(this).val();
-            if(value && value === value.toUpperCase()){
+            if(typeof(value) == 'string' && value.match('^[A-Z]$')){
                 hFormToolsLoadGroup(value);
             }else{
                 hpointsAddValues(value);
@@ -43,27 +43,33 @@ function hBulkUsersLoad(context) {
 
 function hFormToolsAddValues(values) {
     if(typeof(values) == 'string'){
-        $(".hformtools-users > .container").append(Drupal.theme('hpointsTags',values,'input'));
+        $(".hformtools-users > .container").append(Drupal.theme('hFormToolsUsers',values,'user'));
     if(values[0].indexOf('[') == 0){
         var group = $('<div></div>').addClass('group parent');
         group.append(Drupal.theme('hpointsTags',values.shift(),'group'));
         for (v in values){
-            group.append(Drupal.theme('hpointsTags',values[v],'input'));
+            group.append(Drupal.theme('hpointsTags',values[v],'user'));
         }
         $('.hformtools-users > .container').append(group);
     }else{
         for (v in values){
-            $(".hformtools-users > .container").append(Drupal.theme('hpointsTags',values[v],'input'));
+            $(".hformtools-users > .container").append(Drupal.theme('hpointsTags',values[v],'user'));
         }
     }
     Drupal.attachBehaviors()
 }
 
 function hFormToolsLoadGroup(group) {
-    //TODO:
-    //add temporary "loading" group
-    //load group from hformtools/ajax/users/group/XXXXX  (as JSON)
-    //validate JSON  (is an array and has more than one element)
-    //use hFormToolsAddValues to add group
-    //done
+    var tmpname = "tmp" + (new Date.getTime());
+    $('<div></div>').addClass('group tmp '+tmpname).appendTo('.hformtools-users > container');
+    $.ajax({
+        url: Drupal.settings.basePath + '/hformtools/ajax/users/group/'+group,
+        dataType: 'json',
+        success: function(jsonArray, status, jqXHR){
+            if(typeof(jsonArray) == 'array' && jsonArray.length() > 1){
+                hFormToolsAddValues(jsonArray);
+            }
+        },
+        complete: function (jqXHR, status) { $("."+tmpname).remove(); },
+    });
 }
