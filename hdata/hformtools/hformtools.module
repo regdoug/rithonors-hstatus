@@ -44,4 +44,36 @@ function hformtools_menu(){
         'access arguments' => true,
         'file' => 'users/hformtools_users.inc',
     );
+    $menu['hformtools/test'] = array(
+        'page callback' => 'drupal_get_form',
+        'page arguments' => 'hformtools_testform',
+        'access callback' => true,
+    );
+}
+
+function hformtools_testform(&$form_state){
+    if(is_array($form_state['storage']['lastsubmission'])){
+        $form['lastsub'] = array(
+            '#prefix' => '<pre>',
+            '#suffix' => '</pre>',
+            '#value' => print_r($form_state['storage']['lastsubmission']),
+        );
+    }
+    /*$form['html5_number'] = array(
+        '#type' => 'hformtools_html5_number',
+        '#title' => 'HTML5 Number',
+    );
+    $form['html5_email'] = array(
+        '#type' => 'hformtools_html5_email',
+        '#title' => 'HTML5 Email',
+    );*/
+    $form['users'] = array(
+        '#type' => 'hformtools_users',
+        '#title' => 'AJAX Users',
+    );
+    return $form;
+}
+    
+function hformtools_testform_submit($form, &$form_state){
+    $form_state['storage']['lastsubmission'] = $form_state['values'];
 }
