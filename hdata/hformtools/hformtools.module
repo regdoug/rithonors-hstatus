@@ -36,6 +36,9 @@ function hformtools_theme(){
     $hooks['hformtools_html5_email'] = array();
 }
 
+function hformtools_html5_number() { return ""; }
+function hformtools_html5_email() { return ""; }
+
 function hformtools_menu(){
     $menu['hformtools/ajax/users/group/%'] = array(
         'type' => MENU_CALLBACK,
