@@ -1,21 +1,24 @@
 /* bulkui.css */
-.hformtools-users > .container {
+.hformtools-users .ajaxelement{
+    display: none;
+}
+.hformtools-users > .ajaxelement {
     width: 480px;
     min-height: 100px;
     padding: 10px;
     display: none;
 }
-.hformtools-users > .container .user {
+.hformtools-users > .ajaxelement .user {
     display:inline-block;
     width: 80px;
     padding: 2px;
     margin: 3px;
 }
-.hformtools-users > .container .group {
+.hformtools-users > .ajaxelement .group {
     margin: 0px;
     padding: 0px;
 }
-.hformtools-users > .container .group-label {
+.hformtools-users > .ajaxelement .group-label {
     display:inline-block;
     width: 80px;
     padding: 2px;

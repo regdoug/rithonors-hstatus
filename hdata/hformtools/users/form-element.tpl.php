@@ -1,7 +1,9 @@
-<div class="hpoints-users">
-    <div class="container">
+<div class="hformtools-users">
+    <div class="ajaxelement">
         <div class="dynamic"></div>
-        <?php print theme('textfield', $ajaxtextfield_element); ?>
+        <input type="textfield" class="hformtools-ajax-field">
     </div>
-    <?php print theme('textarea',$textarea_element); ?>
+    <div class="normalelement">
+        <?php print drupal_render($textarea_element); ?>
+    </div>
 </div>

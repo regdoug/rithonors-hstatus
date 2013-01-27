@@ -26,32 +26,40 @@ function hformtools_elements(){
     return $type;
 }
 
-function hformtools_theme(){
+function hformtools_theme($existing, $type, $theme, $path){
     $hooks['hformtools_users'] = array(
-        'template' => 'users/form-element.tpl.php',
+        'template' => 'users/form-element',
         'file' => 'users/hformtools_users.inc',
         'arguments' => array('element' => null),
     );
-    $hooks['hformtools_html5_number'] = array();
-    $hooks['hformtools_html5_email'] = array();
+    $hooks['hformtools_html5_number'] = array(
+        'arguments' => array('element' => null),
+    );
+    $hooks['hformtools_html5_email'] = array(
+        'arguments' => array('element' => null),
+    );
+    return $hooks;
 }
 
-function hformtools_html5_number() { return ""; }
-function hformtools_html5_email() { return ""; }
+function theme_hformtools_html5_number($element) { return ""; }
+function theme_hformtools_html5_email($element) { return ""; }
 
 function hformtools_menu(){
     $menu['hformtools/ajax/users/group/%'] = array(
+        'title' => 'hFormTools AJAX Callback - Group',
         'type' => MENU_CALLBACK,
         'page callback' => 'hformtools_users_ajax_groups',
         'page arguments' => array(4),
-        'access arguments' => true,
+        'access callback' => true,
         'file' => 'users/hformtools_users.inc',
     );
     $menu['hformtools/test'] = array(
+        'title' => 'Test hFormTools',
         'page callback' => 'drupal_get_form',
-        'page arguments' => 'hformtools_testform',
+        'page arguments' => array('hformtools_testform'),
         'access callback' => true,
     );
+    return $menu;
 }
 
 function hformtools_testform(&$form_state){
@@ -60,6 +68,7 @@ function hformtools_testform(&$form_state){
             '#prefix' => '<pre>',
             '#suffix' => '</pre>',
             '#value' => print_r($form_state['storage']['lastsubmission']),
+            '#default_value' => 'dtsgla',
         );
     }
     /*$form['html5_number'] = array(
