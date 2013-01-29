@@ -4,8 +4,6 @@
  *
  * @ingroup views_field_handlers
  */
-//TODO: change number values for points.
-//  we'll also need one for points type. (this means another file)
 class hpoints_views_handler_field_status extends views_handler_field {
     function render($values) {
         $value = intval($values->{$this->field_alias});

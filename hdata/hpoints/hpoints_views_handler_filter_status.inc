@@ -7,7 +7,6 @@
 /**
  * Filter by complearning submission status
  */
-//TODO: change to points status
 class hpoints_views_handler_filter_cl_status extends views_handler_filter_in_operator {
   function get_value_options() {
     if (!isset($this->value_options)) {

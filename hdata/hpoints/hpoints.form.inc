@@ -5,12 +5,13 @@
 // 2 - create page to edit h_points_menu (this would be in hpoints.admin.inc)
 
 /**
- * Convenience function to build complearning form
+ * Determines whether the bulk form should be shown and selects the correct
+ * form building function.
+ * 
+ * TODO: It might be better to move this logic to hpoints_menu
  */
-
 function hpoints_build_form(){
     $arg = (func_num_args() > 0)?func_get_arg(0):'';
-    //DEBUG: (&& 1)
     if($arg == 'admin' && 1 && user_access('bulk submit points')){
         return drupal_get_form('hpoints_form_bulk');
     }else{
@@ -91,6 +92,7 @@ function hpoints_form_bulk_submit($form, &$form_state){
     $user_str = preg_replace('[^a-z0-9\\s]','',$form_state['values']['users']);
     $users = explode(' ',$user_str);
     if(is_array($users)){
+        //OPTION: Use ctools bulk api?
         foreach($users as $student){
             $s = array('username' => $student);
             if(hdata_user_is_active_student($s)){
@@ -102,114 +104,6 @@ function hpoints_form_bulk_submit($form, &$form_state){
         }
     }else{
         form_set_error($form['users'],'Invalid Recipient Usernames');
-    }
-    
-    //OPTION: Use ctools bulk api?
-}
-
-//====================================
-//===== Private/Helper Functions =====
-//====================================
-
-/* CONTENTS (in order)
- *
- * _hpoints_newentry
- * _hpoints_savepage
- *             ..._savefinal
- *             ..._saveandredirect
- *             ..._redirect
- *             ..._page_n
- *             ..._loaddata
- */
-
-//note the Drupal convention of making
-//"private" functions start with an underscore
-
-
-
-/*
- * Generates normal (not first or last) pages
- * 
- * some elements may be useful
- */
- //TODO: remove now
-function _hpoints_page_n($n,&$form,$data){
-    $form['page'] = array(
-        '#type' => 'value',
-        '#value' => $n,
-    );
-    $form['heading'] = array(
-        '#value' => '<h3>'.t('Activity !n',array('!n'=>$n)).'</h3>',
-    );
-    $whitelist_nid = hpoints_get_whitelist_nid();
-    if(is_numeric($whitelist_nid)){
-        $form['whitelist'] = array(
-            '#value' => l('Whitelist/Blacklist','node/'.$whitelist_nid),
-        );
-    }
-    $form['type'] = array(
-        '#title' => t('Type of Activity'),
-        '#type' => 'select',
-        '#options' => hpoints_get_type_options(),
-        '#default_value' => 'other',
-    );
-    $form['hours'] = array(
-        '#title' => t('Hours Spent'),
-        '#type' => 'hformtools_html5_number',
-        '#size' => 5,
-        '#maxlength' => 2,
-        '#required' => true,
-        '#element_validate' => array('hpoints_form_cl_int_validate'),
-        //HTML5 attributes
-        '#min' => 0,
-        '#max' => 50,
-        '#step' => 1,
-    );
-    $form['name'] = array(
-        '#type' => 'textfield',
-        '#required' => true,
-        '#title' => t('Activity Name'),
-    );
-    $form['desc'] = array(
-        '#type' => 'textarea',
-        '#required' => true,
-        '#title' => t('Activity Description'),
-        '#description' => t('Please include why this relates to Leadership and/or Citizenship'),
-    );
-    $form['time'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Dates and Times'),
-        '#description' => t('If necessary, please include information about when and where the activity was performed.'),
-    );
-    $form['contact'] = array(
-        '#type' => 'textarea',
-        '#required' => true,
-        '#title' => t('Contact Information'),
-        '#description' => t('Who should we contact to verify this information?'),
-    );
-    $form['comment'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Comments'),
-    );
-    $form['back'] = array(
-      '#type' => 'submit',
-      '#value' => t('< Prev Page'),
-      '#id' => 'back',
-    );
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Next Page >'),
-    );
-
-    $form['hours']['#default_value'] = $data[$n]['hours'];
-    if(isset($data[$n]['type'])){
-        //this one already has a default_value, so we only want to overwrite
-        //it when we have a type stored in $data.
-        $form['type']['#default_value'] = $data[$n]['type'];
-    }
-    $fields = _hpoints_fields();
-    foreach($fields as $f){
-        $form[$f]['#default_value'] = $data[$n][$f];
     }
 }
 
@@ -239,12 +133,7 @@ function hpoints_form(&$form_state){
         
 
 function _hpoints_form(&$form,$huser){
-    /*
-     * This function is mostly validation to make sure the user is allowed
-     * to submit a complearning submission.  Most of these checks are in
-     */
     $submitwarning = '<p><strong>'.variable_get('hpoints_form_submitwarn',HPOINTS_SUBMIT_WARN).'</strong></p>';
-
     
     $form['type'] = array(
         '#title' => t('Activity Type'),
@@ -329,8 +218,6 @@ function hpoints_form_bulk (&$form_state){
 }
 
 function hpoints_submit_allowed($huser){
-    //DEBUG
-    //drupal_set_message('hpoints_submit allowed: '.$huser['name'],'warning');
     if(!$huser){
         return t('Failed to load your profile.');
     }elseif($huser['continuation']['status'] > 2){
@@ -341,7 +228,6 @@ function hpoints_submit_allowed($huser){
 }
 
 function _hpoints_send_email($name,$to,$studentname,$submission){
-    //TODO: use mime mail to send email.
     $from = "{$submission['username']}@rit.edu";
     $formatted_submission = theme('hpoints_submission',$submission);
     $formatted_message = theme('hpoints_reference_email',$studentname,$from,$name,$to,$formatted_submission);

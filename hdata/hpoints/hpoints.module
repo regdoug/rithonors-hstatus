@@ -22,7 +22,6 @@ define('HPOINTS_EMAIL_MSG','This type of submission requires a reference.');
  * that determines if (1) it should be shown in menus and (2) if a user
  * can visit it (throws a 403 on false)
  */
-//DONE:
 function hpoints_menu(){
     //AJAX callback
     //see docs for hpoints_cl_submission
@@ -100,7 +99,6 @@ function hpoints_perm(){
  * generate HTML.  The benefit of doing this is that it makes it easy for
  * other modules or themes to override your display.
  */
-//DONE:
 function hpoints_theme($existing, $type, $theme, $path){
     return array(
         'hpoints_display' => array(
@@ -175,11 +173,10 @@ function hpoints_reject_action($submission){
 }
 
 /**
- * Helper function to get type options
+ * Helper function to get type options.
  * 
- * //VERDICT: keep this function,but read from h_points_menu
- *      (and let's add some columns to h_points_menu, shall we?
- * //OPTION: move to hdata.
+ * Pulls types from hdata_points_type_list() and puts them in a form that
+ * the Form API will understand.
  */
 function hpoints_get_type_options(){
     $list = hdata_points_type_list();
@@ -188,6 +185,11 @@ function hpoints_get_type_options(){
     }
     return $options;
 }
+
+/**
+ * Helper function to determine which points need emails sent as part
+ * of a submission
+ */
 function hpoints_type_needs_email($typeid){
     $list = hdata_points_type_list();
     return $list[$typeid]['send_email'] == 1;
