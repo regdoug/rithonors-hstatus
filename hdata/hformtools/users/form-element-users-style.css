@@ -4,10 +4,9 @@
     background-color: #eee;
 }
 .hformtools-users > .ajaxelement .user {
-    display:inline-block;
-    width: 80px;
-    padding: 2px;
-    margin: 3px;
+    background-color: #dadada;
+    border: 1.5px solid SkyBlue;
+    border-radius: 3px;
 }
 .hformtools-users > .ajaxelement .group {
     border: 1px solid green;
@@ -18,4 +17,5 @@
     width: 80px;
     padding: 2px;
     margin: 3px;
+    border-radius: 3px;
 }

@@ -20,6 +20,10 @@ Drupal.behaviors.hftUsersLoad = function (context) {
             $(this).val('');
         }
     });
+    $('.hformtools-users').closest('form').bind('submit',function(e){
+        $('.hformtools-users textarea').val($(".hformtools-users .dynamic .user").text());
+    });
+        
     $('.hformtools-users .textarea').hide();
     $(".hformtools-users .ajaxelement").show();
 }
@@ -28,8 +32,6 @@ Drupal.behaviors.hftUsersBindDelete = function (context){
     $(".hformtools-users .del",context).not('hformtools-processed').addClass("hformtools-processed").click(function(e){
         e.preventDefault()
         $(this).closest('.parent').remove();
-        //testing
-        $('.hformtools-users textarea').val($(".hformtools-users .dynamic .user").text());
     });
 }
 
@@ -39,7 +41,7 @@ Drupal.theme.prototype.hFormToolsUsers = function(username, type){
     var classes = "";
     switch(type){
         case 'user': classes = 'user parent';break;
-        case 'group': classes = 'group-label';break;
+        case 'group': classes = 'group group-label';break;
         default: return "";
     }
     return $('<span>' + username + ' <a class="del"href="#"><img src="' +
@@ -61,7 +63,6 @@ function hFormToolsAddValues(values) {
             $(".hformtools-users .dynamic").append(Drupal.theme('hFormToolsUsers',values[v],'user'));
         }
     }
-    $(".hformtools-users .textarea textarea").val($(".hformtools-users .dynamic").text());
     Drupal.attachBehaviors()
 }
 
@@ -77,7 +78,7 @@ function hFormToolsLoadGroup(group) {
             }
         },
         complete: function (jqXHR, status) { 
-            alert("AJAX status "+status);
+            //alert("AJAX status "+status);
             $("."+tmpname).remove(); 
         },
     });
