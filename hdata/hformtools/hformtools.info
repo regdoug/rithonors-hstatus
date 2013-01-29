@@ -1,0 +1,14 @@
+; hformtools.info
+; Created 1/22/13 by Reginald Pierce
+
+name = hFormTools
+description = Database abstraction for Honors package.  Created by the RIT Honors Tech Committee
+
+; Group Honors modules on the modules page
+package = Honors
+
+; required
+core = 6.x
+
+; Some AJAX calls need database information.
+dependencies[] = hdata
