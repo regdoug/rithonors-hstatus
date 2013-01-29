@@ -55,24 +55,7 @@ function hpoints_menu(){
         'access arguments' => array('administer points submissions'),
     );
     
-    //Bulk UI test
-    $items['hpoints/tests/bulkui'] = array(
-        'title' => 'Test hPoints Bulk UI',
-        'page callback' => 'hpoints_test_bulk_ui',
-        'access callback' => true,
-    );
-    
     return $items;
-}
-
-function hpoints_test_bulk_ui(){
-    $thispath = drupal_get_path('module','hpoints');
-    drupal_set_message("Adding {$thispath}/bulkui.js");
-    drupal_add_js($thispath.'/bulkui.js');
-    drupal_add_js(array('hpointsBasePath'=>base_path().$thispath),'setting');
-    drupal_set_message("Adding {$thispath}/bulkui.css");
-    drupal_add_css($thispath.'/bulkui.css');
-    return theme('hpoints_form_bulk_users');
 }
 
 /**
@@ -85,9 +68,7 @@ function hpoints_test_bulk_ui(){
  * such as username, total hours, or time submitted.  It merely gets the
  * submission data and themes it with the theme hook "hpoints_cl_activity"
  */
-//DONE:
 function hpoints_submission($sid){
-    //TODO: write this function
     $points = hdata_points_load($sid);
     $data = $points['data'];
     if($data){
@@ -107,7 +88,6 @@ function hpoints_submission($sid){
  *
  * Just returns an array of strings to be used on the permissions page
  */
-//DONE:
 function hpoints_perm(){
     return array('submit points', 'bulk submit points',
         'administer points submissions', 'review points submissions');
@@ -245,20 +225,17 @@ function hpoints_views_api(){
 
 
 /**
- * Allows access if the user is an active student and has permission to
- * submit comp learning.
+ * Allows access if the user has the right to submit points
  */
-//VERDICT: unnecessary, replace with user_access
-//Has role Honors or Faculty is all that's needed.
 function _hpoints_form_access(){
     return user_access('submit points') || user_access('bulk submit points');
 }
 
-//VERDICT: why is this even in hcomplearn?
-//ANSWER: used for VBO
 /**
  * Allows access to the reviewing pages if the user has the
  * 'review complementary learning' permission or is the superuser (UID 1)
+ * 
+ * Used for VBO
  */
 function _hpoints_review_access($op,$submission=null,$account=null){
     if(is_numeric($op)){

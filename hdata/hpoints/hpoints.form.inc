@@ -19,19 +19,6 @@ function hpoints_build_form(){
 }
 
 /**
- * Processes an input element from a plain textfield to an HTML5 textfield
- */
-
-function hpoints_html5_number($html,$elements){
-    $html = str_replace('type="text"','type="number"',$html);
-    return $html;
-}
-function hpoints_html5_email($html,$elements){
-    $html = str_replace('type="text"','type="email"',$html);
-    return $html;
-}
-
-/**
  * Validates a number as an integer
  */
 function hpoints_form_int_validate($element, &$form_state){
@@ -90,12 +77,34 @@ function hpoints_form_submit($form, &$form_state){
 }
 
 function hpoints_form_bulk_submit($form, &$form_state){
-    //emails never needed to be sent
-    //get all attached students
-    //generate one submission
-        //on loop change names one-by-one and save
+    global $user;
+    if(!isset($user->name)){
+        $user = user_load(array('uid' => $user->uid));
+    }
     
-    //Use ctools bulk api?
+    $submission_tmpl = array(
+        'explanation'   => $form_state['values']['description'],
+        'type'          => $form_state['values']['type'],
+        'submittedBy'   => $user->name,
+        'credits'       => $form_state['values']['points'],
+    );
+    $user_str = preg_replace('[^a-z0-9\\s]','',$form_state['values']['users']);
+    $users = explode(' ',$user_str);
+    if(is_array($users)){
+        foreach($users as $student){
+            $s = array('username' => $student);
+            if(hdata_user_is_active_student($s)){
+                $sub = $submission_tmpl + $s;
+                hdata_points_save($sub);
+            }else{
+                drupal_set_message(t('%user is not an active student.',array('username' => $student)),'warning');
+            }
+        }
+    }else{
+        form_set_error($form['users'],'Invalid Recipient Usernames');
+    }
+    
+    //OPTION: Use ctools bulk api?
 }
 
 //====================================
@@ -123,6 +132,7 @@ function hpoints_form_bulk_submit($form, &$form_state){
  * 
  * some elements may be useful
  */
+ //TODO: remove now
 function _hpoints_page_n($n,&$form,$data){
     $form['page'] = array(
         '#type' => 'value',
@@ -145,14 +155,15 @@ function _hpoints_page_n($n,&$form,$data){
     );
     $form['hours'] = array(
         '#title' => t('Hours Spent'),
-        '#type' => 'textfield',
+        '#type' => 'hformtools_html5_number',
         '#size' => 5,
         '#maxlength' => 2,
         '#required' => true,
         '#element_validate' => array('hpoints_form_cl_int_validate'),
         //HTML5 attributes
-        '#attributes' => array('min' => '0', 'max' => '50', 'step' => '1'),
-        '#post_render' => array('hpoints_number'),
+        '#min' => 0,
+        '#max' => 50,
+        '#step' => 1,
     );
     $form['name'] = array(
         '#type' => 'textfield',
@@ -253,7 +264,6 @@ function _hpoints_form(&$form,$huser){
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Submit'),
-      '#disabled' => !$maysubmit,
     );
 }
 
@@ -270,14 +280,11 @@ function _hpoints_form_email (&$form,$huser){
     $form['email'] = array(
         '#title' => t('Email'),
         '#description' => t('Enter the email address of the your reference'),
-        '#type' => 'textfield',
+        '#type' => 'hformtools_html5_number',
         '#size' => 5,
         '#maxlength' => 2,
         '#required' => true,
         '#element_validate' => array('hpoints_form_int_validate'),
-        //HTML5 attributes
-        '#attributes' => array('min' => '1', 'max' => '5', 'step' => '1'),
-        '#post_render' => array('hpoints_html5_email'),
     );
     $form['message'] = array(
         '#title' => t('Message'),
@@ -287,7 +294,11 @@ function _hpoints_form_email (&$form,$huser){
 }
 
 function hpoints_form_bulk (&$form_state){
-    //TODO: we need some type of fancy AJAX user list
+    $form['users'] = array(
+        '#title' => t('Recipients'),
+        '#description' => t('Enter the usernames of the students who will recieve the points'),
+        '#type' => 'hformtools_users',
+    );
     $form['type'] = array(
         '#title' => t('Activity Type'),
         '#type' => 'select',
@@ -300,14 +311,15 @@ function hpoints_form_bulk (&$form_state){
     );
     $form['points'] = array(
         '#title' => t('Credits Awarded'),
-        '#type' => 'textfield',
+        '#type' => 'hformtools_html5_number',
         '#size' => 5,
         '#maxlength' => 2,
         '#required' => true,
         '#element_validate' => array('hpoints_form_int_validate'),
         //HTML5 attributes
-        '#attributes' => array('min' => '1', 'max' => '5', 'step' => '1'),
-        '#post_render' => array('hpoints_html5_number'),
+        '#min' => 1,
+        '#max' => 10,
+        '#step' => 1,
     );
     $form['submit'] = array(
       '#type' => 'submit',

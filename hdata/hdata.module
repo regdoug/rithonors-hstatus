@@ -73,7 +73,7 @@ function hdata_load_note($id){ return _hdata_load_note($id); }
 function hdata_save_note($note, $username){ return _hdata_save_note($note, $username); }
 
 /* loads point types from {h_points_menu} */
-function hdata_points_type_list(){ return _hdata_hpoints_type_list(); }
+function hdata_points_type_list(){ return _hdata_points_type_list(); }
 function hdata_points_type_save($type){ return _hdata_hpoints_type_save($type); }
 /* loads a point submission */
 function hdata_points_load($id){ return _hdata_points_load($id); }
