@@ -1,0 +1,147 @@
+<?php
+
+function hformtools_elements(){
+    // The following definitions were adapted from system_elements in system.module (line 164)
+    $type['hformtools_users'] = array(
+        '#input' => TRUE,
+        '#cols' => 60,
+        '#rows' => 5,
+        '#resizable' => TRUE,
+        '#process' => array('form_expand_ahah'),
+    );
+    $type['hformtools_html5_number'] = array(
+        '#input' => TRUE,
+        '#size' => 60,
+        '#maxlength' => 128,
+        '#autocomplete_path' => FALSE,
+        '#process' => array('form_expand_ahah'),
+    );
+    $type['hformtools_html5_email'] = array(
+        '#input' => TRUE,
+        '#size' => 60,
+        '#maxlength' => 128,
+        '#autocomplete_path' => FALSE,
+        '#process' => array('form_expand_ahah'),
+    );
+    return $type;
+}
+
+function hformtools_theme($existing, $type, $theme, $path){
+    $hooks['hformtools_users'] = array(
+        'template' => 'users/form-element',
+        'file' => 'users/hformtools_users.inc',
+        'arguments' => array('element' => null),
+    );
+    $hooks['hformtools_html5'] = array(
+        'arguments' => array('element' => null, 'type' => 'text'),
+    );
+    $hooks['hformtools_html5_number'] = array(
+        'arguments' => array('element' => null),
+    );
+    $hooks['hformtools_html5_email'] = array(
+        'arguments' => array('element' => null),
+    );
+    return $hooks;
+}
+
+function theme_hformtools_html5_number($element) {
+    if(isset($element['#min'])){
+        $element['#attributes']['min'] = intval($element['#min']);
+    }
+    if(isset($element['#max'])){
+        $element['#attributes']['max'] = intval($element['#max']);
+    }
+    if(isset($element['#step'])){
+        $element['#attributes']['step'] = intval($element['#step']);
+    }
+
+    return theme('hformtools_html5',$element,'number');
+}
+function theme_hformtools_html5_email($element) { 
+    return theme('hformtools_html5',$element,'email');
+}
+//Slight modification of theme_textfield() from includes/common.inc
+function theme_hformtools_html5($element,$type='text'){
+    $size = empty($element['#size']) ? '' : ' size="' . $element['#size'] . '"';
+    $maxlength = empty($element['#maxlength']) ? '' : ' maxlength="' . $element['#maxlength'] . '"';
+    $class = array('form-'.$type);
+    $extra = '';
+    $output = '';
+
+    if ($element['#autocomplete_path'] && menu_valid_path(array('link_path' => $element['#autocomplete_path']))) {
+        drupal_add_js('misc/autocomplete.js');
+        $class[] = 'form-autocomplete';
+        $extra =  '<input class="autocomplete" type="hidden" id="' . $element['#id'] . '-autocomplete" value="' . check_url(url($element['#autocomplete_path'], array('absolute' => TRUE))) . '" disabled="disabled" />';
+    }
+    _form_set_class($element, $class);
+
+    if (isset($element['#field_prefix'])) {
+        $output .= '<span class="field-prefix">' . $element['#field_prefix'] . '</span> ';
+    }
+    
+    $output .= '<input type="'.$type.'"' . $maxlength . ' name="' . $element['#name'] . '" id="' . $element['#id'] . '"' . $size . ' value="' . check_plain($element['#value']) . '"' . drupal_attributes($element['#attributes']) . ' />';
+
+    if (isset($element['#field_suffix'])) {
+        $output .= ' <span class="field-suffix">' . $element['#field_suffix'] . '</span>';
+    }
+
+    return theme('form_element', $element, $output) . $extra;
+}
+
+function hformtools_menu(){
+    $menu['hformtools/ajax/users/group/%'] = array(
+        'title' => 'hFormTools AJAX Callback - Group',
+        'type' => MENU_CALLBACK,
+        'page callback' => 'hformtools_users_ajax_groups',
+        'page arguments' => array(4),
+        'access callback' => true,
+        'file' => 'users/hformtools_users.inc',
+    );
+    $menu['hformtools/test'] = array(
+        'title' => 'Test hFormTools',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('hformtools_testform'),
+        'access callback' => true,
+    );
+    return $menu;
+}
+
+function hformtools_testform(&$form_state){
+    $form['html5_number'] = array(
+        '#type' => 'hformtools_html5_number',
+        '#title' => 'HTML5 Number',
+        '#min' => 0,
+        '#max' => 20,
+        '#step' => 5,
+        
+    );
+    $form['html5_email'] = array(
+        '#type' => 'hformtools_html5_email',
+        '#title' => 'HTML5 Email',
+    );
+    $form['users'] = array(
+        '#type' => 'hformtools_users',
+        '#title' => 'AJAX Users',
+    );
+    if(is_array($form_state['storage']['lastsubmission'])){
+        foreach($form as $name => $item){
+            $form[$name]['#default_value'] = $form_state['storage']['lastsubmission'][$name];
+        }
+        $form['lastsub'] = array(
+            '#prefix' => '<pre>',
+            '#suffix' => '</pre>',
+            '#value' => print_r($form_state['storage']['lastsubmission'],true).PHP_EOL.PHP_EOL.print_r($form,true),
+            '#default_value' => 'dtsgla',
+            '#weight' => -20,
+        );
+    }
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => 'Submit',
+    );
+    return $form;
+}
+    
+function hformtools_testform_submit($form, &$form_state){
+    $form_state['storage']['lastsubmission'] = $form_state['values'];
+}

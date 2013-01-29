@@ -72,6 +72,14 @@ function hdata_load_note($id){ return _hdata_load_note($id); }
  * Returns the note on success, FALSE on failure*/
 function hdata_save_note($note, $username){ return _hdata_save_note($note, $username); }
 
+/* loads point types from {h_points_menu} */
+function hdata_points_type_list(){ return _hdata_points_type_list(); }
+function hdata_points_type_save($type){ return _hdata_hpoints_type_save($type); }
+/* loads a point submission */
+function hdata_points_load($id){ return _hdata_points_load($id); }
+/* saves a point submission */
+function hdata_points_save($submission){ return _hdata_points_save($submission); }
+
 /*
  * Implemented Hooks
  * 
@@ -331,20 +339,13 @@ function _hdata_user_load_continuation($username){
 
 function _hdata_user_load_points($username){
 	$rs = db_query("
-		SELECT explanation,
-			submittedTime,
-			submittedBy,
-			approved,
-			approvedBy,
-			approvedTime,
-			declinedReason,
-			numPoints
+		SELECT id
 		FROM {h_students_points} WHERE username = '%s'", $username);
 	
 	// Get multiple possible rows
-	while ($row =  db_fetch_array($rs))
+	while ($row =  db_result($rs))
 	{
-	   $arry[] = $row;
+	   $arry[] = _hdata_points_load($row);
 	}
 	
 	// Calculate total points and then return the array
@@ -364,6 +365,95 @@ function _hdata_user_load_points($username){
 	{
 		return false;
 	}
+}
+
+function _hdata_points_load($id) {
+    $rs = db_query("SELECT id,
+            username,
+            explanation,
+            pointID as type,
+			submitted as submitted_time,
+			submittedBy as submitted_by,
+			approved as status,
+			approvedBy as reviewer,
+			approvedTime as reviewed_time,
+			declinedReason as reason,
+			numPoints as credits
+		FROM {h_students_points} WHERE id = %d",$id);
+    if($rs){
+        return db_fetch_array($rs);
+    }else{
+        return false;
+    }
+}
+function _hdata_points_save($sub) {
+    if($sub['id']){
+        $q = "UPDATE {h_students_points} SET
+            username='%s', pointID=%d, explanation='%s',
+            submitted='%s', submittedBy='%s', approved='%s',
+            approvedBy='%s', approvedTime='%s', declinedReason='%s',
+            numPoints=%d WHERE id=%d";
+        $rs = db_query($q,$sub['username'],$sub['type'],$sub['explanation'],$sub['submitted_time'],$sub['submitted_by'],
+            $sub['status'],$sub['reviewer'],$sub['reviewed_time'],$sub['reason'],$sub['credits'],$sub['id']);
+        if(!$rs){
+            return false;
+        }
+        if(db_affected_rows() == 1){
+            return $sub;
+        }
+    }
+    //If we get to this point, either the id wasn't set or the id that was set didn't
+    //affect any rows in the query.  Either way, we need an INSERT statement.
+    $sub['submitted_time'] = strftime('%F %H:%M:%S');
+    $q = "INSERT INTO {h_students_points} 
+        (username, pointID, explanation, submitted, submittedBy, approved, approvedBy, approvedTime, declinedReason, numPoints) 
+        VALUES ('%s', %d,   '%s',        '%s',      '%s',        %d,       '%s',       '%s',         '%s',           %d)";
+    $rs = db_query($q,$sub['username'],$sub['type'],$sub['explanation'],$sub['submitted_time'],$sub['submitted_by'],
+            $sub['status'],$sub['reviewer'],$sub['reviewed_time'],$sub['reason'],$sub['credits']);
+    if($rs && db_affected_rows() == 1){
+        $sub['id'] = db_last_insert_id();
+        return $sub;
+    }else{
+        return false;
+    }
+}
+function _hdata_points_type_list($enabled=true) {
+    //OPTION:  cache??
+    $rs = db_query("SELECT id, title, description,sorting as weight, enabled, send_email
+            FROM {h_points_menu} WHERE %d OR enabled=1",$enabled?0:1);
+    $list = array();
+    while(($row = db_fetch_array($rs))){
+        $list[$row['id']] = $row;
+    }
+    return $list;
+}
+function _hdata_points_type_save($type) {
+    $now = strftime('%F %H:%M:%S');
+    if(isset($type['id'])){
+        $q = "UPDATE {h_points_menu} SET title='%s', description='%s',
+                    edited='%s', sorting=%d, enabled=%d, send_email=%d
+                WHERE id=%d";
+        $rs = db_query($q,$type['title'],$type['description'],$now,$type['weight'],$type['enabled'],$type['send_email'],$type['id']);
+        if(!$rs){
+            return false;
+        }
+        if(db_affected_rows() == 1){
+            return $type;
+        }
+    }
+    //If we get to this point, either the id wasn't set or the id that was set didn't
+    //affect any rows in the query.  Either way, we need an INSERT statement.
+    $sub['submitted_time'] = strftime('%F %H:%M:%S');
+    $q = "INSERT INTO {h_points_menu}
+        (title, description, added, edited, sorting, enabled, send_email) 
+        VALUES ('%s', '%s',   '%s', '%s',   %d,      %d,      %d)";
+    $rs = db_query($q,$type['title'],$type['description'],$now,$now,$type['weight'],$type['enabled'],$type['send_email']);
+    if($rs && db_affected_rows() == 1){
+        $type['id'] = db_last_insert_id();
+        return $type;
+    }else{
+        return false;
+    }
 }
 
 /*
