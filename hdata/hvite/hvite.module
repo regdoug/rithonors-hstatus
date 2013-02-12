@@ -1,0 +1,260 @@
+<?php
+
+/**
+ * @file hvite.module
+ * 
+ * This file must be located in the hvite folder and is loaded on every
+ * page.
+ */
+
+function hvite_menu()
+{
+    $items['user/%user/hvite'] = array(
+		'type' => MENU_LOCAL_TASK,
+        'title' => 'hvite test page',
+		'page arguments' => array(1),
+        'page callback' => 'stuff',
+		'access arguments' => array(1),
+		'access callback' => 'hvite_access',
+    );
+	
+    return $items;
+}
+
+// This looks useful: http://drupal.org/project/date
+
+// This was copypasted from http://drupal.org/node/751826 so I can get used to the Drupal form API
+function test_myform(&$form_state)
+{
+  // Access log settings:
+  $options = array('1' => t('Enabled'), '0' => t('Disabled'));
+  $form['access'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Access log settings'),
+    '#tree' => TRUE,
+  );
+  $form['access']['log'] = array(
+    '#type' => 'radios',
+    '#title' => t('Log'),
+    '#default_value' =>  variable_get('log', 0),
+    '#options' => $options,
+    '#description' => t('The log.'),
+  );
+  $period = drupal_map_assoc(array(3600, 10800, 21600, 32400, 43200, 86400, 172800, 259200, 604800, 1209600, 2419200, 4838400, 9676800), 'format_interval');
+  $form['access']['timer'] = array(
+    '#type' => 'select',
+    '#title' => t('Discard logs older than'),
+    '#default_value' => variable_get('timer', 259200),
+    '#options' => $period,
+    '#description' => t('The timer.'),
+  );
+  // Description
+  $form['details'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Details'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['details']['description'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Describe it'),
+    '#default_value' =>  variable_get('description', ''),
+    '#cols' => 60,
+    '#rows' => 5,
+    '#description' => t('Log description.'),
+  );
+  $form['details']['admin'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Only admin can view'),
+    '#default_value' => variable_get('admin', 0),
+  );
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#size' => 30,
+    '#maxlength' => 64,
+    '#description' => t('Enter the name for this group of settings'),
+  );
+  $form['hidden'] = array('#type' => 'value', '#value' => 'is_it_here');
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save'));
+ 
+
+  // Provide a format using regular PHP format parts (see documentation on php.net).
+  // If you're using a date_select, the format will control the order of the date parts in the selector,
+  // rearrange them any way you like. Parts left out of the format will not be displayed to the user.
+  $format = 'Y-m-d H:i';
+ $date = '2008-12-31 00:00:00';
+  $form['date2'] = array(
+     '#type' => 'date_popup', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+     '#title' => t('select a date'),
+     //'#default_value' => $date, 
+     //'#date_format' => $format,
+     '#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+     '#date_timezone' => 'America/Chicago', // Optional, if your date has a timezone other than the site timezone.
+     '#date_increment' => 15, // Optional, used by the date_select and date_popup elements to increment minutes and seconds.
+     '#date_year_range' => '-3:+3', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+  );
+
+  return $form;
+}
+
+function test_myform_validate($form, &$form_state)
+{
+  if ($form_state['values']['name'] == '') {
+    form_set_error('', t('You must select a name for this group of settings.'));
+  }
+}
+
+function test_myform_submit($form, &$form_state)
+{
+  drupal_set_message(t('Your form has been saved.'));
+}
+
+/*
+ * Form for creating an event
+ */
+function hvite_createevent_form(&$form_state)
+{
+	/* Event details */
+	$form['details'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Event details'),
+		'#tree' => TRUE,
+	);
+	
+	/* Title */
+	$form['details']['title'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Event title'),
+		'#cols' => 60,
+		'#rows' => 5,
+		'#description' => t('Max: 100 characters'),
+	);
+	
+	/* Location */
+	$form['details']['location'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Event location'),
+		'#cols' => 60,
+		'#rows' => 5,
+		'#description' => t('Max: 100 characters'),
+	);
+	
+	/* Description */
+	$form['details']['description'] = array(
+		'#type' => 'textarea',
+		'#title' => t('Event description'),
+		'#cols' => 60,
+		'#rows' => 5,
+		//'#description' => t('Event description.'),
+	);
+	
+	/* Start date and time */
+	$form['details']['startdate'] = array(
+		'#type' => 'date_popup', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+		'#title' => t('Start date and time'),
+		'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+		'#date_year_range' => '-3:+3', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+	);
+	
+	/* End date and time */
+	$form['details']['enddate'] = array(
+		'#type' => 'date_popup', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+		'#title' => t('End date and time'),
+		'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
+		'#date_year_range' => '-3:+3', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+	);
+	
+	/* Submit button */
+	$form['submit'] = array('#type' => 'submit', '#value' => t('Create event'));
+
+	return $form;
+}
+
+function hvite_createevent_form_validate($form, &$form_state)
+{
+	if ($form_state['values']['details']['title'] == '')
+	{
+		form_set_error('title', t('You must enter a title.'));
+	}
+	if ($form_state['values']['details']['location']  == '')
+	{
+		form_set_error('location', t('You must enter a location.'));
+	}
+	if ($form_state['values']['details']['description'] == '')
+	{
+		form_set_error('description', t('You must enter a description.'));
+	}
+	if (!isset($form_state['values']['details']['startdate']))
+	{
+		form_set_error('startdate', t('You must enter a start date.'));
+	}
+	if (!isset($form_state['values']['details']['enddate']))
+	{
+		form_set_error('enddate', t('You must select an end date.'));
+	}
+}
+
+function hvite_createevent_form_submit($form, &$form_state)
+{
+	$str = "Title: '" . $form_state['values']['details']['title'] . "'<br />";
+	$str .= "Location: '" . $form_state['values']['details']['location'] . "'<br />";
+	$str .= "Description: '" . $form_state['values']['details']['description'] . "'<br />";
+	$str .= "Start date: '" . $form_state['values']['details']['startdate'] . "' (" . strtotime($form_state['values']['details']['startdate']) . ")<br />";
+	$str .= "End date: '" . $form_state['values']['details']['enddate'] . "' (" . strtotime($form_state['values']['details']['enddate']) . ")<br />";
+	drupal_set_message(t('Event created.'));
+	drupal_set_message(t($str));
+}
+
+/**
+ * Generates the page
+ */
+function stuff()
+{
+	return drupal_get_form('hvite_createevent_form');
+}
+
+/**
+ * Implements hook_perm
+ * 
+ * Just returns an array of strings to be used on the permissions page
+ */
+function hvite_perm(){
+    return array('view all hVite pages', 'view hVite', 'RSVP to hVite events');
+}
+
+/*----------------Access Callbacks------------------*/
+
+/**
+ * Menu access callback for a user's MyStatus page.
+ *
+ * @param $account
+ *   A user account object.
+ * @return
+ *   TRUE if the current user has access, FALSE otherwise.
+ */
+function hvite_access($account) {
+    //$account is the page that is being accessed
+    //$user is the currently logged in user (almost always)
+    global $user;
+	
+    // Anonymous users can't do anything related to hvite
+    if (!$user->uid || !$account->uid)
+	{
+        return FALSE;
+    }
+	
+    // Administrators. (defined in hook_perm)
+    if (user_access('view all hVite pages'))
+	{
+        return TRUE;
+    }
+
+    // Most users can see their own status.
+    if ($user->uid == $account->uid && user_access('view hVite')) {
+        return TRUE;
+    }
+
+    //catch-all
+    return FALSE;
+}
