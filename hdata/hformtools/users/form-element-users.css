@@ -3,24 +3,23 @@
     display: none;
 }
 .hformtools-users > .ajaxelement {
-    width: 480px;
     min-height: 100px;
-    padding: 10px;
+    padding: 8px;
     display: none;
 }
 .hformtools-users > .ajaxelement .user {
     display:inline-block;
     width: 80px;
-    padding: 2px;
-    margin: 3px;
+    padding: 1px 3px;
+    margin: 2px;
 }
 .hformtools-users > .ajaxelement .group {
     margin: 0px;
-    padding: 0px;
+    padding: 1px;
 }
 .hformtools-users > .ajaxelement .group-label {
     display:inline-block;
     width: 80px;
-    padding: 2px;
-    margin: 3px;
+    padding: 1px 3px;
+    margin: 2px;
 }
