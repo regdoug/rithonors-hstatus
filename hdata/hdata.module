@@ -6,12 +6,9 @@
  * I chose to put this in a separate module for two reasons.
  *  - It keeps the code cleaner in the other files.
  *  - It gives more flexibility if we should change the db structure.
+ *
+ * WARNING. THIS MODULE DOES NOT DO PERMISSION CHECKS!
  */
-
-//WARNING. THIS MODULE DOES NOT DO PERMISSION CHECKS!
-
-
-            
 
 /*
  * Public Functions
@@ -36,7 +33,7 @@ function hdata_user_load($userinfo,$reset=false){
     $caller=array_shift($trace);
     drupal_set_message("which was called by {$caller['function']}");
     */
-    
+
     return _hdata_user_load($userinfo,$reset);
 }
 /* Quick function to determine if the user is an active student */
@@ -46,7 +43,7 @@ function hdata_user_is_active_student($userinfo){ return _hdata_isactivestudent(
 function hdata_user_save($user){return _hdata_user_save($user);}
 /* Used internally, but userful(?) externally for info */
 //TODO: make this a system variable
-function hdata_user_cache_life(){return '1 second';}
+function hdata_user_cache_life(){return '1 month';}
 
 /* id should be uid if $draft is true */
 function hdata_cl_load($id,$draft=false){ return _hdata_cl_load($id,$draft); }
@@ -82,11 +79,11 @@ function hdata_points_save($submission){ return _hdata_points_save($submission);
 
 /*
  * Implemented Hooks
- * 
+ *
  * hdata doesn't implement many hooks, because it is primarily an API
  * module.
  */
- 
+
 function hdata_menu(){
     return array(
         'testhdata' => array(
@@ -197,7 +194,7 @@ function _hdata_user_load($userinfo, $reset = false){
 
     $u['name'] = $username;
     $u['uid'] = $uid;
-	
+
 	/* Load basic people from peoplesoft table. If that fails, read from legacy table. */
 	if (($u['basic'] = _hdata_user_load_basic_peoplesoft($username)) == false)
 	{
@@ -207,12 +204,12 @@ function _hdata_user_load($userinfo, $reset = false){
 			return false;
 		}
 	}
-	
+
     $u['continuation'] = _hdata_user_load_continuation($username);
     $u['points'] = _hdata_user_load_points($username);
     $u['submissions'] = _hdata_user_load_submissions($uid);
 	$u['courses']=_hdata_courses_load($username);
-	
+
     cache_set("hdata_user:$username", $u, 'cache_honors',
         strtotime('+'.hdata_user_cache_life()));
     $husers[$username] = $u;  //update static variable for future calls
@@ -346,13 +343,13 @@ function _hdata_user_load_points($username){
 	$rs = db_query("
 		SELECT id
 		FROM {h_students_points} WHERE username = '%s'", $username);
-	
+
 	// Get multiple possible rows
 	while ($row =  db_result($rs))
 	{
 	   $arry[] = _hdata_points_load($row);
 	}
-	
+
 	// Calculate total points and then return the array
 	if (isset($arry))
 	{
@@ -362,7 +359,7 @@ function _hdata_user_load_points($username){
 		{
 			$total += $arr['numPoints'];
 		}
-		
+
 		$arry['total'] = $total;
 		return $arry;
 	}
@@ -407,7 +404,7 @@ function _hdata_courses_load($username) {
 	}
 		return $allcourses;
 }
-				
+
 function _hdata_points_save($sub) {
     if($sub['id']){
         $q = "UPDATE {h_students_points} SET
@@ -427,8 +424,8 @@ function _hdata_points_save($sub) {
     //If we get to this point, either the id wasn't set or the id that was set didn't
     //affect any rows in the query.  Either way, we need an INSERT statement.
     $sub['submitted_time'] = strftime('%F %H:%M:%S');
-    $q = "INSERT INTO {h_students_points} 
-        (username, pointID, explanation, submitted, submittedBy, approved, approvedBy, approvedTime, declinedReason, numPoints) 
+    $q = "INSERT INTO {h_students_points}
+        (username, pointID, explanation, submitted, submittedBy, approved, approvedBy, approvedTime, declinedReason, numPoints)
         VALUES ('%s', %d,   '%s',        '%s',      '%s',        %d,       '%s',       '%s',         '%s',           %d)";
     $rs = db_query($q,$sub['username'],$sub['type'],$sub['explanation'],$sub['submitted_time'],$sub['submitted_by'],
             $sub['status'],$sub['reviewer'],$sub['reviewed_time'],$sub['reason'],$sub['credits']);
@@ -468,7 +465,7 @@ function _hdata_points_type_save($type) {
     //affect any rows in the query.  Either way, we need an INSERT statement.
     $sub['submitted_time'] = strftime('%F %H:%M:%S');
     $q = "INSERT INTO {h_points_menu}
-        (title, description, added, edited, sorting, enabled, send_email) 
+        (title, description, added, edited, sorting, enabled, send_email)
         VALUES ('%s', '%s',   '%s', '%s',   %d,      %d,      %d)";
     $rs = db_query($q,$type['title'],$type['description'],$now,$now,$type['weight'],$type['enabled'],$type['send_email']);
     if($rs && db_affected_rows() == 1){
@@ -522,7 +519,7 @@ function _hdata_user_save($user){
     if($user['basic']['legacy']){
         return false;
     }
-    
+
     $success = _hdata_user_save_basic($user) || _hdata_user_save_continuation($user);
     if($success){
         cache_set("hdata_user:$username", $u, 'cache_honors',
@@ -533,7 +530,7 @@ function _hdata_user_save($user){
 
 function _hdata_user_save_basic($user){
     $q = "UPDATE {h_students_peoplesoft}
-        SET uid=%d, firstname='%s', lastname='%s', college='%s', dept='%s', planid='%s', 
+        SET uid=%d, firstname='%s', lastname='%s', college='%s', dept='%s', planid='%s',
                 status=%d, enteredrit=%d, enteredhonors=%d, lefthonors=%d
         WHERE username='%s'";
     $b = $user['basic'];
@@ -772,7 +769,7 @@ function _hdata_load_note($id){
 }
 function _hdata_save_note($note, $username){
     if(isset($note['id'])){
-        $q = "UPDATE {h_notes} SET 
+        $q = "UPDATE {h_notes} SET
                 title='%s', note='%s', date='%s', cont_id='%s', dce='%s'";
         $rs = db_query($q,$note['title'],$note['body'],$note['date'],$note['cont_id'],$username);
     }else{
@@ -792,7 +789,7 @@ function _hdata_save_note($note, $username){
 /**
  * This function will provide a username list of students based on the
  * 'college' and 'active' criteria.
- * 
+ *
  * @param college If null, load all colleges, otherwise load the college
  * @param active (Optional) If true, load only active students
  */
@@ -849,7 +846,7 @@ function _hdata_student_list_legacy($college,$active){
  * 'college' and 'type' criteria supplied.  Type refers to the faculty
  * account type, which is generally the position which a faculty member
  * holds.  See h_faculty_types
- * 
+ *
  * @param college If null, load all colleges, otherwise load the college
  * @param type If less than zero, load all types, otherwise load only specified
  */
