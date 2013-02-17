@@ -46,7 +46,7 @@ function hdata_user_is_active_student($userinfo){ return _hdata_isactivestudent(
 function hdata_user_save($user){return _hdata_user_save($user);}
 /* Used internally, but userful(?) externally for info */
 //TODO: make this a system variable
-function hdata_user_cache_life(){return '1 month';}
+function hdata_user_cache_life(){return '1 second';}
 
 /* id should be uid if $draft is true */
 function hdata_cl_load($id,$draft=false){ return _hdata_cl_load($id,$draft); }
@@ -188,7 +188,7 @@ function _hdata_user_load($userinfo, $reset = false){
     }
 
     if(!$reset && ($cache = cache_get("hdata_user:$username",'cache_honors'))) {
-        if(!empty($cache->data) && $cache->expire > time()){
+        if(!empty($cache->data) && $cache->created > time() - strtotime(hdata_user_cache_life())){
             // get from long term cache
             $husers[$username] = $cache->data;
             return $husers[$username];
@@ -211,7 +211,8 @@ function _hdata_user_load($userinfo, $reset = false){
     $u['continuation'] = _hdata_user_load_continuation($username);
     $u['points'] = _hdata_user_load_points($username);
     $u['submissions'] = _hdata_user_load_submissions($uid);
-
+	$u['courses']=_hdata_courses_load($username);
+	
     cache_set("hdata_user:$username", $u, 'cache_honors',
         strtotime('+'.hdata_user_cache_life()));
     $husers[$username] = $u;  //update static variable for future calls
@@ -390,6 +391,23 @@ function _hdata_points_load($id) {
         return false;
     }
 }
+
+function _hdata_courses_load($username) {
+	$rs=db_query("SELECT id,
+				username,
+				name,
+				instructor,
+				term,
+				grade,
+				credits
+			FROM {h_students_courses_peoplesoft} WHERE username='%s'", $username);
+	$allcourses=array();
+	while (($row = db_fetch_array($rs))){
+		$allcourses[]=$row;
+	}
+		return $allcourses;
+}
+				
 function _hdata_points_save($sub) {
     if($sub['id']){
         $q = "UPDATE {h_students_points} SET
@@ -431,6 +449,7 @@ function _hdata_points_type_list($enabled=true) {
     }
     return $list;
 }
+
 function _hdata_points_type_save($type) {
     $now = strftime('%F %H:%M:%S');
     if(isset($type['id'])){

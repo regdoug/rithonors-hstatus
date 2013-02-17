@@ -1,5 +1,5 @@
 <?php
-
+//TODO: add styles to mystatus page via new css file. Use drupal_add_css
 /**
  * @file hstatus.module
  * 
