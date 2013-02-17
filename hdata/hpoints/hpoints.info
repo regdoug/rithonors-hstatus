@@ -1,0 +1,17 @@
+; hpoints.info
+; Created 1/2/13 by Reginald Pierce
+
+name = hPoints
+description = Points submission and review.  Created by the RIT Honors Tech Committee
+
+; In case we make other modules, this will group them on the modules page
+package = Honors
+
+; required
+core = 6.x
+
+; Dependencies
+dependencies[] = hdata
+dependencies[] = views
+dependencies[] = colorbox
+dependencies[] = ctools

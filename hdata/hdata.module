@@ -73,7 +73,7 @@ function hdata_load_note($id){ return _hdata_load_note($id); }
 function hdata_save_note($note, $username){ return _hdata_save_note($note, $username); }
 
 /* loads point types from {h_points_menu} */
-function hdata_points_type_list(){ return _hdata_hpoints_type_list(); }
+function hdata_points_type_list(){ return _hdata_points_type_list(); }
 function hdata_points_type_save($type){ return _hdata_hpoints_type_save($type); }
 /* loads a point submission */
 function hdata_points_load($id){ return _hdata_points_load($id); }
@@ -433,7 +433,7 @@ function _hdata_points_save($sub) {
     $rs = db_query($q,$sub['username'],$sub['type'],$sub['explanation'],$sub['submitted_time'],$sub['submitted_by'],
             $sub['status'],$sub['reviewer'],$sub['reviewed_time'],$sub['reason'],$sub['credits']);
     if($rs && db_affected_rows() == 1){
-        $sub['id'] = db_last_insert_id();
+        $sub['id'] = db_last_insert_id('h_students_points','id');
         return $sub;
     }else{
         return false;
@@ -875,7 +875,11 @@ function _hdata_faculty_list($college,$type=-1){
  * Simply checks to see if a student is active in the Honors program.
  */
 function _hdata_isactivestudent($userinfo){
-    if(empty($userinfo['name']) && empty($userinfo['uid'])){
+    if(is_numeric($userinfo)){
+        $userinfo = array('uid' => $userinfo);
+    }elseif(is_string($userinfo)){
+        $userinfo = array('name' => $userinfo);
+    }elseif(empty($userinfo['name']) && empty($userinfo['uid'])){
         return false;
     }
     if(empty($userinfo['name'])){
@@ -886,7 +890,8 @@ function _hdata_isactivestudent($userinfo){
         FROM {h_students_peoplesoft} s
         WHERE s.username='%s' AND s.status=1";
     $rs = db_query($q,$userinfo['name']);
-    if(db_fetch_array($rs)){
+    $name = db_result($rs);
+    if($name){
         return true;
     }else{
         return false;

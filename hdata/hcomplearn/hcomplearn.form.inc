@@ -1,4 +1,8 @@
 <?php
+//TODO: hcomplearn should use hformtools
+//  This means replacing the "faked" HTML5 number fields with fields of
+//  type 'hformtools_html5_number'
+//  Other changes may also be in order.
 
 /**
  * Convenience function to build complearning form
