@@ -1,0 +1,26 @@
+<?php
+/*
+ * Will need to declare plenty of permissions.
+ */
+hstudent_perm() {
+	return array(
+		'Administer hstudent module',
+		'Search students',
+		'Search faculty'
+	);
+}
+
+/*
+ * Need to register a path for the search page (and possibly a results page).
+ * Only register this page if the user has the appropriate permissions.
+ */
+hstudent_menu() {
+	$global user;
+	
+	items['student_search'] = array(
+		
+	);
+	items['search_results'] = array(
+		
+	);
+}
