@@ -2,7 +2,7 @@
 /*
  * Will need to declare plenty of permissions.
  */
-hstudent_perm() {
+function hstudent_perm() {
 	return array(
 		'Administer hstudent module',
 		'Search students',
@@ -14,13 +14,54 @@ hstudent_perm() {
  * Need to register a path for the search page (and possibly a results page).
  * Only register this page if the user has the appropriate permissions.
  */
-hstudent_menu() {
-	$global user;
-	
-	items['student_search'] = array(
-		
+function hstudent_menu() {
+	items['search_users'] = array(
+		'title' => "Search Users",
+		'page_callback' => '_hstudent_search_page',
+		'access_callback' => '_hstudent_search_access'
 	);
 	items['search_results'] = array(
-		
+		'title' => "Search Results",
+		'page_callback' => '_hstudent_results_page',
+		'access_callback' => '_hstudents_results_access'
 	);
+}
+
+/*
+ * Searches for the user with the given name or RIT DCE
+ */
+function hstudent_search($name) {
+
+}
+
+/*
+ * Page callback for .../search_users/
+ * Generates search page
+ */
+function _hstudent_search_page($arg) {
+
+}
+
+/*
+ * Access callback for URL .../search_users/
+ * Specifies access permissions for the search page
+ */
+function _hstudent_search_access($arg) {
+
+}
+
+/*
+ * Page callback for URL .../search_results/
+ * Generates results page
+ */
+function _hstudent_results_page($arg) {
+
+}
+
+/*
+ * Access callback for URL .../search_results/
+ * Specifies access permissions for results page
+ */
+function _hstudent_results_access($arg) {
+
 }
