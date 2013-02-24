@@ -407,7 +407,7 @@ function _hcomplearn_page_last(&$form,$huser,$data){
     $genericmessage = t('Your responses have been saved as a draft.
         They will be stored for up to @time.',
         array('@time' => hcomplearn_timetosave() ) );
-
+    
     $form['page'] = array(
         '#type' => 'value',
         '#value' => 'last',
@@ -416,32 +416,40 @@ function _hcomplearn_page_last(&$form,$huser,$data){
         '#value' => $genericmessage,
         '#prefix' => '<p>',
         '#suffix' => '</p>',
+        '#weight' => -15,
     );
     $form['info2'] = array(
         '#value' => $maysubmitmsg,
         '#prefix' => '<p>',
         '#suffix' => '</p>',
+        '#weight' => -13,
     );
     $form['info3'] = array(
         '#value' => $submitwarning,
         '#prefix' => '<p><strong>',
         '#suffix' => '</strong></p>',
+        '#weight' => -11,
     );
-    //DEBUG
-    $form['user'] = array(
-        '#prefix' => '<pre>',
-        '#value' => print_r($huser,true),
-        '#suffix' => '</pre>',
+    $form['submission-fieldset'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Preview Submission'),
+        '#collapsible' => true,
+        '#collapsed' => true,
+    );
+    $form['submission-fieldset']['submission'] = array(
+        '#value' => theme('hcomplearn_cl_activities',array('data' => $data)),
     );
     $form['back'] = array(
       '#type' => 'submit',
       '#value' => t('< Prev Page'),
       '#id' => 'back',
+      '#weight' => 10,
     );
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Done, Submit Now'),
       '#disabled' => !$maysubmit,
+      '#weight' => 10,
     );
 }
 
