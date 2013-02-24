@@ -10,10 +10,17 @@
 /**
  * Function defined by hstatus_menu to generate the page.
  *
- * All it does is start drupal's theme system
+ * If user has permission to view the MyStatus page, generate the MyStatus
+ * page through the Drupal theme system.  Otherwise, redirect the user
+ * to the "View" tab.
  */
-function hstatus_user_page($user){
-    return theme('hstatus_mystatus',$user);
+function hstatus_user_page($acct){
+    if((user_access('view all myStatus pages') || user_access('view myStatus')) 
+            && hdata_user_is_active_student($acct->uid)){
+        return theme('hstatus_mystatus',$acct);
+    }else{
+        return drupal_goto("user/{$acct->uid}/view");
+    }
 }
 
 /**
