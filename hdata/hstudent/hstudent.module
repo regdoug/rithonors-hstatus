@@ -29,78 +29,10 @@ function hstudent_menu() {
 }
 
 /*
- * Searches for the user with the given name or RIT DCE
- */
-function hstudent_search($name) {
-	$tokens = explode(' ',$name);
-	
-	$DCEs = array();
-	$names = array();
-	foreach($tokens as $s) {
-		if(preg_match('/[a-zA-Z]{3}[0-9]{4}/')) {
-			//definitely a student DCE
-			$DCEs[] = $s;
-		} else {
-			//not a DCE
-			$names[] = $s;
-		}
-	}
-	
-	/*Prioritize search results:
-	 * 1. DCE match - top priority
-	 * 2. First and last name match
-	 * 3. One name match
-	 */
-	$search_results[];
-	foreach($DCEs as $s) {
-		$query = "SELECT student.firstname firstname,
-		                 student.lastname lastname,
-						 student.uid uid
-				  FROM {h_student} student
-				  WHERE student.name = '%s'";
-		$result = db_query($query, %s);
-		while($arry = db_fetch_array($result)) {
-			//Create link string: 'FirstName LastName (DCE)'
-			$arry['precedence'] = 0;
-			$search_results[] = $arry;
-		}
-	}
-	if(count($names) == 2) {
-		$query = "SELECT student.name username,
-		                 student.firstname firstname,
-						 student.lastname lastname,
-						 student.uid uid
-				  FROM {h_student} student
-				  WHERE (firstname = '%s' AND lastname = '%s') OR
-				        (firstname = '%s' AND lastname = '%s')";
-		$result = db_query($query, $names[0], $names[1], $names[1], $names[0]);
-		while($arry = db_fetch_array($result)) {
-			$arry['precedence'] = 1;
-			$search_results[] = $arry;
-		}
-	}
-	foreach($names as $s) {
-		$query = "SELECT student.name username,
-		                 student.firstname firstname,
-						 student.lastname lastname,
-						 student.uid uid
-		          FROM {h_student} student
-				  WHERE firstname = '%s' OR lastname = '%s'";
-		$result = db_query($query, $s, $s);
-		while($arry = db_fetch_array($result)) {
-			$arry['precedence'] = 2;
-			$search_results[] = $arry;
-		}
-	}
-	//TODO: link to status page with text being the first and last names
-}
-
-/*
  * Page callback for .../search_users/
  * Generates search page
  */
 function _hstudent_search_page($arg) {
-
 }
 
 /*
