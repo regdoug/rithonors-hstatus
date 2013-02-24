@@ -36,10 +36,15 @@ hdata/hpoints/hpoints.form.inc
    5	-// 2 - create page to edit h_points_menu (this would be in hpoints.admin.inc)
    6	-
 --
-  95	:        //OPTION: Use ctools bulk api?
-  96	-        foreach($users as $student){
-  97	-            $s = array('username' => $student);
-  98	-            if(hdata_user_is_active_student($s)){
+  97	:        //OPTION: Use ctools bulk api?
+  98	-        foreach($users as $student){
+  99	-            if(!empty($student)){
+ 100	-                if(hdata_user_is_active_student($student)){
+--
+ 191	:    //DEBUG:
+ 192	-    $form['debug_lastsub'] = array(
+ 193	-        '#prefix' => '<pre>',
+ 194	-        '#suffix' => '</pre>',
 ```
 
 hdata/hpoints/hpoints.admin.inc
@@ -77,13 +82,28 @@ hdata/hdata.module
 --
 
 ```
-  48	://TODO: make this a system variable
-  49	-function hdata_user_cache_life(){return '1 month';}
-  50	-
-  51	-/* id should be uid if $draft is true */
+  45	://TODO: make this a system variable
+  46	-function hdata_user_cache_life(){return '1 month';}
+  47	-
+  48	-/* id should be uid if $draft is true */
 --
- 425	:    //OPTION:  cache??
- 426	-    $rs = db_query("SELECT id, title, description,sorting as weight, enabled, send_email
- 427	-            FROM {h_points_menu} WHERE %d OR enabled=1",$enabled?0:1);
- 428	-    $list = array();
+  86	://DEBUG: Remove before beta testing
+  87	-function hdata_menu(){
+  88	-    return array(
+  89	-        'testhdata' => array(
+--
+ 440	:    //OPTION:  cache??
+ 441	-    $rs = db_query("SELECT id, title, description,sorting as weight, enabled, send_email
+ 442	-            FROM {h_points_menu} WHERE %d OR enabled=1",$enabled?0:1);
+ 443	-    $list = array();
+```
+
+hdata/hformtools/hformtools.module
+--
+
+```
+ 100	:    //DEBUG:  Remove for beta release
+ 101	-    $menu['hformtools/test'] = array(
+ 102	-        'title' => 'Test hFormTools',
+ 103	-        'page callback' => 'drupal_get_form',
 ```

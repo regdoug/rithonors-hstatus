@@ -83,7 +83,7 @@ function hdata_points_save($submission){ return _hdata_points_save($submission);
  * hdata doesn't implement many hooks, because it is primarily an API
  * module.
  */
-
+//DEBUG: Remove before beta testing
 function hdata_menu(){
     return array(
         'testhdata' => array(

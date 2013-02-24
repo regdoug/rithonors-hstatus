@@ -97,6 +97,7 @@ function hformtools_menu(){
         'access callback' => true,
         'file' => 'users/hformtools_users.inc',
     );
+    //DEBUG:  Remove for beta release
     $menu['hformtools/test'] = array(
         'title' => 'Test hFormTools',
         'page callback' => 'drupal_get_form',
