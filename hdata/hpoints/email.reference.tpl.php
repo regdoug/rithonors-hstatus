@@ -17,7 +17,7 @@ at <a href="mailto:honors@rit.edu">honors@rit.edu</a> to confirm the
 accuracy of this report.</p>
 
 <blockquote>
-@activity
+@points_submission
 </blockquote>
 TEXT;
 print t($text,array('@student'=>$student_name,'@student_email'=>$student_email,

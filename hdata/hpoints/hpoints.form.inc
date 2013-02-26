@@ -53,7 +53,7 @@ function hpoints_form_int_validate($element, &$form_state){
 function hpoints_form_submit($form, &$form_state){
     global $user;
     if(!isset($user->name)){
-        $u = user_load($user);
+        $u = user_load($user->uid);
     }
     if($form_state['storage']['email']){
         $huser = hdata_user_load(array('uid'=>$u->uid,'name'=>$u->name));
@@ -66,8 +66,7 @@ function hpoints_form_submit($form, &$form_state){
     }else{
         $type = intval($form_state['values']['type']);
         $explanation = check_plain($form_state['values']['description']);
-        $username = $user->name;
-        $sub = array('username'=>$username,'type'=>$type,'explanation'=>$explanation);
+        $sub = array('username'=>$u->name,'type'=>$type,'explanation'=>$explanation);
         $sub = hdata_points_save($sub);
         
         if(hpoints_type_needs_email($type)){
@@ -86,20 +85,25 @@ function hpoints_form_bulk_submit($form, &$form_state){
     $submission_tmpl = array(
         'explanation'   => $form_state['values']['description'],
         'type'          => $form_state['values']['type'],
-        'submittedBy'   => $user->name,
+        'submitted_by'  => $user->name,
+        'reviewer'      => $user->name,
+        'reviewed_time' => strftime('%F %H:%M:%S'),
         'credits'       => $form_state['values']['points'],
+        'status'        => 1,
     );
     $user_str = preg_replace('[^a-z0-9\\s]','',$form_state['values']['users']);
     $users = explode(' ',$user_str);
     if(is_array($users)){
         //OPTION: Use ctools bulk api?
         foreach($users as $student){
-            $s = array('username' => $student);
-            if(hdata_user_is_active_student($s)){
-                $sub = $submission_tmpl + $s;
-                hdata_points_save($sub);
-            }else{
-                drupal_set_message(t('%user is not an active student.',array('username' => $student)),'warning');
+            if(!empty($student)){
+                if(hdata_user_is_active_student($student)){
+                    $sub = $submission_tmpl + array('username' => trim($student));
+                    $form_state['storage']['testing']['sub'] = $sub;
+                    hdata_points_save($sub);
+                }else{
+                    drupal_set_message(t('%user is not an active student.',array('%user' => $student)),'warning');
+                }
             }
         }
     }else{
@@ -169,20 +173,27 @@ function _hpoints_form_email (&$form,$huser){
     $form['email'] = array(
         '#title' => t('Email'),
         '#description' => t('Enter the email address of the your reference'),
-        '#type' => 'hformtools_html5_number',
-        '#size' => 5,
-        '#maxlength' => 2,
+        '#type' => 'hformtools_html5_email',
         '#required' => true,
-        '#element_validate' => array('hpoints_form_int_validate'),
     );
     $form['message'] = array(
         '#title' => t('Message'),
         '#description' => t('Enter a short message to accompany this email'),
         '#type' => 'textarea',
     );
+    $form['submit'] = array(
+        '#value' => t('Send Email'),
+        '#type' => 'submit',
+    );
 }
 
 function hpoints_form_bulk (&$form_state){
+    //DEBUG:
+    $form['debug_lastsub'] = array(
+        '#prefix' => '<pre>',
+        '#suffix' => '</pre>',
+        '#value' => print_r($form_state['storage']['testing']['sub'],true),
+    );
     $form['users'] = array(
         '#title' => t('Recipients'),
         '#description' => t('Enter the usernames of the students who will recieve the points'),

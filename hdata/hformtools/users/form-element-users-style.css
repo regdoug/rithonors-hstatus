@@ -4,8 +4,8 @@
     background-color: #eee;
 }
 .hformtools-users > .ajaxelement .user {
-    background-color: #dadada;
-    border: 1.5px solid SkyBlue;
+    background-color: #ddd;
+    border: 1.5px solid #261006;
     border-radius: 3px;
 }
 .hformtools-users > .ajaxelement .group {
@@ -13,9 +13,5 @@
     border-radius: 4px;
 }
 .hformtools-users > .ajaxelement .group-label {
-    display:inline-block;
-    width: 80px;
-    padding: 2px;
-    margin: 3px;
     border-radius: 3px;
 }

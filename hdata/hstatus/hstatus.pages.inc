@@ -82,6 +82,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
             $variables['college'] = $huser['basic']['college'];
             $variables['department'] = $huser['basic']['department'];
             $variables['program'] = $huser['basic']['program'];
+            $variables['courses']= $huser['courses'];
 
         }else{ //the load failed.
             //signal that the display should be nothing

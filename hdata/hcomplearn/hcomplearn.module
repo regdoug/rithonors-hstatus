@@ -81,18 +81,7 @@ function hcomplearn_menu(){
  */
 function hcomplearn_cl_submission($sid){
     $complearning = hdata_cl_load($sid);
-    $data = $complearning['data'];
-    $output = '';
-    if($data){
-        for($i = 1; $i <= $data['count']; $i++){
-            if($data[$i]['name'] == ''){
-                $data[$i]['name'] = "Activity $i";
-            }
-            $output .= theme('hcomplearn_cl_activity',$data[$i]);
-        }
-    }else{
-        $output = '<h1>Not Found</h1>';
-    }
+    $output = theme('hcomplearn_cl_activities',$complearning);
 
     //AJAX functions should echo the output and return null to prevent
     //the theme system from kicking in.
@@ -122,6 +111,9 @@ function hcomplearn_theme($existing, $type, $theme, $path){
         'hcomplearn_cl_activity' => array(
             'arguments' => array('activity' => NULL),
             'template' => 'clactivity',
+        ),
+        'hcomplearn_cl_activities' => array(
+            'arguments' => array('submission' => NULL),
         ),
     );
 }
@@ -154,6 +146,29 @@ function hcomplearn_action_info(){
     ),*/
   );
 }
+
+/* ----- Theme Functions ----- */
+
+/**
+ * Themes a whole submission using the theme hook hcomplearn_cl_activity
+ */
+function theme_hcomplearn_cl_activities($submission){
+    $data = $submission['data'];
+    $output = '';
+    if($data){
+        for($i = 1; $i <= $data['count']; $i++){
+            if($data[$i]['name'] == ''){
+                $data[$i]['name'] = "Activity $i";
+            }
+            $output .= theme('hcomplearn_cl_activity',$data[$i]);
+        }
+    }else{
+        $output = '<h1>Not Found</h1>';
+    }
+    return $output;
+}
+
+/* ----- Helper Functions ----- */
 
 /**
  * Performs a database update to approve a Complearning submission,
