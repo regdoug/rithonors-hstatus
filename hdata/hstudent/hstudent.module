@@ -20,12 +20,12 @@ function hstudent_menu() {
 		'page_callback' => '_hstudent_search_page',
 		'access_callback' => '_hstudent_search_access'
 	);
-	items['search_results'] = array(
-		'title' => "Search Results",
-		'page_callback' => '_hstudent_results_page',
-		'access_callback' => '_hstudents_results_access',
-		'type' => MENU_CALLBACK
-	);
+	// items['search_results'] = array(
+		// 'title' => "Search Results",
+		// 'page_callback' => '_hstudent_results_page',
+		// 'access_callback' => '_hstudents_results_access',
+		// 'type' => MENU_CALLBACK
+	// );
 }
 
 /*
@@ -33,6 +33,24 @@ function hstudent_menu() {
  * Generates search page
  */
 function _hstudent_search_page($arg) {
+}
+
+/*
+ *Generates search form, and results if a search has been initiated
+ */
+function hstudent_search_form($form_state) {
+	$form['search_field'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Name(s) or RIT DCE:')
+	);
+	$form['submit_button'] = array(
+		'#type' => 'submit',
+		'#value' => t('Search')
+	);
+	if($form_state['search_field']) {
+		//Generate search results
+	}
+	return $form;
 }
 
 /*
