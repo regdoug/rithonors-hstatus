@@ -10,5 +10,8 @@ package = Honors
 ; required
 core = 6.x
 
-; All modules in this package depend on hdata
+; Dependencies
 dependencies[] = hdata
+dependencies[] = date
+dependencies[] = hnews
+dependencies[] = hformtools

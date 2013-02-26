@@ -11,22 +11,22 @@ function hvite_menu()
 {
 	/* Event creation page */
 	$items['hvite/createevent'] = array(
-		'type' => MENU_NORMAL_ITEM,
+		'type' => MENU_CALLBACK,
 		'title' => 'hVite Event Creation Test Form',
 		'page arguments' => array(1),
-		'page callback' => 'stuff',
+		'page callback' => 'hvite_createevent_page',
 		'access arguments' => array(1),
-		'access callback' => 'hvite_access_use',
+		'access callback' => 'hvite_access',
 	);
 	
 	/* Event list page */
 	$items['hvite/eventlist'] = array(
-		'type' => MENU_NORMAL_ITEM,
+		'type' => MENU_CALLBACK,
 		'title' => 'hVite Event List Test Form',
 		'page arguments' => array(1),
-		'page callback' => 'stuff',
+		'page callback' => 'hvite_eventlist_page',
 		'access arguments' => array(1),
-		'access callback' => 'hvite_access_use',
+		'access callback' => 'hvite_access',
 	);
 	
 	return $items;
@@ -69,6 +69,13 @@ function hvite_createevent_form(&$form_state)
 		'#cols' => 60,
 		'#rows' => 5,
 		//'#description' => t('Event description.'),
+	);
+	
+	
+	/* User list */
+	$form['details']['users'] = array(
+		'#type' => 'hformtools_users',
+		'#title' => 'Select users to invite',
 	);
 	
 	/* Start date and time */
@@ -117,6 +124,19 @@ function hvite_createevent_form_validate($form, &$form_state)
 	}
 }
 
+/*
+	mimemail arguments
+	string - from address
+	array of recipients or single string (probably)
+	string subject
+	string body
+	
+	function _hnews_send_mail($nid,$vid,$to)
+	
+	form elemenent type hformtools_users
+	returns space delimited list of users
+*/
+
 function hvite_createevent_form_submit($form, &$form_state)
 {
 	$str = "Title: '" . $form_state['values']['details']['title'] . "'<br />";
@@ -129,11 +149,19 @@ function hvite_createevent_form_submit($form, &$form_state)
 }
 
 /**
- * Generates the page
+ * Generates the create event page
  */
-function stuff()
+function hvite_createevent_page()
 {
 	return drupal_get_form('hvite_createevent_form');
+}
+
+/**
+ * Generates the event list page
+ */
+function hvite_eventlist_page()
+{
+	return drupal_get_form('hvite_eventlist_form');
 }
 
 /**
@@ -146,7 +174,7 @@ function hvite_perm(){
 }
 
 /*----------------Access Callbacks------------------*/
-function hvite_access_use($account)
+function hvite_access($account)
 {
     if (user_access('make hVite events'))
 	{
