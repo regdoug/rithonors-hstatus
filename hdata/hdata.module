@@ -68,6 +68,8 @@ function hdata_load_note($id){ return _hdata_load_note($id); }
 /*Saves a note to $username.  If $note['id'] is unset, a new note is created.
  * Returns the note on success, FALSE on failure*/
 function hdata_save_note($note, $username){ return _hdata_save_note($note, $username); }
+/* Deletes a note.  True/false return value indicates success/failure */
+function hdata_note_del($id){ return _hdata_note_del($id); }
 
 /* loads point types from {h_points_menu} */
 function hdata_points_type_list(){ return _hdata_points_type_list(); }
@@ -759,7 +761,7 @@ function _hdata_load_note($id){
     }
     //note that the query is structured so that the returned array will
     //already be in the format we want.
-    $q = 'SELECT id, title, note AS body, posted_by AS author, date, cont_id AS year FROM {h_notes} WHERE id=%d';
+    $q = 'SELECT id, dce AS username, title, note AS body, posted_by AS author, date, cont_id AS year FROM {h_notes} WHERE id=%d';
     $rs = db_query($q,$id);
     if($rs){
         return db_fetch_array($rs);
@@ -770,8 +772,9 @@ function _hdata_load_note($id){
 function _hdata_save_note($note, $username){
     if(isset($note['id'])){
         $q = "UPDATE {h_notes} SET
-                title='%s', note='%s', date='%s', cont_id='%s', dce='%s'";
-        $rs = db_query($q,$note['title'],$note['body'],$note['date'],$note['cont_id'],$username);
+                title='%s', note='%s', date='%s', cont_id='%s', dce='%s', posted_by='%s'
+                WHERE id=%d";
+        $rs = db_query($q,$note['title'],$note['body'],$note['date'],$note['cont_id'],$username,$note['author'],$note['id']);
     }else{
         $q = "INSERT INTO {h_notes} (dce,title,note,date,posted_by,cont_id)
                          VALUES ('%s','%s','%s','%s','%s','%s')";
@@ -784,6 +787,11 @@ function _hdata_save_note($note, $username){
     }else{
         return $note;
     }
+}
+
+function _hdata_note_del($id){
+    $rs = db_query("DELETE FROM {h_notes} WHERE id=%d",$id);
+    return ($rs && db_affected_rows() > 0);
 }
 
 /**

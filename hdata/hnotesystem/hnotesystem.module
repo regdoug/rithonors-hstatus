@@ -6,30 +6,7 @@
 * Replace all comments if you would like. Be sure to identify params, files and returns in your comments
 */
 
-/**
-* Your module will use the subject as the main title and load the content from your function
-*/
-function hnotesystem_block($op='list', $delta=0, $edit=array())
-{
-	switch ($op) {
-	case 'list':
-	$blocks[0]['info'] = t('hNoteSystem');
-	return $blocks;
-	case 'view':
-	$blocks['subject'] = t('hNoteSystem');
-	$blocks['content'] = hnotesystem_block_content();
-	return $blocks;
-	}
-}
-
-/**
-* Your module should generate it's content here. This will be displayed within your module
-*/
-function hnotesystem_block_content()
-{
-	$content .= "Replace with your logic";
-	return $content;
-}
+//NOTE: deleted block stuff.  I don't think it is needed. Reggie 2/27
 
 /**
 * This will allow you to restrict certain actions of the module to certain roles
@@ -42,7 +19,8 @@ function hnotesystem_perm()
 /**
 * This will provide users with more information about your module
 */
-function hnotesystem_hook_help($path, $arg)
+//TODO: add real help
+function hnotesystem_help($path, $arg)
 {
 	switch($path) {
 	case 'admin/help#hnotesystem':
@@ -56,18 +34,20 @@ function hnotesystem_hook_help($path, $arg)
 */
 function hnotesystem_menu()
 {
-	// This is all the admin stuff from the skeleton.
+	//DEBUG:
+	drupal_set_message('hnotesystem_menu called');
+	// Admin settings form
 	$items = array ();
 	$items['admin/settings/hnotesystem'] = array (
 		'title' => t('hNoteSystem'),
-		'description' => t('Replace with admin setting description'),
+		'description' => t('Settings for the Honors Note System'),
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('hnotesystem_settings'),
 		'access arguments' => array('administer hnotesystem'),
 		'type' => MENU_NORMAL_ITEM,
 	);
 	
-	// Now lets add the actual form that Reggie wants!
+	// All actions are under hnotesystem/form
 	$items['hnotesystem/form'] = array(
 		'title' => t('hNoteSystem Form'), 
 		'page callback' => 'hnotesystem_display_form',
@@ -75,7 +55,8 @@ function hnotesystem_menu()
 		'access arguments' => array('access hnotesystem'),
 	
 	);
-		
+	//DEBUG:
+	drupal_set_message('about to return '.print_r($items,true));
 	return $items;
 }
 
@@ -84,25 +65,22 @@ function hnotesystem_menu()
 */
 function hnotesystem_settings()
 {
-	$form['hnotesystem_general_settings'] = array(
-		'#title' => t('General Settings'),
-		'#type' => "fieldset",
-		'#collapsible' => TRUE,
+	$form['hnotesystem_delete_warning'] = array(
+		'#type' => 'checkbox',
+		'#title' => t('Warn Before Deleting Note?'),
+		'#required' => true,
+		'#checked' => variable_get('hnotesystem_delete_warning',true),
 	);
-	$form['hnotesystem_general_settings']['text'] = array(
-		'#title' => t('Text'),
-		'#type' => "fieldset",
-		'#collapsible' => TRUE,
-		'#collapsed' => FALSE,
-	);
-	$form['hnotesystem_general_settings']['text']['sample'] = array(
-		'#title' => t('Sample'),
+	$form['hnotesystem_delete_warning_text'] = array(
+		'#title' => t('Warning Text'),
 		'#type' => "textfield",
 		'#size' => 45,
 		'#maxlength' => 50,
-		'#required' => FALSE,
-		'#description' => t('Sample textfield and settings menu'),
-		'#default_value' => variable_get('sample','Sample Text'),
+		'#required' => TRUE,
+		'#description' => t('Warning text before deleting a note. !id and !title will be replaced.', 
+				array('!id' => '@id', '!title' => '@title')),
+		'#default_value' => variable_get('hnotesystem_delete_warning_text',
+				'Are you sure you want to delete Note @id "@title"?'),
 	);
 	return system_settings_form($form);
 }
@@ -115,32 +93,41 @@ function hnotesystem_settings()
 /**
 * This will display the form to create/edit/delete a note.
 */
-function hnotesystem_display_form($action = "", $param = "")
+function hnotesystem_display_form($action = '', $param = '')
 {
-	if ($action == "")
+	if ($param == '')
 	{
-		
+		if ($action == "create")
+		{
+			return drupal_get_form('hnotesystem_create_note_form', $param);
+		}
 	}
-	else if ($action == "list") // List all the notes for a username
+	else if (!is_numeric($param)) 
 	{
+		if($action == 'list')
+		{// List all the notes for a username
+			//TODO: create theme functions
+		}
 	}
-	// All other actions use param as the note ID
-	else if ($action == "create")
-	{
-		return drupal_get_form('hnotesystem_create_note_form', $param);
+	else
+	{//By now, $param is guaranteed to be numeric
+		if ($action == "edit")
+		{
+			return drupal_get_form('hnotesystem_edit_note_form', $param);
+		}
+		else if ($action == "delete")
+		{
+			if(variable_get('hnotesystem_delete_warning',true)){
+				return drupal_get_form('hnotesystem_delete_note_form', $param);
+			}else{
+				_hnotesystem_del($param);
+			}
+		}
 	}
-	else if ($action == "edit")
-	{
-		return drupal_get_form('hnotesystem_edit_note_form', $param);
-	}
-	else if ($action == "delete")
-	{
-		return drupal_get_form('hnotesystem_delete_note_form', $param);
-	}
-	$content = "";
-	$content .= "<a href=".url('hnotesystem/form/create').">Create Note</a><br />";
-	$content .= "<a href=".url('hnotesystem/form/edit').">Edit Note</a><br />";
-	$content .= "<a href=".url('hnotesystem/form/delete').">Delete Note</a><br />";
+	//NOTE: see how to create links below
+	$content = l('Create Note','hnotesystem/form/create').'<br />';
+	$content .= l('Edit Note','hnotesystem/form/edit').'<br />';
+	$content .= l('Delete Note','hnotesystem/form/delete').'<br />';
 	//$content .= "Action: ".$action." Param: ".$param;
 	return $content;
 }
@@ -148,9 +135,18 @@ function hnotesystem_display_form($action = "", $param = "")
 /**
 * This function will generate a form given the type needed.
 */
+//QUESTION: Why would $idOrName ever be a name?
 function _hnotesystem_gen_form($type, $idOrName)
 {
+	global $user;
+	if(is_numeric($idOrName)){
+		$note = hdata_load_note($idOrName);
+	}
 	//drupal_set_message(t('Param: '.print_r($idOrName, true)));
+	//QUESTION:  I'm not quite sure what this accomplishes.  Odds are the
+	//  user will have no clue what the id is.
+	//
+	//  I've just blocked the form from generating if the param type is wrong.
 	if (($type == "delete" || $type == "edit") && !is_numeric($idOrName))
 	{
 		$form['note_id'] = array(
@@ -163,7 +159,16 @@ function _hnotesystem_gen_form($type, $idOrName)
 	{
 		if ($type == "delete")
 		{
-			// Nothing to put here after deleting a note!
+			//COMMENT: Nothing to put here after deleting a note!
+			//QUESTION:  Why not have an "Are you sure" message?
+			$form['confirm_msg'] = array(
+				'#value' => t('Are you sure you want to delete Note @id "@title"',
+						array('@id'=>$idOrName,'@title'=>$note['title'])),
+			);
+			$form['note_id'] = array(
+				'#type' => 'value',
+				'#value' => $note['id'],
+			);
 		}
 		else
 		{
@@ -175,33 +180,49 @@ function _hnotesystem_gen_form($type, $idOrName)
 					'#title' => t('Username'),
 					'#required' => TRUE, 
 				);
+			} else {
+				$form['username'] = array(
+					'#type' => 'textfield',
+					'#title' => t('Username'),
+					'#disabled' => true,
+					'#value' => $note['username'],
+				);
+				$form['note_id'] = array(
+					'#type' => 'value',
+					'#value' => $note['id'],
+				);
 			}
 			$form['title'] = array(
 				'#type' => 'textfield',
 				'#title' => t('Title'),
-				'#required' => TRUE, 
+				'#required' => TRUE,
+				'#default_value' => $note['title'],
 			);
 			$form['body'] = array(
 				'#type' => 'textarea',
 				'#title' => t('Note Body'),
-				'#required' => TRUE, 
+				'#required' => TRUE,
+				'#default_value' => $note['body'],
 			);
 			
-			// Should these fields be auto-generated?
+			//Q: Should these fields be auto-generated?
+			//ANS: yes, probably
 			$form['date'] = array(
 				'#type' => 'date',
 				'#title' => t('Date'),
-				'#required' => TRUE, 
+				'#required' => TRUE,
+				'#default_value' => array('year'=>date('Y'),'month'=>date('m'),'day'=>date('d')),
 			);
 			$form['author'] = array(
 				'#type' => 'textfield',
 				'#title' => t('Author'),
 				'#required' => TRUE, 
+				'#default_value' => $note['author'],
 			);
 		}
 		
-		// What is cont_id?
-		
+		//Q: What is cont_id?
+		//ANS: the school year in which the note was created
 		
 	}
 	
@@ -216,15 +237,19 @@ function _hnotesystem_gen_form($type, $idOrName)
 /**
 * Converts a submitted form into a note.
 */
-function _hnotesystem_form_to_note($form)
+function _hnotesystem_form_to_note($values)
 {
-	$note = array();
-	if (isset($form['username']['#post']['username']))
-		$note['username'] = $form['username']['#post']['username'];
-	$note['title'] = $form['title']['#post']['title'];
-	$note['body'] = $form['body']['#post']['body'];
-	$note['date'] = $form['date']['#post']['date'];
-	$note['author'] = $form['username']['#post']['username'];
+	$note = array(
+		'id' => $values['note_id'],
+		'username' => $values['username'],
+		'title' => $values['title'],
+		'body' => $values['body'],
+		'date' => "{$values['date']['year']}-{$values['date']['month']}-{$values['date']['day']}",
+		'author' => $values['author'],
+		'year' => strftime('%Y',strtotime('-6 months')),
+	);
+	//DEBUG:
+	drupal_set_message('Note: '.print_r($note,true));
 	return $note;
 }
 
@@ -242,17 +267,20 @@ function hnotesystem_create_note_form(&$form_state, $param = "")
 function hnotesystem_create_note_form_submit($form, &$form_state)
 {
 	drupal_set_message(t('The create form has been submitted.'));
-	$note = _hnotesystem_form_to_note($form);
+	//NOTE: always use $form_state['values'].  It has been checked to
+	//  ensure that hacking attempts are squelched.
+	$note = _hnotesystem_form_to_note($form_state['values']);
 	// $note['id'] is left blank so a new note is created.
 	hdata_save_note($note, $note['username']);
+	$form_state['redirect'] = 'hnotesystem/form';
 }
 
 /**
 * Form builder for the edit form.
 */
+//NOTE: form_state['storage'] is really inteded for multi-page forms
 function hnotesystem_edit_note_form(&$form_state, $param = "")
 {
-	$form_state['storage']['note_id'] = $param;
 	return _hnotesystem_gen_form("edit", $param);
 }
 
@@ -261,18 +289,10 @@ function hnotesystem_edit_note_form(&$form_state, $param = "")
 */
 function hnotesystem_edit_note_form_submit($form, &$form_state)
 {
-	$note_id = $form['note_id']['#post']['note_id'];
-	if (is_numeric($note_id))
-	{
-		drupal_goto('hnotesystem/form/edit/'.$note_id);
-	}
-	else
-	{
-		drupal_set_message(t('The edit form has been submitted.'));
-		$note = _hnotesystem_form_to_note($form);
-		$node['id'] = $form_state['storage']['note_id'];
-		hdata_save_note($note, $note['username']);
-	}
+	drupal_set_message(t('The edit form has been submitted.'));
+	$note = _hnotesystem_form_to_note($form_state['values']);
+	hdata_save_note($note, $note['username']);
+	$form_state['redirect'] = 'hnotesystem/form';
 }
 
 /**
@@ -288,5 +308,16 @@ function hnotesystem_delete_note_form(&$form_state, $param = "")
 */
 function hnotesystem_delete_note_form_submit($form, &$form_state)
 {
-	drupal_set_message(t('The delete form has been submitted.'));
+	_hnotesystem_del($form_state['values']['note_id']);
+	$form_state['redirect'] = 'hnotesystem/form';
+}
+
+//helper function to delete a note.
+function _hnotesystem_del($id)
+{
+	if(hdata_note_del($id)){
+		drupal_set_message(t('Note @id has been deleted.',array('@id'=>$id)));
+	}else{
+		drupal_set_message(t('Delete function failed'));
+	}
 }
