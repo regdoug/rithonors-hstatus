@@ -1,0 +1,7 @@
+; hnotesystem.info
+; Created 1/8/13 by Ryan Rule-Hoffman
+name = hNoteSystem
+description = Provides the notes system for the RIT honor's website.
+package = Honors
+dependencies[] = hdata
+core = 6.x
