@@ -1,5 +1,5 @@
 <h1>
-	<a href='<?php print $base_path.'/userhistory/'.$username;?>'>
+	<a href='<?php print $base_path.'/student_history/'.$username;?>'>
 		<?php print $fname.' '.$lname.' ('.$username.')';?>
 	</a>
 </h1>

@@ -946,8 +946,7 @@ function _hdata_student_search($query) {
 			$query .= "(s.username = '%s') OR ";
 		}
 		$query = substr($query, 0, -3); //trim the extra 'OR'
-		$DCEs += $DCEs;
-		$rs = db_query($query, $DCEs);
+		$rs = db_query($query, array_merge_recursive($DCEs,$DCEs));
 		while($arry = db_fetch_array($rs)) {
 			if(!in_array($arry['username'], $search_results)){
 				$search_results[] = $arry['username'];
@@ -958,7 +957,7 @@ function _hdata_student_search($query) {
 	if(count($names) == 2) {
 		$query = "SELECT p.username username
 				  FROM {h_students_peoplesoft} p
-				  WHERE (p.firstname = '%s' AND p.lastname = 's%') OR
+				  WHERE (p.firstname = '%s' AND p.lastname = '%s') OR
 				        (p.firstname = '%s' AND p.lastname = '%s')
 				  UNION
 				  SELECT s.username username
@@ -973,21 +972,29 @@ function _hdata_student_search($query) {
 	}
 	
 	if(count($names) > 0) {
-		$query = "SELECT p.username FROM {h_students_peoplesoft} p WHERE ";
+		$query_names = '(';
 		foreach($names as $s) {
-			$query .= "(p.username = '%s') OR ";
+			$query_names .= "'%s',";
 		}
-		$query = substr($query, 0, -3); //trim the 'OR'
-		$query .= 'UNION SELECT s.username FROM {h_students} s WHERE ';
-		foreach($names as $s) {
-			$query .= "(s.username = '%s') OR ";
-		}
-		$query = substr($query, 0, -3);
-		$names += $names;
-		$rs = db_query($query, $names);
+		$query_names = substr($query_names, 0, -1) . ')';
+		
+		$query = "SELECT username FROM {h_students_peoplesoft} 
+				WHERE firstname IN $query_names OR lastname IN $query_names";
+		//using array_merge_recursive because we are using each name as a search
+		//criterion twice (firstname and lastname)
+		$rs = db_query($query, array_merge_recursive($names, $names));
 		while($arry = db_fetch_array($rs)) {
 			if(!in_array($arry['username'], $search_results)) {
-				$search_results[] = $arry;
+				$search_results[] = $arry['username'];
+			}
+		}
+		
+		$query = "SELECT username FROM {h_students} 
+				WHERE firstname IN $query_names OR lastname IN $query_names";
+		$rs = db_query($query, array_merge_recursive($names,$names));
+		while($arry = db_fetch_array($rs)) {
+			if(!in_array($arry['username'], $search_results)) {
+				$search_results[] = $arry['username'];
 			}
 		}
 	}
