@@ -5,7 +5,7 @@ description = Provides search capabilities for Honors staff.
 name = hStudent
 
 ;Group with other Honors modules
-group = Honors
+package = Honors
 
 ;Required
 core = 6.x

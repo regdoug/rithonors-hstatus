@@ -911,7 +911,7 @@ function _hdata_isactivestudent($userinfo){
  */
 function _hdata_student_search($query) {
 	if(!is_array($query)) {
-		$tokens = explode(' ',$name);
+		$tokens = explode(' ',$query);
 	} else {
 		$tokens = $query;
 	}
@@ -933,51 +933,62 @@ function _hdata_student_search($query) {
 	 * 2. First and last name match
 	 * 3. One name match
 	 */
-	$search_results[];
-	$query = "SELECT p.username FROM {h_students_peoplesoft} p WHERE ";
-	foreach($DCEs as $s) {
-		$query .= "(p.username = '%s') OR ";
-	}
-	$query = substr($query, 0, -3); //trim the extra 'OR' from the end of the string
-	$query .= "UNION SELECT s.username FROM {h_students} s WHERE ";
-	foreach($DCEs as $s) {
-		$query .= "(s.username = '%s') OR ";
-	}
-	$query = substr($query, 0, -3); //trim the extra 'OR'
-	array_push($DCEs, $DCEs);
-	$rs = db_query($query, $DCEs);
-	while($arry = db_fetch_array($rs)) {
-		if(!in_array($arry['username'], $search_results)){
-			$search_results[] = $arry['username'];
+	$search_results = array();
+	
+	if(count($DCEs) > 0) {
+		$query = "SELECT p.username FROM {h_students_peoplesoft} p WHERE ";
+		foreach($DCEs as $s) {
+			$query .= "(p.username = '%s') OR ";
+		}
+		$query = substr($query, 0, -3); //trim the extra 'OR' from the end of the string
+		$query .= "UNION SELECT s.username FROM {h_students} s WHERE ";
+		foreach($DCEs as $s) {
+			$query .= "(s.username = '%s') OR ";
+		}
+		$query = substr($query, 0, -3); //trim the extra 'OR'
+		$DCEs += $DCEs;
+		$rs = db_query($query, $DCEs);
+		while($arry = db_fetch_array($rs)) {
+			if(!in_array($arry['username'], $search_results)){
+				$search_results[] = $arry['username'];
+			}
 		}
 	}
 	
 	if(count($names) == 2) {
-		$query = "SELECT student.name username
-				  FROM {h_student} student
-				  WHERE (student.firstname = '%s' AND student.lastname = '%s') OR
-				        (student.firstname = '%s' AND student.lastname = '%s')";
-		$result = db_query($query, $names[0], $names[1], $names[1], $names[0]);
+		$query = "SELECT p.username username
+				  FROM {h_students_peoplesoft} p
+				  WHERE (p.firstname = '%s' AND p.lastname = 's%') OR
+				        (p.firstname = '%s' AND p.lastname = '%s')
+				  UNION
+				  SELECT s.username username
+				  FROM {h_students} s
+				  WHERE (s.firstname = '%s' AND s.lastname = '%s') OR
+				        (s.firstname = '%s' AND s.lastname = '%s')";
+		$result = db_query($query, $names[0], $names[1], $names[1], $names[0], 
+				$names[0], $names[1], $names[1], $names[0]);
 		while($arry = db_fetch_array($result)) {
-			$raw_results[] = $arry['username'];
+			$search_results[] = $arry['username'];
 		}
 	}
 	
-	$query = "SELECT p.username FROM {h_students_peoplesoft} p WHERE ";
-	foreach($names as $s) {
-		$query .= "(p.username = '%s') OR ";
-	}
-	$query = substr($query, 0, -3); //trim the 'OR'
-	$query .= 'UNION SELECT s.username FROM {h_students} s WHERE ';
-	foreach($names as $s) {
-		$query .= "(s.username = '%s') OR ";
-	}
-	$query = substr($query, 0, -3);
-	array_push($names, $names);
-	$rs = db_query($query, $names);
-	while($arry = db_fetch_array($rs)) {
-		if(!in_array($arry['username'], $search_results)) {
-			$search_results[] = $arry;
+	if(count($names) > 0) {
+		$query = "SELECT p.username FROM {h_students_peoplesoft} p WHERE ";
+		foreach($names as $s) {
+			$query .= "(p.username = '%s') OR ";
+		}
+		$query = substr($query, 0, -3); //trim the 'OR'
+		$query .= 'UNION SELECT s.username FROM {h_students} s WHERE ';
+		foreach($names as $s) {
+			$query .= "(s.username = '%s') OR ";
+		}
+		$query = substr($query, 0, -3);
+		$names += $names;
+		$rs = db_query($query, $names);
+		while($arry = db_fetch_array($rs)) {
+			if(!in_array($arry['username'], $search_results)) {
+				$search_results[] = $arry;
+			}
 		}
 	}
 	

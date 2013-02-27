@@ -1,24 +1,24 @@
 <?php
-/*
- * Will need to declare plenty of permissions.
- */
-function hstudent_perm() {
-	return array(
-		'Administer hstudent module',
-		'Search students',
-		'Search faculty'
-	);
-}
+// /*
+ // * Will need to declare plenty of permissions.
+ // */
+// function hstudent_perm() {
+	// return array(
+		// 'Administer hstudent module',
+		// 'Search students',
+		// 'Search faculty'
+	// );
+// }
 
 /*
  * Need to register a path for the search page (and possibly a results page).
  * Only register this page if the user has the appropriate permissions.
  */
 function hstudent_menu() {
-	items['search_users'] = array(
-		'title' => "Search Users",
-		'page_callback' => '_hstudent_search_page',
-		'access_callback' => '_hstudent_search_access'
+	$items['search_users'] = array(
+		'title' => "Student Search",
+		'page callback' => '_hstudent_search_page',
+		'access callback' => '_hstudent_search_access'
 	);
 	// items['search_results'] = array(
 		// 'title' => "Search Results",
@@ -26,13 +26,15 @@ function hstudent_menu() {
 		// 'access_callback' => '_hstudents_results_access',
 		// 'type' => MENU_CALLBACK
 	// );
+	return $items;
 }
 
 /*
  * Page callback for .../search_users/
  * Generates search page
  */
-function _hstudent_search_page($arg) {
+function _hstudent_search_page() {
+	return drupal_get_form('hstudent_search_form');
 }
 
 /*
@@ -41,38 +43,77 @@ function _hstudent_search_page($arg) {
 function hstudent_search_form($form_state) {
 	$form['search_field'] = array(
 		'#type' => 'textfield',
-		'#title' => t('Name(s) or RIT DCE:')
+		'#title' => t('Name(s) or RIT DCE')
 	);
 	$form['submit_button'] = array(
 		'#type' => 'submit',
 		'#value' => t('Search')
 	);
-	if($form_state['search_field']) {
-		//Generate search results
+	$form['random_text'] = array(
+		'#prefix' => '<h1>',
+		'#value' => 'Random Text',
+		'#suffix' => '</h1>'
+	);
+	$form['more_random'] = array(
+		'#prefix' => '<pre>',
+		'#suffix' => '</pre>',
+		'#value' => print_r($form_state, TRUE)
+	);
+	if(is_array($form_state['storage']['results'])) {
+		foreach($form_state['storage']['results'] as $s) {
+			$form[$s] = array(
+				'#prefix' => '<div>',
+				'#value' => theme('hstudent_result',$s)."Result $s",
+				'#suffix' => '</div>'
+			);
+		}
 	}
 	return $form;
+}
+
+function hstudent_theme($existing, $type, $theme, $path) {
+	return array(
+		'hstudent_result' => array(
+			'arguments' => array('username' => ""),
+			'template' => 'hstudent_result',
+		)
+	);
+}
+
+function template_preprocess_hstudent_result(&$variables) {
+	$student_info = hdata_user_load(array('name'=>$variables['username']));
+	$variables['fname'] = $student_info['basic']['name']['firstname'];
+	$variables['lname'] = $student_info['basic']['name']['lastname'];
+	drupal_set_message("t_p_h_r called, firstname=".$student_info['basic']['name']['firstname']);
+	$variables['username'] = $student_info['name'];
+	switch($student_info['yearlevel']) {
+		case 1: $variables['year'] = 'Freshman'; break;
+		case 2: $variables['year'] = 'Second Year'; break;
+		case 3: $variables['year'] = 'Third Year'; break;
+		case 4: $variables['year'] = 'Fourth Year'; break;
+		case 5: $variables['year'] = 'Senior'; break;
+		case 6: $variables['year'] = 'Sixth Year'; break;
+	}
+	$query = "SELECT description FROM {h_plans} WHERE id = '%d'";
+	$rs = db_query($query, $student_info['planid']);
+	$arry = db_fetch_array($rs);
+	$variables['major'] = $student_info['basic']['program'].' '.$student_info['basic']['department'];
+	drupal_set_message("leaving t_p_h_r: vars=".print_r($variables, TRUE));
+}	
+
+/*
+ *Submit function for the search form. Puts search value into form storage
+ */
+function hstudent_search_form_submit($form, &$form_state) {
+	$results = hdata_student_search($form_state['values']['search_field']);
+	$form_state['storage']['results'] = $results;
 }
 
 /*
  * Access callback for URL .../search_users/
  * Specifies access permissions for the search page
  */
-function _hstudent_search_access($arg) {
-
-}
-
-/*
- * Page callback for URL .../search_results/
- * Generates results page
- */
-function _hstudent_results_page($arg) {
-
-}
-
-/*
- * Access callback for URL .../search_results/
- * Specifies access permissions for results page
- */
-function _hstudent_results_access($arg) {
-
+function _hstudent_search_access() {
+	//Fix this at some point.
+	return TRUE;
 }
