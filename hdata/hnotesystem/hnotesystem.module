@@ -34,8 +34,6 @@ function hnotesystem_help($path, $arg)
 */
 function hnotesystem_menu()
 {
-	//DEBUG:
-	drupal_set_message('hnotesystem_menu called');
 	// Admin settings form
 	$items = array ();
 	$items['admin/settings/hnotesystem'] = array (
@@ -55,8 +53,6 @@ function hnotesystem_menu()
 		'access arguments' => array('access hnotesystem'),
 	
 	);
-	//DEBUG:
-	drupal_set_message('about to return '.print_r($items,true));
 	return $items;
 }
 
@@ -248,8 +244,6 @@ function _hnotesystem_form_to_note($values)
 		'author' => $values['author'],
 		'year' => strftime('%Y',strtotime('-6 months')),
 	);
-	//DEBUG:
-	drupal_set_message('Note: '.print_r($note,true));
 	return $note;
 }
 

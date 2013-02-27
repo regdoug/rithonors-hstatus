@@ -161,7 +161,9 @@ function hvite_createevent_page()
  */
 function hvite_eventlist_page()
 {
-	return drupal_get_form('hvite_eventlist_form');
+	//QUESTION:  why a form?  why not a regular page?
+	//return drupal_get_form('hvite_eventlist_form');
+	return '<p>Under Development</p>';
 }
 
 /**

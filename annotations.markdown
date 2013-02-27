@@ -1,6 +1,13 @@
 Annotations
 ==
 
+.git/objects/2d/e1bb1aec8e76aba9b5d7f2962caecbc7ac6c46
+--
+
+```
+Binary file .git/objects/2d/e1bb1aec8e76aba9b5d7f2962caecbc7ac6c46 matches
+```
+
 hdata/hnews/hnews.module
 --
 
@@ -68,6 +75,16 @@ hdata/hpoints/hpoints.views.inc
   54	-            'help' => t('The user to whom these points belong.'),
 ```
 
+hdata/hvite/hvite.module
+--
+
+```
+ 164	:	//QUESTION:  why a form?  why not a regular page?
+ 165	-	//return drupal_get_form('hvite_eventlist_form');
+ 166	-	return '<p>Under Development</p>';
+ 167	-}
+```
+
 hdata/hcomplearn/hcomplearn.form.inc
 --
 
@@ -87,15 +104,15 @@ hdata/hdata.module
   47	-
   48	-/* id should be uid if $draft is true */
 --
-  86	://DEBUG: Remove before beta testing
-  87	-function hdata_menu(){
-  88	-    return array(
-  89	-        'testhdata' => array(
+  88	://DEBUG: Remove before beta testing
+  89	-function hdata_menu(){
+  90	-    return array(
+  91	-        'testhdata' => array(
 --
- 440	:    //OPTION:  cache??
- 441	-    $rs = db_query("SELECT id, title, description,sorting as weight, enabled, send_email
- 442	-            FROM {h_points_menu} WHERE %d OR enabled=1",$enabled?0:1);
- 443	-    $list = array();
+ 438	:    //OPTION:  cache??
+ 439	-    $rs = db_query("SELECT id, title, description,sorting as weight, enabled, send_email
+ 440	-            FROM {h_points_menu} WHERE %d OR enabled=1",$enabled?0:1);
+ 441	-    $list = array();
 ```
 
 hdata/hformtools/hformtools.module
@@ -106,4 +123,67 @@ hdata/hformtools/hformtools.module
  101	-    $menu['hformtools/test'] = array(
  102	-        'title' => 'Test hFormTools',
  103	-        'page callback' => 'drupal_get_form',
+```
+
+hdata/hnotesystem/hnotesystem.module
+--
+
+```
+   9	://NOTE: deleted block stuff.  I don't think it is needed. Reggie 2/27
+  10	-
+  11	-/**
+  12	-* This will allow you to restrict certain actions of the module to certain roles
+--
+  22	://TODO: add real help
+  23	-function hnotesystem_help($path, $arg)
+  24	-{
+  25	-	switch($path) {
+--
+ 105	:			//TODO: create theme functions
+ 106	-		}
+ 107	-	}
+ 108	-	else
+--
+ 123	:	//NOTE: see how to create links below
+ 124	-	$content = l('Create Note','hnotesystem/form/create').'<br />';
+ 125	-	$content .= l('Edit Note','hnotesystem/form/edit').'<br />';
+ 126	-	$content .= l('Delete Note','hnotesystem/form/delete').'<br />';
+--
+ 134	://QUESTION: Why would $idOrName ever be a name?
+ 135	-function _hnotesystem_gen_form($type, $idOrName)
+ 136	-{
+ 137	-	global $user;
+--
+ 142	:	//QUESTION:  I'm not quite sure what this accomplishes.  Odds are the
+ 143	-	//  user will have no clue what the id is.
+ 144	-	//
+ 145	-	//  I've just blocked the form from generating if the param type is wrong.
+--
+ 158	:			//COMMENT: Nothing to put here after deleting a note!
+ 159	:			//QUESTION:  Why not have an "Are you sure" message?
+ 160	-			$form['confirm_msg'] = array(
+ 161	-				'#value' => t('Are you sure you want to delete Note @id "@title"',
+ 162	-						array('@id'=>$idOrName,'@title'=>$note['title'])),
+--
+ 204	:			//Q: Should these fields be auto-generated?
+ 205	:			//ANS: yes, probably
+ 206	-			$form['date'] = array(
+ 207	-				'#type' => 'date',
+ 208	-				'#title' => t('Date'),
+--
+ 220	:		//Q: What is cont_id?
+ 221	:		//ANS: the school year in which the note was created
+ 222	-		
+ 223	-	}
+ 224	-	
+--
+ 264	:	//NOTE: always use $form_state['values'].  It has been checked to
+ 265	-	//  ensure that hacking attempts are squelched.
+ 266	-	$note = _hnotesystem_form_to_note($form_state['values']);
+ 267	-	// $note['id'] is left blank so a new note is created.
+--
+ 275	://NOTE: form_state['storage'] is really inteded for multi-page forms
+ 276	-function hnotesystem_edit_note_form(&$form_state, $param = "")
+ 277	-{
+ 278	-	return _hnotesystem_gen_form("edit", $param);
 ```
