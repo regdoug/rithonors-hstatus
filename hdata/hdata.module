@@ -73,6 +73,8 @@ function hdata_load_note($id){ return _hdata_load_note($id); }
 /*Saves a note to $username.  If $note['id'] is unset, a new note is created.
  * Returns the note on success, FALSE on failure*/
 function hdata_save_note($note, $username){ return _hdata_save_note($note, $username); }
+/* Deletes a note.  True/false return value indicates success/failure */
+function hdata_note_del($id){ return _hdata_note_del($id); }
 
 /* loads point types from {h_points_menu} */
 function hdata_points_type_list(){ return _hdata_points_type_list(); }
@@ -88,7 +90,7 @@ function hdata_points_save($submission){ return _hdata_points_save($submission);
  * hdata doesn't implement many hooks, because it is primarily an API
  * module.
  */
-
+//DEBUG: Remove before beta testing
 function hdata_menu(){
     return array(
         'testhdata' => array(
@@ -271,27 +273,23 @@ function _hdata_user_load_basic_peoplesoft($username){
 			-The tables have been changed
 			-"active" has been changed to "status"
 			-"department" has been changed to "dept"
-			-"program" has been removed
 	*/
     $q_basic =
     "SELECT
-        s.firstname fname,
-        s.lastname lname,
-        s.college college,
-        s.dept dpt,
-        s.status active,
-        s.planid,
-        s.enteredhonors,
-        s.enteredrit,
-        s.lefthonors,
-        plan.description program,
-        gpas.gpa gpa
-     FROM {h_students_peoplesoft} s
+        student.firstname fname,
+        student.lastname lname,
+        student.college college,
+        student.dept dpt,
+        student.status active,
+		student.planid planid,
+        gpas.gpa gpa,
+		plans.description program
+     FROM {h_students_peoplesoft} student
      JOIN {h_students_gpa} gpas
-        ON s.username = gpas.username
-     JOIN {h_plans} plan
-        ON plan.id = s.planid
-     WHERE s.username = '%s'
+        ON student.username = gpas.username
+	 JOIN {h_plans} plans
+	    ON student.planid = plans.id
+     WHERE student.username = '%s'
      LIMIT 1";
      $rs = db_query($q_basic, $username);
      $arry = db_fetch_array($rs);
@@ -305,7 +303,7 @@ function _hdata_user_load_basic_peoplesoft($username){
              'college' => $arry['college'],
              'department' => $arry['dpt'],
 			 'program' => $arry['program'],
-             'planid' => $arry['planid'],
+			 'planid' => $arry['planid'],
              'gpa' => $arry['gpa'],
              'enteredhonors' => $arry['enteredhonors'],
              'enteredrit' => $arry['enteredrit'],
@@ -764,7 +762,7 @@ function _hdata_load_note($id){
     }
     //note that the query is structured so that the returned array will
     //already be in the format we want.
-    $q = 'SELECT id, title, note AS body, posted_by AS author, date, cont_id AS year FROM {h_notes} WHERE id=%d';
+    $q = 'SELECT id, dce AS username, title, note AS body, posted_by AS author, date, cont_id AS year FROM {h_notes} WHERE id=%d';
     $rs = db_query($q,$id);
     if($rs){
         return db_fetch_array($rs);
@@ -775,8 +773,9 @@ function _hdata_load_note($id){
 function _hdata_save_note($note, $username){
     if(isset($note['id'])){
         $q = "UPDATE {h_notes} SET
-                title='%s', note='%s', date='%s', cont_id='%s', dce='%s'";
-        $rs = db_query($q,$note['title'],$note['body'],$note['date'],$note['cont_id'],$username);
+                title='%s', note='%s', date='%s', cont_id='%s', dce='%s', posted_by='%s'
+                WHERE id=%d";
+        $rs = db_query($q,$note['title'],$note['body'],$note['date'],$note['cont_id'],$username,$note['author'],$note['id']);
     }else{
         $q = "INSERT INTO {h_notes} (dce,title,note,date,posted_by,cont_id)
                          VALUES ('%s','%s','%s','%s','%s','%s')";
@@ -789,6 +788,11 @@ function _hdata_save_note($note, $username){
     }else{
         return $note;
     }
+}
+
+function _hdata_note_del($id){
+    $rs = db_query("DELETE FROM {h_notes} WHERE id=%d",$id);
+    return ($rs && db_affected_rows() > 0);
 }
 
 /**

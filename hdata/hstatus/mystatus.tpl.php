@@ -33,8 +33,10 @@ if($displaynone):
 ?>
 <h2>You are not in the Honors Database</h2>
 <?php else: ?>
-
+<section>
 <h2><?php t('Honor Status for @user',array('@user'=>$username)); ?></h2>
+
+<div id="student-information" style="display:inline-block;width:575px;">
 <table>
     <thead>
         <tr><td>Full Name</td>
@@ -55,32 +57,32 @@ if($displaynone):
 <h2> Honors Points</h2>
 <strong>Total Points: <?php print (int)$points_total; ?></strong>
 <h3> Honors Courses</h3>
+<table>
+    <thead>
+	<tr><td>Course Name</td>
+	<td>Number</td>
+	<td>Term Taken</td>
+	<td>Instructor</td>
+	<td>Grade</td>
+	<td>Points</td>
+	</tr>
+    </thead>
+    <tbody>
 <?php
-$num_elm=count($courses);
-$html_table='<table>
-			<thead>
-				<tr><td>Course Name</td>
-				<td>Number</td>
-				<td>Term Taken</td>
-				<td>Instructor</td>
-				<td>Grade</td>
-				<td>Points</td>
-				</tr>
-			</thead>
-			<tbody>';
-foreach($courses as $value)
-{
-	$html_table .='<tr><td>'.$value['name']. '</td>
-					<td>' .$value['num'] .'</td>
-					<td>' .$value['term'] .'</td>
-					<td>' .$value['instructor'] .'</td>
-					<td>' .$value['grade'] .'</td>
-					<td>' .$value['credits'] .'</td></tr>';	
+if(is_array($courses)){
+    foreach($courses as $value)
+    {
+	echo '<tr><td>'.$value['name']. '</td>
+		<td>' .$value['num'] .'</td>
+		<td>' .$value['term'] .'</td>
+		<td>' .$value['instructor'] .'</td>
+		<td>' .$value['grade'] .'</td>
+		<td>' .$value['credits'] .'</td></tr>';	
+    }
 }
-$html_table.='</tbody></table>';
-echo $html_table;
 ?>
-
+    </tbody>
+</table>
 <p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
 
 <p>Your continuation status is 
@@ -102,6 +104,11 @@ if(isset($color)){
 
 <?php if(isset($color)){ print '</span>'; }/*print closing tag.*/ ?>
 </p>
+</div> <!-- End #student-information -->
+<div style="float:right;">
+<img src="<?php print base_path()."facebook/portraits/$username.jpg";?>" width=150 height=200 alt="<?php print $username; ?>" />
+</div>
+</section> <!-- End Main Section -->
 <pre>
 <?php print_r($huser); /*DEBUG*/ ?>
 </pre>
