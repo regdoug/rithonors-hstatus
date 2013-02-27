@@ -268,27 +268,23 @@ function _hdata_user_load_basic_peoplesoft($username){
 			-The tables have been changed
 			-"active" has been changed to "status"
 			-"department" has been changed to "dept"
-			-"program" has been removed
 	*/
     $q_basic =
     "SELECT
-        s.firstname fname,
-        s.lastname lname,
-        s.college college,
-        s.dept dpt,
-        s.status active,
-        s.planid,
-        s.enteredhonors,
-        s.enteredrit,
-        s.lefthonors,
-        plan.description program,
-        gpas.gpa gpa
-     FROM {h_students_peoplesoft} s
+        student.firstname fname,
+        student.lastname lname,
+        student.college college,
+        student.dept dpt,
+        student.status active,
+		student.planid planid,
+        gpas.gpa gpa,
+		plans.description program
+     FROM {h_students_peoplesoft} student
      JOIN {h_students_gpa} gpas
-        ON s.username = gpas.username
-     JOIN {h_plans} plan
-        ON plan.id = s.planid
-     WHERE s.username = '%s'
+        ON student.username = gpas.username
+	 JOIN {h_plans} plans
+	    ON student.planid = plans.id
+     WHERE student.username = '%s'
      LIMIT 1";
      $rs = db_query($q_basic, $username);
      $arry = db_fetch_array($rs);
@@ -302,7 +298,7 @@ function _hdata_user_load_basic_peoplesoft($username){
              'college' => $arry['college'],
              'department' => $arry['dpt'],
 			 'program' => $arry['program'],
-             'planid' => $arry['planid'],
+			 'planid' => $arry['planid'],
              'gpa' => $arry['gpa'],
              'enteredhonors' => $arry['enteredhonors'],
              'enteredrit' => $arry['enteredrit'],
