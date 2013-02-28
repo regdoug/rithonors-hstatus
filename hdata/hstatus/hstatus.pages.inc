@@ -43,7 +43,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
         }*/
 
         //gets a user object
-        $huser = hdata_user_load(array('name'=>$username));
+        $huser = hdata_user_load(array('name'=>$username),true);
         $variables['huser'] = $huser;
         // $huser will be false if the load failed.
         if($huser){

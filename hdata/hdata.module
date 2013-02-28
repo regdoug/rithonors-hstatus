@@ -355,7 +355,7 @@ function _hdata_user_load_points($username){
 
 		foreach ($arry as $arr)
 		{
-			$total += $arr['numPoints'];
+			$total += $arr['credits'];
 		}
 
 		$arry['total'] = $total;
@@ -395,12 +395,13 @@ function _hdata_courses_load($username) {
 				term,
 				grade,
 				credits
-			FROM {h_students_courses_peoplesoft} WHERE username='%s'", $username);
+			FROM {h_students_courses_peoplesoft} WHERE username='%s'
+            ORDER BY term", $username);
 	$allcourses=array();
 	while (($row = db_fetch_array($rs))){
 		$allcourses[]=$row;
 	}
-		return $allcourses;
+    return $allcourses;
 }
 
 function _hdata_points_save($sub) {

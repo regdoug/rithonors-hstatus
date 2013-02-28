@@ -21,6 +21,8 @@ function hdata_testcases_page(){
     <option value="hdata_load_notes">hdata_load_notes(username)</option>
     <option value="hdata_load_note">hdata_load_note(id)</option>
     <option value="hdata_user_is_active_student">hdata_user_is_active_student(username)</option>
+    <option value="hdata_points_load">hdata_points_load(id)</option>
+    <option value="_hdata_user_load_points">_hdata_user_load_points(username)</option>
 </select>
 Arguments:<br>
 <input name="arg1">
