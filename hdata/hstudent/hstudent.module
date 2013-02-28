@@ -97,14 +97,11 @@ function template_preprocess_hstudent_result(&$variables) {
 		case 5: $variables['year'] = 'Senior'; break;
 		case 6: $variables['year'] = 'Sixth Year'; break;
 	}
-	if($student_info['basic']['planid']) {
-		$query = "SELECT description FROM {h_plans} WHERE id = '%d'";
-		$rs = db_query($query, $student_info['basic']['planid']);
-		$arry = db_fetch_array($rs);
-		$variables['major'] = $arry['description'];
-	} else {
-		$variable['major'] = $student_info['basic']['department'];
-	}
+    if(isset($student_info['basic']['planid'])) {
+	    $variables['major'] = $student_info['basic']['program'];
+    } else {
+        $variables['major'] = "{$student_info['basic']['college']} {$student_info['basic']['department']} {$student_info['basic']['program']}";
+    }
 	// drupal_set_message("leaving t_p_h_r: vars=".print_r($variables, TRUE));
 }	
 
