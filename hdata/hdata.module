@@ -68,6 +68,8 @@ function hdata_load_note($id){ return _hdata_load_note($id); }
 /*Saves a note to $username.  If $note['id'] is unset, a new note is created.
  * Returns the note on success, FALSE on failure*/
 function hdata_save_note($note, $username){ return _hdata_save_note($note, $username); }
+/* Deletes a note.  True/false return value indicates success/failure */
+function hdata_note_del($id){ return _hdata_note_del($id); }
 
 /* loads point types from {h_points_menu} */
 function hdata_points_type_list(){ return _hdata_points_type_list(); }
@@ -206,7 +208,7 @@ function _hdata_user_load($userinfo, $reset = false){
 	}
 
     $u['continuation'] = _hdata_user_load_continuation($username);
-    $u['points'] = _hdata_user_load_points_alt($username);
+    $u['points'] = _hdata_user_load_points($username);
     $u['submissions'] = _hdata_user_load_submissions($uid);
 	$u['courses']=_hdata_courses_load($username);
 
@@ -332,32 +334,9 @@ function _hdata_user_load_continuation($username){
 }
 
 /*
- * alternate function to get points info---made it 
- * when the first one didn't work
- */
-function _hdata_user_load_points_alt($username){
-	$rs=db_query("SELECT id,
-            username,
-            pointID,
-            explanation,
-			submittedTime ,
-			submittedBy,
-			approved,
-			approvedBy,
-			approvedTime,
-			declinedReason,
-			numPoints
-		FROM {h_students_points} WHERE username='%s'", $username);
-	$allpoints=array();
-	while (($row = db_fetch_array($rs))){
-		$allpoints[]=$row;
-	}
-		return $allpoints;
-}
-
-/*
  * Collects info from h_students_points table
  */
+
 function _hdata_user_load_points($username){
 	$rs = db_query("
 		SELECT id
@@ -376,7 +355,7 @@ function _hdata_user_load_points($username){
 
 		foreach ($arry as $arr)
 		{
-			$total += $arr['numPoints'];
+			$total += $arr['credits'];
 		}
 
 		$arry['total'] = $total;
@@ -391,18 +370,18 @@ function _hdata_user_load_points($username){
 function _hdata_points_load($id) {
     $rs = db_query("SELECT id,
             username,
-            pointID,
             explanation,
-			submittedTime,
-			submittedBy,
-			approved,
-			approvedBy,
-			approvedTime,
-			declinedReason,
-			numPoints
+            pointID as type,
+			submitted as submitted_time,
+			submittedBy as submitted_by,
+			approved as status,
+			approvedBy as reviewer,
+			approvedTime as reviewed_time,
+			declinedReason as reason,
+			numPoints as credits
 		FROM {h_students_points} WHERE id = %d",$id);
     if($rs){
-        return db_fetch_array($q1);
+        return db_fetch_array($rs);
     }else{
         return false;
     }
@@ -778,7 +757,7 @@ function _hdata_load_note($id){
     }
     //note that the query is structured so that the returned array will
     //already be in the format we want.
-    $q = 'SELECT id, title, note AS body, posted_by AS author, date, cont_id AS year FROM {h_notes} WHERE id=%d';
+    $q = 'SELECT id, dce AS username, title, note AS body, posted_by AS author, date, cont_id AS year FROM {h_notes} WHERE id=%d';
     $rs = db_query($q,$id);
     if($rs){
         return db_fetch_array($rs);
@@ -789,8 +768,9 @@ function _hdata_load_note($id){
 function _hdata_save_note($note, $username){
     if(isset($note['id'])){
         $q = "UPDATE {h_notes} SET
-                title='%s', note='%s', date='%s', cont_id='%s', dce='%s'";
-        $rs = db_query($q,$note['title'],$note['body'],$note['date'],$note['cont_id'],$username);
+                title='%s', note='%s', date='%s', cont_id='%s', dce='%s', posted_by='%s'
+                WHERE id=%d";
+        $rs = db_query($q,$note['title'],$note['body'],$note['date'],$note['cont_id'],$username,$note['author'],$note['id']);
     }else{
         $q = "INSERT INTO {h_notes} (dce,title,note,date,posted_by,cont_id)
                          VALUES ('%s','%s','%s','%s','%s','%s')";
@@ -803,6 +783,11 @@ function _hdata_save_note($note, $username){
     }else{
         return $note;
     }
+}
+
+function _hdata_note_del($id){
+    $rs = db_query("DELETE FROM {h_notes} WHERE id=%d",$id);
+    return ($rs && db_affected_rows() > 0);
 }
 
 /**
