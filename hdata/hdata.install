@@ -97,6 +97,7 @@ function hdata_update_6002 (){
             'not null' => true
         ));
     return $ret;
+}
 
 /**
  * Implements hook_schema
