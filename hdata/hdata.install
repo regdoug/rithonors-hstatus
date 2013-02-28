@@ -959,4 +959,4 @@ $s['h_notes'] = array(
     'primary key' => array('id'),
 );
 return $s;
-}        
+ }
