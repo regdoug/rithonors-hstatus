@@ -59,6 +59,11 @@ function hdata_cl_draft_life(){
 function hdata_student_list($college = null, $active = true){return _hdata_student_list($college,$active);}
 /* Gets a list of faculty usernames */
 function hdata_faculty_list($college = null){return _hdata_faculty_list($college);}
+/* Search for students by usernames or name. $query can be an array of search
+terms or a string with search terms separated by spaces */
+function hdata_student_search($query) {
+	return _hdata_student_search($query);
+}
 
 /*Loads all the notes for the user specified. An empty array means no
  * notes.  FALSE means an error occured (possibly no such user). */
@@ -898,4 +903,106 @@ function _hdata_isactivestudent($userinfo){
     }else{
         return false;
     }
+}
+
+/*
+ * Searches the database for students from student names or usernames. Usernames
+ * are considered best matches and are come first in the returned array. If 
+ * exactly two names are specified in the query, a first AND last name search is
+ * run, and these results are considered the next best match. Results matching
+ * first OR last name are given lowest priority and are returned last in the
+ * array.
+ * Returns an array of usernames (RIT DCEs)
+ */
+function _hdata_student_search($query) {
+	if(!is_array($query)) {
+		$tokens = explode(' ',$query);
+	} else {
+		$tokens = $query;
+	}
+	
+	$DCEs = array();
+	$names = array();
+	foreach($tokens as $s) {
+		if(preg_match('/[a-zA-Z]{3}[0-9]{4}/', $s)) {
+			//definitely a student DCE
+			$DCEs[] = $s;
+		} else {
+			//not a DCE
+			$names[] = $s;
+		}
+	}
+	
+	/*Prioritize search results:
+	 * 1. DCE match - top priority
+	 * 2. First and last name match
+	 * 3. One name match
+	 */
+	$search_results = array();
+	
+	if(count($DCEs) > 0) {
+		$query = "SELECT p.username FROM {h_students_peoplesoft} p WHERE ";
+		foreach($DCEs as $s) {
+			$query .= "(p.username = '%s') OR ";
+		}
+		$query = substr($query, 0, -3); //trim the extra 'OR' from the end of the string
+		$query .= "UNION SELECT s.username FROM {h_students} s WHERE ";
+		foreach($DCEs as $s) {
+			$query .= "(s.username = '%s') OR ";
+		}
+		$query = substr($query, 0, -3); //trim the extra 'OR'
+		$rs = db_query($query, array_merge_recursive($DCEs,$DCEs));
+		while($arry = db_fetch_array($rs)) {
+			if(!in_array($arry['username'], $search_results)){
+				$search_results[] = $arry['username'];
+			}
+		}
+	}
+	
+	if(count($names) == 2) {
+		$query = "SELECT p.username username
+				  FROM {h_students_peoplesoft} p
+				  WHERE (p.firstname = '%s' AND p.lastname = '%s') OR
+				        (p.firstname = '%s' AND p.lastname = '%s')
+				  UNION
+				  SELECT s.username username
+				  FROM {h_students} s
+				  WHERE (s.firstname = '%s' AND s.lastname = '%s') OR
+				        (s.firstname = '%s' AND s.lastname = '%s')";
+		$result = db_query($query, $names[0], $names[1], $names[1], $names[0], 
+				$names[0], $names[1], $names[1], $names[0]);
+		while($arry = db_fetch_array($result)) {
+			$search_results[] = $arry['username'];
+		}
+	}
+	
+	if(count($names) > 0) {
+		$query_names = '(';
+		foreach($names as $s) {
+			$query_names .= "'%s',";
+		}
+		$query_names = substr($query_names, 0, -1) . ')';
+		
+		$query = "SELECT username FROM {h_students_peoplesoft} 
+				WHERE firstname IN $query_names OR lastname IN $query_names";
+		//using array_merge_recursive because we are using each name as a search
+		//criterion twice (firstname and lastname)
+		$rs = db_query($query, array_merge_recursive($names, $names));
+		while($arry = db_fetch_array($rs)) {
+			if(!in_array($arry['username'], $search_results)) {
+				$search_results[] = $arry['username'];
+			}
+		}
+		
+		$query = "SELECT username FROM {h_students} 
+				WHERE firstname IN $query_names OR lastname IN $query_names";
+		$rs = db_query($query, array_merge_recursive($names,$names));
+		while($arry = db_fetch_array($rs)) {
+			if(!in_array($arry['username'], $search_results)) {
+				$search_results[] = $arry['username'];
+			}
+		}
+	}
+	
+	return $search_results;
 }
