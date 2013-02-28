@@ -86,6 +86,19 @@ function hdata_update_6001(){
 }
 
 /**
+ * Update 6002 is the alpha2 update.  It fixes a wrong column name in
+ * h_students_points.  (submittedTime should be submitted)
+ */
+function hdata_update_6002 (){
+    $ret = array();
+    db_change_field($ret, 'h_students_points', 'submittedTime', 'submitted', array(
+            'description' => t('Time of submission.'),
+            'type' => 'datetime',
+            'not null' => true
+        ));
+    return $ret;
+
+/**
  * Implements hook_schema
  * 
  * Defines the database structure for the hdata module
@@ -671,7 +684,7 @@ $s['h_students_points'] = array(
             'type' => 'text',
             'size' => 'small',
         ),
-        'submittedTime' => array(
+        'submitted' => array(
             'description' => t('Time of submission.'),
             'type' => 'datetime',
             'not null' => true
