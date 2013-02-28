@@ -206,7 +206,7 @@ function _hdata_user_load($userinfo, $reset = false){
 	}
 
     $u['continuation'] = _hdata_user_load_continuation($username);
-    $u['points'] = _hdata_user_load_points($username);
+    $u['points'] = _hdata_user_load_points_alt($username);
     $u['submissions'] = _hdata_user_load_submissions($uid);
 	$u['courses']=_hdata_courses_load($username);
 
@@ -266,27 +266,23 @@ function _hdata_user_load_basic_peoplesoft($username){
 			-The tables have been changed
 			-"active" has been changed to "status"
 			-"department" has been changed to "dept"
-			-"program" has been removed
 	*/
     $q_basic =
     "SELECT
-        s.firstname fname,
-        s.lastname lname,
-        s.college college,
-        s.dept dpt,
-        s.status active,
-        s.planid,
-        s.enteredhonors,
-        s.enteredrit,
-        s.lefthonors,
-        plan.description program,
-        gpas.gpa gpa
-     FROM {h_students_peoplesoft} s
+        student.firstname fname,
+        student.lastname lname,
+        student.college college,
+        student.dept dpt,
+        student.status active,
+		student.planid planid,
+        gpas.gpa gpa,
+		plans.description program
+     FROM {h_students_peoplesoft} student
      JOIN {h_students_gpa} gpas
-        ON s.username = gpas.username
-     JOIN {h_plans} plan
-        ON plan.id = s.planid
-     WHERE s.username = '%s'
+        ON student.username = gpas.username
+	 JOIN {h_plans} plans
+	    ON student.planid = plans.id
+     WHERE student.username = '%s'
      LIMIT 1";
      $rs = db_query($q_basic, $username);
      $arry = db_fetch_array($rs);
@@ -300,7 +296,7 @@ function _hdata_user_load_basic_peoplesoft($username){
              'college' => $arry['college'],
              'department' => $arry['dpt'],
 			 'program' => $arry['program'],
-             'planid' => $arry['planid'],
+			 'planid' => $arry['planid'],
              'gpa' => $arry['gpa'],
              'enteredhonors' => $arry['enteredhonors'],
              'enteredrit' => $arry['enteredrit'],
@@ -336,9 +332,32 @@ function _hdata_user_load_continuation($username){
 }
 
 /*
+ * alternate function to get points info---made it 
+ * when the first one didn't work
+ */
+function _hdata_user_load_points_alt($username){
+	$rs=db_query("SELECT id,
+            username,
+            pointID,
+            explanation,
+			submittedTime ,
+			submittedBy,
+			approved,
+			approvedBy,
+			approvedTime,
+			declinedReason,
+			numPoints
+		FROM {h_students_points} WHERE username='%s'", $username);
+	$allpoints=array();
+	while (($row = db_fetch_array($rs))){
+		$allpoints[]=$row;
+	}
+		return $allpoints;
+}
+
+/*
  * Collects info from h_students_points table
  */
-
 function _hdata_user_load_points($username){
 	$rs = db_query("
 		SELECT id
@@ -372,18 +391,18 @@ function _hdata_user_load_points($username){
 function _hdata_points_load($id) {
     $rs = db_query("SELECT id,
             username,
+            pointID,
             explanation,
-            pointID as type,
-			submitted as submitted_time,
-			submittedBy as submitted_by,
-			approved as status,
-			approvedBy as reviewer,
-			approvedTime as reviewed_time,
-			declinedReason as reason,
-			numPoints as credits
+			submittedTime,
+			submittedBy,
+			approved,
+			approvedBy,
+			approvedTime,
+			declinedReason,
+			numPoints
 		FROM {h_students_points} WHERE id = %d",$id);
     if($rs){
-        return db_fetch_array($rs);
+        return db_fetch_array($q1);
     }else{
         return false;
     }
