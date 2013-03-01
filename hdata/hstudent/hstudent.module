@@ -20,6 +20,11 @@ function hstudent_menu() {
 		'page callback' => '_hstudent_search_page',
 		'access callback' => '_hstudent_search_access'
 	);
+	$items['student_history'] = array(
+		'title' => "Student History",
+		'page callback' => '_hstudent_history_page',
+		'access callback' => '_hstudent_search_access'
+	);
 	// items['search_results'] = array(
 		// 'title' => "Search Results",
 		// 'page_callback' => '_hstudent_results_page',
@@ -35,6 +40,14 @@ function hstudent_menu() {
  */
 function _hstudent_search_page() {
 	return drupal_get_form('hstudent_search_form');
+}
+
+function _hstudent_search_page() {
+	if(func_num_args() > 0){
+		$username = func_get_arg(0);
+		return theme('hstudent_search_form',$username);
+	}
+	return "<h1>Student History</h1><p>Student Not Supplied</p>"
 }
 
 /*
@@ -76,37 +89,57 @@ function hstudent_theme($existing, $type, $theme, $path) {
 		'hstudent_result' => array(
 			'arguments' => array('username' => ""),
 			'template' => 'hstudent_result',
-		)
+		),
+		'hstudent_page' => array(
+			'arguments' => array('username' => ""),
+			'template' => 'hstudent_page',
+		),
 	);
 }
 
 function template_preprocess_hstudent_result(&$variables) {
 	$student_info = hdata_user_load(array('name'=>$variables['username']));
-	$variables['fname'] = $student_info['basic']['name']['firstname'];
-	$variables['lname'] = $student_info['basic']['name']['lastname'];
-	// drupal_set_message("t_p_h_r called, firstname=".$student_info['basic']['name']['firstname']);
-	$variables['username'] = $student_info['name'];
-	$query = "SELECT yearlevel FROM {h_students_peoplesoft} WHERE username='%s'";
-	$rs = db_query($query, $variables['username']);
-	$arry = db_fetch_array($rs);
-	switch($arry['yearlevel']) {
-		case 1: $variables['year'] = 'Freshman'; break;
-		case 2: $variables['year'] = 'Second Year'; break;
-		case 3: $variables['year'] = 'Third Year'; break;
-		case 4: $variables['year'] = 'Fourth Year'; break;
-		case 5: $variables['year'] = 'Senior'; break;
-		case 6: $variables['year'] = 'Sixth Year'; break;
+	if($student_info){
+		$variables['fname'] = $student_info['basic']['name']['firstname'];
+		$variables['lname'] = $student_info['basic']['name']['lastname'];
+		//DEBUG:
+		// drupal_set_message("t_p_h_r called, firstname=".$student_info['basic']['name']['firstname']);
+		
+		if($student_info['legacy']){
+			$query = "SELECT yearlevel FROM {h_students} WHERE username='%s'";
+			$rs = db_query($query, $variables['username']);
+			$yearlevel = db_result($rs);
+			
+			$variable['major'] = $student_info['basic']['college'].$student_info['basic']['department'].$student_info['basic']['program'];
+		}else{
+			$query = "SELECT yearlevel FROM {h_students_peoplesoft} WHERE username='%s'";
+			$rs = db_query($query, $variables['username']);
+			$yearlevel = db_result($rs);
+			
+			$variables['major'] = $student_info['program'];
+		}
+		switch($yearlevel) {
+			case 1: $variables['year'] = 'Freshman'; break;
+			case 2: $variables['year'] = 'Second Year'; break;
+			case 3: $variables['year'] = 'Third Year'; break;
+			case 4: $variables['year'] = 'Fourth Year'; break;
+			case 5: $variables['year'] = 'Senior'; break;
+			case 6: $variables['year'] = 'Sixth Year'; break;
+		}
+	} else { //student not found
+		$variables['username'] = false;
 	}
-	if($student_info['basic']['planid']) {
-		$query = "SELECT description FROM {h_plans} WHERE id = '%d'";
-		$rs = db_query($query, $student_info['basic']['planid']);
-		$arry = db_fetch_array($rs);
-		$variables['major'] = $arry['description'];
-	} else {
-		$variable['major'] = $student_info['basic']['department'];
-	}
+	//DEBUG:
 	// drupal_set_message("leaving t_p_h_r: vars=".print_r($variables, TRUE));
-}	
+}
+
+function template_preprocess_hstudent_page(&$variables) {
+	template_preprocess_hstudent_result($variables);
+	if($variables['username']){
+		//do stuff
+	}
+}
+	
 
 /*
  *Submit function for the search form. Puts search value into form storage
