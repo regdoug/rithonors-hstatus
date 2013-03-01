@@ -44,6 +44,10 @@ if($displaynone):
 <h2>You are not in the Honors Database</h2>
 <?php else: ?>
 
+<div style="float:right;">
+<img src="<?php print base_path()."facebook/portraits/$username.jpg";?>" width=150 height=200 alt="<?php print $username; ?>" />
+</div>
+
 <h2>Continuation Status </h2>
  <p>Your continuation status is 
 <?php
@@ -83,7 +87,7 @@ if(isset($color)){
         <td><?php print $college;?></td>
         <td><?php print $department;?></td>
         <td><?php print $program;?></td>
-        <td><?php print $gpa;?></td></tr>
+        <td><?php print substr(strval($gpa),0,1) .'.'.substr(strval($gpa),1);?></td></tr>
     </tbody>
 </table>
 
@@ -116,57 +120,84 @@ if(is_array($courses)){
 ?>
     </tbody>
 </table>
-<p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
 
 <h3>Other Activities</h3>
-<?php
-$num_elm=count($points);
-$html_table='<table>
+<table>
 			<thead>
-				<tr><td>Explanation</td>
-				<td>Status</td>
-				<td>Points</td>
-				<td>Date Submitted</td>
+				<tr>
+					<td>Explanation</td>
+					<td>Status</td>
+					<td>Points</td>
+					<td>Date Submitted</td>
 				</tr>
 			</thead>
-			<tbody>';
-foreach($points as $value)
-{	
-	$html_table .='<tr><td>'.$value['explanation']. '</td>
-					<td>' .$value['approved'] .'</td>
-					<td>' .$value['numPoints'] .'</td>
-					<td>' .$value['submittedTime'] .'</td>
-					 </tr>';				
+			<tbody>
+<?php
+
+if(is_array($courses)){
+    foreach($courses as $value)
+    {
+	echo '<tr>
+			<td>' .$value['explanation'] .'</td>
+			<td>' .$value['status'] .'</td>
+			<td>' .$value['credits'] .'</td>
+			<td>' .$value['submitted_time'] .'</td>
+		  </tr>';
+    }
 }
-$html_table.='</tbody></table>';
-echo $html_table;
+
 ?>
-<h3>Point Request Form</h3>
+</tbody>
+</table>
+
+<!-- temporary -->
+<h3><a href="https://www-staging.rit.edu/academicaffairs/honors/">Point Request Form</a></h3>
 
 <h2>Comp Learning Submissions</h2>
-<p>For requirements, please see the <a href="http://www-staging.rit.edu/academicaffairs/honors/service-requirements">comp learning page</a>.</p>
-<p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
 
+<p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
+<p>For requirements, please see the <a href="http://www-staging.rit.edu/academicaffairs/honors/service-requirements">comp learning page</a>.</p>
+<h4>Submissions</h4>
+<table>
+	<thead>
+		<tr>
+			<td>ID</td>
+			<td>Status</td>
+			<td>Hours</td>
+			<td>Submit Date</td>
+			<td>Review Date</td>
+		
+		</tr>
+	</thead>
+	<tbody>
+	<?php
+	echo 
+		'<tr><td>'.$sumissions['complearn']['id'] .'</td>
+		<td>'.$sumissions['complearn']['status'] .'</td>
+		<td>'.$sumissions['complearn']['hours'] .'</td>
+		<td>'.$sumissions['complearn']['submit_date'] .'</td>
+		<td>'.$sumissions['complearn']['review_date'] .'</td>
+		</tr>';
+		?>
+	</tbody>
+</table>
 </div> <!-- End #student-information -->
-<div style="float:right;">
-<img src="<?php print base_path()."facebook/portraits/$username.jpg";?>" width=150 height=200 alt="<?php print $username; ?>" />
-</div>
 </section> <!-- End Main Section -->
 <h2>Questions?</h2>
 
-<strong>Continuation Review</strong>
+<h3>Continuation Review</h3>
 <p>Email any questions to <a href="mailto:honors@rit.edu">
 honors@rit.edu</a></p>
 
-<strong>Comp Learning</strong>
+<h3>Comp Learning</h3>
 <p><a href="http://www-staging.rit.edu/academicaffairs/honors/service-requirements">info about comp learning requirements</a></p>
 <p>Email any questions to <a href="mailto:CompLearning@mail.honors.rit.edu">CompLearning@mail.honors.rit.edu</a></p>
 
-<strong>General Requirements</strong>
+<h3>General Requirements</h3>
 <p><a href=http://www-staging.rit.edu/academicaffairs/honors/academic-requirements>info about honors requirements</a></p>
 <p>Email any questions to <a href="mailto:Council@mail.honors.rit.edu">Council@mail.honors.rit.edu</a></p>
 
-<strong>Honors Courses</strong>
+<h3>Honors Courses</h3>
 <p><a href="http://www-staging.rit.edu/academicaffairs/honors/courseslist">A Listing of the currently offered honors courses</a></p>
 <pre>
 <?php print_r($huser); /*DEBUG*/ ?>
