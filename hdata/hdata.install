@@ -6,10 +6,10 @@
  * Installs the schema for the honors student tables
  * (the same as the tables for the old site)
  */
- 
+
 /**
  * Implements hook_install.
- * 
+ *
  * Run when the module is installed (NOTE: this is different that enable!)
  */
 function hdata_install(){
@@ -19,7 +19,7 @@ function hdata_install(){
 
 /**
  * Implements hook_uninstall
- * 
+ *
  * Run when a module is uninstalled (NOTE: this is different than disable!)
  */
 function hdata_uninstall(){
@@ -30,21 +30,21 @@ function hdata_uninstall(){
 /*
  * hook_update_N functions
  * http://api.drupal.org/api/drupal/developer!hooks!install.php/function/hook_update_N/6
- * 
+ *
  * Whenever you make a change that requires a patch to the database
  * (such as a change in the schema, you need to write a hook_update_N
  * function.
- * 
+ *
  * Database updates consist of 3 parts:
  *   - 1 digit for Drupal core compatibility
- *   - 1 digit for your module's major release version 
+ *   - 1 digit for your module's major release version
  *      (e.g. is this the 5.x-1.* (1) or 5.x-2.* (2) series of your module?)
  *   - 2 digits for sequential counting starting with 00
  */
- 
+
 /**
  * hdata_update_6000 creates the new h_cldrafts table
- * 
+ *
  * Added by Reginald Pierce on 05/01/2012
  */
 function hdata_update_6000(){
@@ -56,16 +56,16 @@ function hdata_update_6000(){
 
 /**
  * hdata_update_6001 implements a new complearning system.
- * 
+ *
  * The new system gives more flexibility and it should be more efficient
  * than the old system.  The main changes are
  *  - h_complearning is abandoned (but not deleted)
  *  - A new table h_cl_data will store all submissions
- *  - h_cldrafts and a new table, h_cl, will contain references to 
+ *  - h_cldrafts and a new table, h_cl, will contain references to
  *    the data in h_cl_data.
  *  - h_cl will support activity types, as per the request of
  *    Complearning Advisor Doug Strouth.
- * 
+ *
  * Added by Reginald Pierce on 07/01/2012
  */
 function hdata_update_6001(){
@@ -86,15 +86,29 @@ function hdata_update_6001(){
 }
 
 /**
+ * Update 6002 is the alpha2 update.  It fixes a wrong column name in
+ * h_students_points.  (submittedTime should be submitted)
+ */
+function hdata_update_6002 (){
+    $ret = array();
+    db_change_field($ret, 'h_students_points', 'submittedTime', 'submitted', array(
+            'description' => t('Time of submission.'),
+            'type' => 'datetime',
+            'not null' => true
+        ));
+    return $ret;
+}
+
+/**
  * Implements hook_schema
- * 
+ *
  * Defines the database structure for the hdata module
- * 
+ *
  * NOTE: If you modify this you MUST create an "update" function or it will
  * not affect any previous installs of this module!
  */
 function hdata_schema() {
- 
+
 //convenience function for creating a cache structure to be used by 'cache_set' and 'cache_get'
 $s['cache_honors'] = drupal_get_schema_unprocessed('system', 'cache');
 
@@ -513,9 +527,9 @@ $s['h_students_courses_peoplesoft'] = array(
     ),
     'primary key' => array('id'),
 );
-    
-        
-    
+
+
+
 //All the old tables: students, students_courses, students_gpa, students_points
 //students_waivers, complearning, continuation, notes.  (All prefixed)
 $s['h_students'] = array(
@@ -671,7 +685,7 @@ $s['h_students_points'] = array(
             'type' => 'text',
             'size' => 'small',
         ),
-        'submittedTime' => array(
+        'submitted' => array(
             'description' => t('Time of submission.'),
             'type' => 'datetime',
             'not null' => true
@@ -856,7 +870,7 @@ $s['h_continuation'] = array(
         ),
         'status' => array(
             'description' => t('-1=not set, 0=continued, 1=conditional continuation,
-                2=warning, 3=withdrawn, 4=graduated, 5=BS/MS withdrawn, 
+                2=warning, 3=withdrawn, 4=graduated, 5=BS/MS withdrawn,
                 6=BS/MS graduated, 7=BS/MS conditional'),
             'type' => 'int',
             'size' => 'tiny',
@@ -946,4 +960,4 @@ $s['h_notes'] = array(
     'primary key' => array('id'),
 );
 return $s;
-}        
+}

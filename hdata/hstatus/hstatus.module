@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file hstatus.module
  * 
@@ -8,16 +7,21 @@
  */
 
 /**
- * Implements hook_menu
+ * Implements hook_menu_alter to set MyStatus as the default user page.
  * 
- * hook_menu is called by drupal whenever a module is enabled or disabled
- * to update the internal page registry.
+ * The usual user/view page is retained for users w/o an Honors status
+ * and for compatibility.
+ */
+  
+/* hook_menu_alter is called by drupal after all hook_menu hooks are 
+ * done.  hook_menu is called whenever a module is enabled or disabled
+ * to update the internal page registry.  hook_menu_alter allow
  * 
  * Note that every page has a built-in permissions callback ("access callback")
  * that determines if (1) it should be shown in menus and (2) if a user
  * can visit it (throws a 403 on false)
  */
-function hstatus_menu(){
+function hstatus_menu_alter(&$items){
     /* the array key gives the path.  note the % sign which indicates an
      * argument.  The 'user' after the % indicates that argument should
      * be the return value of the function 'user_load' instead of the actual
@@ -25,7 +29,32 @@ function hstatus_menu(){
      * the path the user sees because modules are allowed to alias any 
      * path name they want.
      */
-    $items['user/%user/mystatus'] = array(
+
+//this was user/%user_uid_optional
+  $items['user/%user/view'] = array(
+    'title' => 'My account',
+    'title callback' => 'user_page_title',
+    'title arguments' => array(1),
+    'page callback' => 'user_view',
+    'page arguments' => array(1),
+    'access callback' => 'user_view_access',
+    'access arguments' => array(1),
+        'type' => MENU_LOCAL_TASK,
+    'parent' => '',
+    'file' => 'user.pages.inc',
+    'module' => 'user',
+  );
+
+//this was user/%user/view
+  $items['user/%user/mystatus'] = array(
+    'title' => 'MyStatus',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+    'module' => 'hstatus',
+  );
+
+//this was user/%user/mystatus
+    $items['user/%user_uid_optional'] = array(
         //menu title
         'title' => 'My Status',
         //function to generate the HTML content
@@ -36,14 +65,12 @@ function hstatus_menu(){
         'page arguments' => array(1),
         //file that the page function is located in (relative to module directory)
         'file' => 'hstatus.pages.inc',
-        //MENU_LOCAL_TASK means that it shold be displayed as a tab
-        'type' => MENU_LOCAL_TASK,
+        //In hook_menu, the module is automatically filled in, but in hook_menu_alter it must be specified
+        'module' => 'hstatus',
         //function to decide if the user has permissions
-        'access callback' => '_hstatus_status_access',
+    'access callback' => 'user_view_access',
         //arguments to the preceding function
-        'access arguments' => array(1),
-        //weight in menu or tab bar
-        'weight' => 2,
+    'access arguments' => array(1),
     );
     return $items;
 }
@@ -78,38 +105,4 @@ function hstatus_theme($existing, $type, $theme, $path){
             'arguments' => array('user' => NULL),
         ),
     );
-}
-
-/*----------------Access Callbacks------------------*/
-
-/**
- * Menu access callback for a user's MyStatus page.
- *
- * @param $account
- *   A user account object.
- * @return
- *   TRUE if the current user has access, FALSE otherwise.
- */
-function _hstatus_status_access($account) {
-    //$account is the page that is being accessed
-    //$user is the currently logged in user (almost always)
-    global $user;
-
-    // Anonymous users cannot have mystatus pages or view mystatus pages.
-    if (!$user->uid || !$account->uid) {
-        return FALSE;
-    }
-
-    // Administrators.  (defined in hook_perm)
-    if ( user_access('view all myStatus pages') ) {
-        return TRUE;
-    }
-
-    // Most users can see their own status.
-    if ($user->uid == $account->uid && user_access('view myStatus')) {
-        return TRUE;
-    }
-
-    //catch-all
-    return FALSE;
 }

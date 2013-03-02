@@ -1,11 +1,11 @@
 <?php
 /*
  * hdata.testcases.inc
- * 
+ *
  * This file contains functions to test hdata, which, since it is a backend
  * module is rather difficult to accurately test.
  */
- 
+
 function hdata_testcases_page(){
     global $base_path;
     $settings = array('ajax_path' => $base_path . 'testhdata/ajax/');
@@ -21,6 +21,8 @@ function hdata_testcases_page(){
     <option value="hdata_load_notes">hdata_load_notes(username)</option>
     <option value="hdata_load_note">hdata_load_note(id)</option>
     <option value="hdata_user_is_active_student">hdata_user_is_active_student(username)</option>
+    <option value="hdata_points_load">hdata_points_load(id)</option>
+    <option value="_hdata_user_load_points">_hdata_user_load_points(username)</option>
 </select>
 Arguments:<br>
 <input name="arg1">
@@ -44,7 +46,7 @@ function hdata_testcases_ajax(){
     if($fcn == 'hdata_user_load' || $fcn == 'hdata_user_is_active_student'){
         $argv[0] = array('name' => $argv[0]);
     }
-    
+
     if(function_exists($fcn)){
         echo '<pre>';
         echo "About to call $fcn with the following arguments\n";

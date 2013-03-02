@@ -1,0 +1,184 @@
+<?php
+// /*
+ // * Will need to declare plenty of permissions.
+ // */
+// function hstudent_perm() {
+	// return array(
+		// 'Administer hstudent module',
+		// 'Search students',
+		// 'Search faculty'
+	// );
+// }
+
+/*
+ * Need to register a path for the search page (and possibly a results page).
+ * Only register this page if the user has the appropriate permissions.
+ */
+function hstudent_menu() {
+	$items['search_users'] = array(
+		'title' => "Student Search",
+		'page callback' => '_hstudent_search_page',
+		'access callback' => '_hstudent_search_access'
+	);
+	$items['student_history'] = array(
+		'title' => "Student History",
+		'page callback' => '_hstudent_history_page',
+		'access callback' => '_hstudent_search_access'
+	);
+	// items['search_results'] = array(
+		// 'title' => "Search Results",
+		// 'page_callback' => '_hstudent_results_page',
+		// 'access_callback' => '_hstudents_results_access',
+		// 'type' => MENU_CALLBACK
+	// );
+	return $items;
+}
+
+/*
+ * Page callback for .../search_users/
+ * Generates search page
+ */
+function _hstudent_search_page() {
+	return drupal_get_form('hstudent_search_form');
+}
+
+function _hstudent_history_page() {
+	if(func_num_args() > 0){
+		$username = func_get_arg(0);
+		return theme('hstudent_page',$username);
+	}
+	return "<h1>Student History</h1><p>Student Not Supplied</p>";
+}
+
+/*
+ *Generates search form, and results if a search has been initiated
+ */
+function hstudent_search_form($form_state) {
+	$form['search_field'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Name(s) or RIT DCE')
+	);
+	$form['submit_button'] = array(
+		'#type' => 'submit',
+		'#value' => t('Search')
+	);
+	// $form['random_text'] = array(
+		// '#prefix' => '<h1>',
+		// '#value' => 'Random Text',
+		// '#suffix' => '</h1>'
+	// );
+	// $form['more_random'] = array(
+		// '#prefix' => '<pre>',
+		// '#suffix' => '</pre>',
+		// '#value' => print_r($form_state, TRUE)
+	// );
+	if(is_array($form_state['storage']['results'])) {
+		foreach($form_state['storage']['results'] as $s) {
+			$form[$s] = array(
+				'#prefix' => '<div>',
+				'#value' => theme('hstudent_result',$s),
+				'#suffix' => '</div>'
+			);
+		}
+	}
+	return $form;
+}
+
+function hstudent_theme($existing, $type, $theme, $path) {
+	return array(
+		'hstudent_result' => array(
+			'arguments' => array('username' => ""),
+			'template' => 'hstudent_result',
+		),
+		'hstudent_page' => array(
+			'arguments' => array('username' => ""),
+			'template' => 'hstudent_page',
+		),
+	);
+}
+
+function template_preprocess_hstudent_result(&$variables) {
+	$student_info = hdata_user_load(array('name'=>$variables['username']));
+	if($student_info){
+		$variables['student_info'] = $student_info;
+		$variables['fname'] = $student_info['basic']['name']['firstname'];
+		$variables['lname'] = $student_info['basic']['name']['lastname'];
+		//DEBUG:
+		//drupal_set_message("t_p_h_r called, firstname=".$student_info['basic']['name']['firstname']);
+		
+		if($student_info['basic']['legacy']){
+			$query = "SELECT yearlevel FROM {h_students} WHERE username='%s'";
+			$rs = db_query($query, $variables['username']);
+			$yearlevel = db_result($rs);
+			
+			$variable['major'] = $student_info['basic']['college'].$student_info['basic']['department'].$student_info['basic']['program'];
+		}else{
+			$query = "SELECT yearlevel FROM {h_students_peoplesoft} WHERE username='%s'";
+			$rs = db_query($query, $variables['username']);
+			$yearlevel = db_result($rs);
+			
+			$variables['major'] = $student_info['basic']['program'];
+		}
+		switch($yearlevel) {
+			case 1: $variables['year'] = 'Freshman'; break;
+			case 2: $variables['year'] = 'Second Year'; break;
+			case 3: $variables['year'] = 'Third Year'; break;
+			case 4: $variables['year'] = 'Fourth Year'; break;
+			case 5: $variables['year'] = 'Fifth Year'; break;
+			case 6: $variables['year'] = 'Sixth Year'; break;
+		}
+	} else { //student not found
+		$variables['username'] = false;
+	}
+	//DEBUG:
+	// drupal_set_message("leaving t_p_h_r: vars=".print_r($variables, TRUE));
+}
+
+function template_preprocess_hstudent_page(&$variables) {
+	template_preprocess_hstudent_result($variables);
+	if($variables['student_info']){
+		//do stuff
+		$student_info = $variables['student_info'];
+		$variables['status'] = $student_info['continuation']['status'];
+		switch($variables['status']){
+			case 0: $variables['status_string'] = 'Continued';break;
+			case 1: $variables['status_string'] = 'Conditional Continuation';break;
+			case 2: $variables['status_string'] = 'Warning';break;
+			case 3: $variables['status_string'] = 'Withdrawn';break;
+			case 4: $variables['status_string'] = 'Graduated';break;
+			case 5: $variables['status_string'] = 'Withdrawn due to BS/MS';break;
+			case 6: $variables['status_string'] = 'Graduated with BS/MS';break;
+			case 7: $variables['status_string'] = 'Conditional Continuation (BS/MS)';break;
+			default: $variables['status_string'] = 'Unknown';
+		}
+		if(!$student_info['basic']['legacy']){
+			$rs = db_query("SELECT plan, subplan FROM {h_plans} WHERE id=%d",$student_info['basic']['planid']);
+			$rsarry = db_fetch_array($rs);
+			array_push($variables,$rsarry);
+		}
+		$variables['enteredrit'] = $student_info['basic']['enteredrit'];
+		$variables['enteredhonors'] = $student_info['basic']['enteredhonors'];
+		$variables['lefthonors'] = $student_info['basic']['lefthonors'];
+	}else{
+		drupal_set_message('Failed to load user');
+	}
+	$variables['vardump'] = print_r($variables,true);
+}
+	
+
+/*
+ *Submit function for the search form. Puts search value into form storage
+ */
+function hstudent_search_form_submit($form, &$form_state) {
+	$results = hdata_student_search($form_state['values']['search_field']);
+	$form_state['storage']['results'] = $results;
+}
+
+/*
+ * Access callback for URL .../search_users/
+ * Specifies access permissions for the search page
+ */
+function _hstudent_search_access() {
+	//Fix this at some point.
+	return TRUE;
+}

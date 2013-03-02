@@ -1,0 +1,248 @@
+<?php
+
+/**
+ * @file hpoints.module
+ *
+ * This file must be located in the hpoints folder and is loaded on every
+ * page.
+ */
+
+/*--------------Defaults-------------*/
+define('HPOINTS_SUBMIT_MSG','Please describe the activity that you believe should earn you points.');
+define('HPOINTS_SUBMIT_WARN','Submissions will be reviewed and you will recieve an email when a decision is made.');
+define('HPOINTS_EMAIL_MSG','This type of submission requires a reference.');
+
+/**
+ * Implements hook_menu
+ *
+ * hook_menu is called by drupal whenever a module is enabled or disabled
+ * to update the internal page registry.
+ *
+ * Note that every page has a built-in permissions callback ("access callback")
+ * that determines if (1) it should be shown in menus and (2) if a user
+ * can visit it (throws a 403 on false)
+ */
+function hpoints_menu(){
+    //AJAX callback
+    //see docs for hpoints_cl_submission
+    $items['hpoints/submission/%'] = array(
+        'title' => 'Points Submission',
+        'page callback' => 'hpoints_submission',
+        'page arguments' => array(2),
+        'type' => MENU_CALLBACK,
+        'access arguments' => array('review points submisstions'),
+    );
+
+    //submission form
+    //note that even though no % is in the path, anything following 'submitcl' gets passed as an argument.
+    //(This is true of all menu entries with blank type)
+    $items['hpoints/form'] = array(
+        'title' => 'Honors Points Submission Form',
+        'page callback' => 'hpoints_build_form',
+        'file' => 'hpoints.form.inc',
+        'access callback' => '_hpoints_form_access',
+    );
+    
+    //Settings Page
+    //TODO: needs two pages (as tabs) one for types
+    $items['admin/settings/hpoints'] = array(
+        'title' => 'hPoints Settings',
+        'description' => 'Adjust the points form settings.',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('hpoints_admin_settings'),
+        'file' => 'hpoints.admin.inc',
+        'access arguments' => array('administer points submissions'),
+    );
+    
+    return $items;
+}
+
+/**
+ * hpoints_cl_submission is an AJAX callback function to generate
+ * HTML from complearning submission data.
+ *
+ * The design intent of this function was that it would be used to
+ * return HTML to an AJAX lightbox embedded in a general complearning
+ * reviewing page.  As such, it does not display general information
+ * such as username, total hours, or time submitted.  It merely gets the
+ * submission data and themes it with the theme hook "hpoints_cl_activity"
+ */
+function hpoints_submission($sid){
+    $points = hdata_points_load($sid);
+    $data = $points['data'];
+    if($data){
+        $output = theme('hpoints_display',$data);
+    }else{
+        $output = '<h1>Not Found</h1>';
+    }
+
+    //AJAX functions should echo the output and return null to prevent
+    //the theme system from kicking in.
+    echo $output;
+    return null;
+}
+
+/**
+ * Implements hook_perm
+ *
+ * Just returns an array of strings to be used on the permissions page
+ */
+function hpoints_perm(){
+    return array('submit points', 'bulk submit points',
+        'administer points submissions', 'review points submissions');
+}
+
+/**
+ * Implements hook_theme
+ *
+ * hook_theme defines "theme hooks" which are just functions or files that
+ * generate HTML.  The benefit of doing this is that it makes it easy for
+ * other modules or themes to override your display.
+ */
+function hpoints_theme($existing, $type, $theme, $path){
+    return array(
+        'hpoints_display' => array(
+            'arguments' => array('submission' => NULL),
+            'template' => 'pointsubmission',
+        ),
+        'hpoints_reference_email' => array(
+            'arguments' => array('student_name' => '','student_email'=>'',
+                                'reference_name' => '', 'reference_email' => '',
+                                'points_submission' => ''),
+            'template' => 'email.reference',
+        ),
+        'hpoints_form_bulk_users' => array(
+            'arguments' => array('default_value' => ''),
+            'template' => 'bulkui',
+        ),
+    );
+}
+
+/**
+ * Implements hook_action_info
+ */
+function hpoints_action_info(){
+    return array(
+        'hpoints_approve_action' => array(
+            'description' => t('Approve Points Submission'),
+            'type' => 'hpoints',
+            'configurable' => FALSE,
+        ),
+        'hpoints_reject_action' => array(
+            'description' => t('Reject Points Submission'),
+            'type' => 'hpoints',
+            'configurable' => FALSE,
+        ),
+    /* Example action -- taken from Drupal
+      'user_block_ip_action' => array(
+      'description' => t('Ban IP address of current user'),
+      'type' => 'user',
+      'configurable' => FALSE,
+      'hooks' => array(
+        'nodeapi' => array('presave', 'delete', 'insert', 'update', 'view'),
+        'comment' => array('view', 'insert', 'update', 'delete'),
+        'user' => array('logout'),
+      )
+    ),*/
+  );
+}
+
+/**
+ * Performs a database update to approve a Complearning submission,
+ * provided that the user has the appropriate permissions.
+ */
+function hpoints_approve_action($submission){
+    if(user_access('administer points submissions') || user_access('review points submissions')){
+        $submission['status'] = 1;
+        hdata_points_save($submission);
+    }else{
+        drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
+    }
+}
+/**
+ * Performs a database update to reject a Complearning submission,
+ * provided that the user has the appropriate permissions.
+ */
+function hpoints_reject_action($submission){
+    if(user_access('administer points submissions') || user_access('review points submissions')){
+        $submission['status'] = -1;
+        hdata_points_save($submission);
+    }else{
+        drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
+    }
+}
+
+/**
+ * Helper function to get type options.
+ * 
+ * Pulls types from hdata_points_type_list() and puts them in a form that
+ * the Form API will understand.
+ */
+function hpoints_get_type_options(){
+    $list = hdata_points_type_list();
+    foreach($list as $type){
+        $options[$type['id']] = $type['title'];
+    }
+    return $options;
+}
+
+/**
+ * Helper function to determine which points need emails sent as part
+ * of a submission
+ */
+function hpoints_type_needs_email($typeid){
+    $list = hdata_points_type_list();
+    return $list[$typeid]['send_email'] == 1;
+}
+
+/*
+ * Implements hook_views_bulk_operations_object_info
+ * 
+ * This hook tells Views Bulk Operations (VBO) that bulk operations
+ * are supported for the 'complearning' type and how to access the table.
+ */
+function hpoints_views_bulk_operations_object_info(){
+    return array(
+        'hpoints' => array(
+            'type' => 'hpoints',
+            'base_table' => 'h_students_points',
+            'load' => 'hdata_points_load',
+            'oid' => 'id',
+            'title' => 'id',
+            'access' => '_hpoints_review_access',
+        ),
+    );
+}
+
+/**
+ * Implements hook_views_api
+ * 
+ * This tells Views that hcomplearn has a views.inc file.
+ */
+function hpoints_views_api(){
+    return array('api'=>2);
+}
+
+/*----------------Access Callbacks------------------*/
+
+
+/**
+ * Allows access if the user has the right to submit points
+ */
+function _hpoints_form_access(){
+    return user_access('submit points') || user_access('bulk submit points');
+}
+
+/**
+ * Allows access to the reviewing pages if the user has the
+ * 'review complementary learning' permission or is the superuser (UID 1)
+ * 
+ * Used for VBO
+ */
+function _hpoints_review_access($op,$submission=null,$account=null){
+    if(is_numeric($op)){
+        $account = user_load($op);
+    }
+    return user_access('administer points submissions',$account) ||
+            user_access('review points submissions',$account);
+}

@@ -1,0 +1,17 @@
+.hformtools-users > .ajaxelement {
+    border: 1px solid gray;
+    border-radius: 5px;
+    background-color: #eee;
+}
+.hformtools-users > .ajaxelement .user {
+    background-color: #ddd;
+    border: 1.5px solid #261006;
+    border-radius: 3px;
+}
+.hformtools-users > .ajaxelement .group {
+    border: 1px solid green;
+    border-radius: 4px;
+}
+.hformtools-users > .ajaxelement .group-label {
+    border-radius: 3px;
+}

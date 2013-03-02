@@ -1,0 +1,14 @@
+;hstudent.info
+;Created by Connor Pierce, 2/18/2013
+
+description = Provides search capabilities for Honors staff.
+name = hStudent
+
+;Group with other Honors modules
+package = Honors
+
+;Required
+core = 6.x
+
+;Requires the hdata module
+dependencies[] = hdata
