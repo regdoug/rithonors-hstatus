@@ -2,7 +2,7 @@
 /**
  * @file hdata.module
  * Manages the database queries for the Honors modules.
- * 
+ *
  * WARNING. THIS MODULE DOES NOT DO PERMISSION CHECKS!
  *
  * I chose to put this in a separate module for two reasons.
@@ -70,40 +70,6 @@ function hdata_points_load($id){ return _hdata_points_load($id); }
 /* saves a point submission */
 function hdata_points_save($submission){ return _hdata_points_save($submission); }
 
-/*
- * Implemented Hooks
- *
- * hdata doesn't implement many hooks, because it is primarily an API
- * module.
- */
-//DEBUG: Remove before beta testing
-function hdata_menu(){
-    return array(
-        'testhdata' => array(
-            'type' => MENU_NORMAL_ITEM,
-            'title' => 'Test hData',
-            'page callback' => 'hdata_testcases_page',
-            'access callback' => true,
-            'file' => 'hdata.testcases.inc',
-        ),
-        'testhdata/ajax/%' => array(
-            'type' => MENU_CALLBACK,
-            'title' => 'AJAX functions for the hdata test page',
-            'page callback' => 'hdata_testcases_ajax',
-            'page arguments' => array(2),
-            'access callback' => true,
-            'file' => 'hdata.testcases.inc',
-        ),
-    );
-}
-/*
- *uncomment the following code to rebuild the menu structure on each page load
- *WATCH OUT! This will *really* slow down your site!
- *If you do it, just do it for one page load and then comment it out again.
- */
-//function hdata_init(){
-    //menu_rebuild();
-//}
 
 /**
  * _hdata_user_load
@@ -404,7 +370,7 @@ function _hdata_courses_load($username) {
 	$allcourses=array();
 	while (($row = db_fetch_array($rs))){
 		$allcourses[]=$row;
-		
+
 	}
     return $allcourses;
 }

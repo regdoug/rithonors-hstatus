@@ -103,20 +103,18 @@ function template_preprocess_hstudent_result(&$variables) {
 		$variables['student_info'] = $student_info;
 		$variables['fname'] = $student_info['basic']['name']['firstname'];
 		$variables['lname'] = $student_info['basic']['name']['lastname'];
-		//DEBUG:
-		//drupal_set_message("t_p_h_r called, firstname=".$student_info['basic']['name']['firstname']);
-		
+
 		if($student_info['basic']['legacy']){
 			$query = "SELECT yearlevel FROM {h_students} WHERE username='%s'";
 			$rs = db_query($query, $variables['username']);
 			$yearlevel = db_result($rs);
-			
+
 			$variable['major'] = $student_info['basic']['college'].$student_info['basic']['department'].$student_info['basic']['program'];
 		}else{
 			$query = "SELECT yearlevel FROM {h_students_peoplesoft} WHERE username='%s'";
 			$rs = db_query($query, $variables['username']);
 			$yearlevel = db_result($rs);
-			
+
 			$variables['major'] = $student_info['basic']['program'];
 		}
 		switch($yearlevel) {
@@ -130,8 +128,6 @@ function template_preprocess_hstudent_result(&$variables) {
 	} else { //student not found
 		$variables['username'] = false;
 	}
-	//DEBUG:
-	// drupal_set_message("leaving t_p_h_r: vars=".print_r($variables, TRUE));
 }
 
 function template_preprocess_hstudent_page(&$variables) {
@@ -164,7 +160,7 @@ function template_preprocess_hstudent_page(&$variables) {
 	}
 	$variables['vardump'] = print_r($variables,true);
 }
-	
+
 
 /*
  *Submit function for the search form. Puts search value into form storage

@@ -44,5 +44,3 @@
 <p>Continuation system needs overhaul before this will be functional</p>
 <h2>Comp Learning, Courses, and Points</h2>
 <p>Same as MyStatus page... use theme functions?</p>
-<h2>Debugging</h2>
-<pre><?php print $vardump; ?></pre>

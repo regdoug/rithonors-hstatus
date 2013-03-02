@@ -57,7 +57,7 @@ function theme_hformtools_html5_number($element) {
 
     return theme('hformtools_html5',$element,'number');
 }
-function theme_hformtools_html5_email($element) { 
+function theme_hformtools_html5_email($element) {
     return theme('hformtools_html5',$element,'email');
 }
 //Slight modification of theme_textfield() from includes/common.inc
@@ -78,7 +78,7 @@ function theme_hformtools_html5($element,$type='text'){
     if (isset($element['#field_prefix'])) {
         $output .= '<span class="field-prefix">' . $element['#field_prefix'] . '</span> ';
     }
-    
+
     $output .= '<input type="'.$type.'"' . $maxlength . ' name="' . $element['#name'] . '" id="' . $element['#id'] . '"' . $size . ' value="' . check_plain($element['#value']) . '"' . drupal_attributes($element['#attributes']) . ' />';
 
     if (isset($element['#field_suffix'])) {
@@ -97,13 +97,6 @@ function hformtools_menu(){
         'access callback' => true,
         'file' => 'users/hformtools_users.inc',
     );
-    //DEBUG:  Remove for beta release
-    $menu['hformtools/test'] = array(
-        'title' => 'Test hFormTools',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('hformtools_testform'),
-        'access callback' => true,
-    );
     return $menu;
 }
 
@@ -114,7 +107,7 @@ function hformtools_testform(&$form_state){
         '#min' => 0,
         '#max' => 20,
         '#step' => 5,
-        
+
     );
     $form['html5_email'] = array(
         '#type' => 'hformtools_html5_email',
@@ -142,7 +135,7 @@ function hformtools_testform(&$form_state){
     );
     return $form;
 }
-    
+
 function hformtools_testform_submit($form, &$form_state){
     $form_state['storage']['lastsubmission'] = $form_state['values'];
 }
