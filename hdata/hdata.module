@@ -281,37 +281,38 @@ function _hdata_user_load_basic_peoplesoft($username){
         student.college college,
         student.dept dpt,
         student.status active,
-		student.planid planid,
+        student.planid planid,
         gpas.gpa gpa,
-		plans.description program
-     FROM {h_students_peoplesoft} student
-     JOIN {h_students_gpa} gpas
+        plans.description program
+    FROM {h_students_peoplesoft} student
+    JOIN {h_students_gpa} gpas
         ON student.username = gpas.username
-	 JOIN {h_plans} plans
-	    ON student.planid = plans.id
-     WHERE student.username = '%s'
-     LIMIT 1";
-     $rs = db_query($q_basic, $username);
-     $arry = db_fetch_array($rs);
-     if($arry){
-         return array(
-             'name' => array(
-                 'firstname' => $arry['fname'],
-                 'lastname' => $arry['lname'],
-             ),
-             'active' => $arry['active'],
-             'college' => $arry['college'],
-             'department' => $arry['dpt'],
-			 'program' => $arry['program'],
-			 'planid' => $arry['planid'],
-             'gpa' => $arry['gpa'],
-             'enteredhonors' => $arry['enteredhonors'],
-             'enteredrit' => $arry['enteredrit'],
-             'lefthonors' => $arry['lefthonors'],
-         );
-     }else{
-         return false;
-     }
+    JOIN {h_plans} plans
+        ON student.planid = plans.id
+    WHERE student.username = '%s'
+    LIMIT 1";
+    $rs = db_query($q_basic, $username);
+    $arry = db_fetch_array($rs);
+    if($arry){
+        return array(
+            'legacy' => false,
+            'name' => array(
+                'firstname' => $arry['fname'],
+                'lastname' => $arry['lname'],
+            ),
+            'active' => $arry['active'],
+            'college' => $arry['college'],
+            'department' => $arry['dpt'],
+            'program' => $arry['program'],
+            'planid' => $arry['planid'],
+            'gpa' => $arry['gpa'],
+            'enteredhonors' => $arry['enteredhonors'],
+            'enteredrit' => $arry['enteredrit'],
+            'lefthonors' => $arry['lefthonors'],
+        );
+    }else{
+        return false;
+    }
 }
 
 /*
@@ -360,7 +361,7 @@ function _hdata_user_load_points($username){
 
 		foreach ($arry as $arr)
 		{
-			$total += $arr['numPoints'];
+			$total += $arr['credits'];
 		}
 
 		$arry['total'] = $total;
@@ -400,12 +401,14 @@ function _hdata_courses_load($username) {
 				term,
 				grade,
 				credits
-			FROM {h_students_courses_peoplesoft} WHERE username='%s'", $username);
+			FROM {h_students_courses_peoplesoft} WHERE username='%s'
+            ORDER BY term", $username);
 	$allcourses=array();
 	while (($row = db_fetch_array($rs))){
 		$allcourses[]=$row;
+		
 	}
-		return $allcourses;
+    return $allcourses;
 }
 
 function _hdata_points_save($sub) {
@@ -906,7 +909,7 @@ function _hdata_isactivestudent($userinfo){
 
 /*
  * Searches the database for students from student names or usernames. Usernames
- * are considered best matches and are come first in the returned array. If 
+ * are considered best matches and are come first in the returned array. If
  * exactly two names are specified in the query, a first AND last name search is
  * run, and these results are considered the next best match. Results matching
  * first OR last name are given lowest priority and are returned last in the
@@ -919,7 +922,7 @@ function _hdata_student_search($query) {
 	} else {
 		$tokens = $query;
 	}
-	
+
 	$DCEs = array();
 	$names = array();
 	foreach($tokens as $s) {
@@ -931,14 +934,14 @@ function _hdata_student_search($query) {
 			$names[] = $s;
 		}
 	}
-	
+
 	/*Prioritize search results:
 	 * 1. DCE match - top priority
 	 * 2. First and last name match
 	 * 3. One name match
 	 */
 	$search_results = array();
-	
+
 	if(count($DCEs) > 0) {
 		$query = "SELECT p.username FROM {h_students_peoplesoft} p WHERE ";
 		foreach($DCEs as $s) {
@@ -957,7 +960,7 @@ function _hdata_student_search($query) {
 			}
 		}
 	}
-	
+
 	if(count($names) == 2) {
 		$query = "SELECT p.username username
 				  FROM {h_students_peoplesoft} p
@@ -968,21 +971,21 @@ function _hdata_student_search($query) {
 				  FROM {h_students} s
 				  WHERE (s.firstname = '%s' AND s.lastname = '%s') OR
 				        (s.firstname = '%s' AND s.lastname = '%s')";
-		$result = db_query($query, $names[0], $names[1], $names[1], $names[0], 
+		$result = db_query($query, $names[0], $names[1], $names[1], $names[0],
 				$names[0], $names[1], $names[1], $names[0]);
 		while($arry = db_fetch_array($result)) {
 			$search_results[] = $arry['username'];
 		}
 	}
-	
+
 	if(count($names) > 0) {
 		$query_names = '(';
 		foreach($names as $s) {
 			$query_names .= "'%s',";
 		}
 		$query_names = substr($query_names, 0, -1) . ')';
-		
-		$query = "SELECT username FROM {h_students_peoplesoft} 
+
+		$query = "SELECT username FROM {h_students_peoplesoft}
 				WHERE firstname IN $query_names OR lastname IN $query_names";
 		//using array_merge_recursive because we are using each name as a search
 		//criterion twice (firstname and lastname)
@@ -992,8 +995,8 @@ function _hdata_student_search($query) {
 				$search_results[] = $arry['username'];
 			}
 		}
-		
-		$query = "SELECT username FROM {h_students} 
+
+		$query = "SELECT username FROM {h_students}
 				WHERE firstname IN $query_names OR lastname IN $query_names";
 		$rs = db_query($query, array_merge_recursive($names,$names));
 		while($arry = db_fetch_array($rs)) {
@@ -1002,6 +1005,6 @@ function _hdata_student_search($query) {
 			}
 		}
 	}
-	
+
 	return $search_results;
 }
