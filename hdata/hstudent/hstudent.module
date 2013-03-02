@@ -42,12 +42,12 @@ function _hstudent_search_page() {
 	return drupal_get_form('hstudent_search_form');
 }
 
-function _hstudent_search_page() {
+function _hstudent_history_page() {
 	if(func_num_args() > 0){
 		$username = func_get_arg(0);
-		return theme('hstudent_search_form',$username);
+		return theme('hstudent_page',$username);
 	}
-	return "<h1>Student History</h1><p>Student Not Supplied</p>"
+	return "<h1>Student History</h1><p>Student Not Supplied</p>";
 }
 
 /*
@@ -100,12 +100,13 @@ function hstudent_theme($existing, $type, $theme, $path) {
 function template_preprocess_hstudent_result(&$variables) {
 	$student_info = hdata_user_load(array('name'=>$variables['username']));
 	if($student_info){
+		$variables['student_info'] = $student_info;
 		$variables['fname'] = $student_info['basic']['name']['firstname'];
 		$variables['lname'] = $student_info['basic']['name']['lastname'];
 		//DEBUG:
-		// drupal_set_message("t_p_h_r called, firstname=".$student_info['basic']['name']['firstname']);
+		//drupal_set_message("t_p_h_r called, firstname=".$student_info['basic']['name']['firstname']);
 		
-		if($student_info['legacy']){
+		if($student_info['basic']['legacy']){
 			$query = "SELECT yearlevel FROM {h_students} WHERE username='%s'";
 			$rs = db_query($query, $variables['username']);
 			$yearlevel = db_result($rs);
@@ -116,14 +117,14 @@ function template_preprocess_hstudent_result(&$variables) {
 			$rs = db_query($query, $variables['username']);
 			$yearlevel = db_result($rs);
 			
-			$variables['major'] = $student_info['program'];
+			$variables['major'] = $student_info['basic']['program'];
 		}
 		switch($yearlevel) {
 			case 1: $variables['year'] = 'Freshman'; break;
 			case 2: $variables['year'] = 'Second Year'; break;
 			case 3: $variables['year'] = 'Third Year'; break;
 			case 4: $variables['year'] = 'Fourth Year'; break;
-			case 5: $variables['year'] = 'Senior'; break;
+			case 5: $variables['year'] = 'Fifth Year'; break;
 			case 6: $variables['year'] = 'Sixth Year'; break;
 		}
 	} else { //student not found
@@ -135,9 +136,33 @@ function template_preprocess_hstudent_result(&$variables) {
 
 function template_preprocess_hstudent_page(&$variables) {
 	template_preprocess_hstudent_result($variables);
-	if($variables['username']){
+	if($variables['student_info']){
 		//do stuff
+		$student_info = $variables['student_info'];
+		$variables['status'] = $student_info['continuation']['status'];
+		switch($variables['status']){
+			case 0: $variables['status_string'] = 'Continued';break;
+			case 1: $variables['status_string'] = 'Conditional Continuation';break;
+			case 2: $variables['status_string'] = 'Warning';break;
+			case 3: $variables['status_string'] = 'Withdrawn';break;
+			case 4: $variables['status_string'] = 'Graduated';break;
+			case 5: $variables['status_string'] = 'Withdrawn due to BS/MS';break;
+			case 6: $variables['status_string'] = 'Graduated with BS/MS';break;
+			case 7: $variables['status_string'] = 'Conditional Continuation (BS/MS)';break;
+			default: $variables['status_string'] = 'Unknown';
+		}
+		if(!$student_info['basic']['legacy']){
+			$rs = db_query("SELECT plan, subplan FROM {h_plans} WHERE id=%d",$student_info['basic']['planid']);
+			$rsarry = db_fetch_array($rs);
+			array_push($variables,$rsarry);
+		}
+		$variables['enteredrit'] = $student_info['basic']['enteredrit'];
+		$variables['enteredhonors'] = $student_info['basic']['enteredhonors'];
+		$variables['lefthonors'] = $student_info['basic']['lefthonors'];
+	}else{
+		drupal_set_message('Failed to load user');
 	}
+	$variables['vardump'] = print_r($variables,true);
 }
 	
 
