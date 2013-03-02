@@ -194,11 +194,11 @@ honors@rit.edu</a></p>
 <p>Email any questions to <a href="mailto:CompLearning@mail.honors.rit.edu">CompLearning@mail.honors.rit.edu</a></p>
 
 <h3>General Requirements</h3>
-<p><a href=http://www-staging.rit.edu/academicaffairs/honors/academic-requirements>info about honors requirements</a></p>
+<p><a href=http://www-staging.rit.edu/academicaffairs/honors/academic-requirements>Academic Requirements</a></p>
 <p>Email any questions to <a href="mailto:Council@mail.honors.rit.edu">Council@mail.honors.rit.edu</a></p>
 
 <h3>Honors Courses</h3>
-<p><a href="http://www-staging.rit.edu/academicaffairs/honors/courseslist">A Listing of the currently offered honors courses</a></p>
+<p>See the <a href="http://www-staging.rit.edu/academicaffairs/honors/courseslist">Courses</a> page.</p>
 <pre>
 <?php print_r($huser); /*DEBUG*/ ?>
 </pre>
