@@ -5,9 +5,12 @@
 function hstudent_perm() {
 	return array(
 		'Search students',
-		'View all student history pages',
-		'View own student history page'
+		'View students in own college',
+		'View active students',
+		'View inactive students'
 	);
+	//TODO: users with no View permissions will not get links on the search page
+	//TODO: checking active/inactive permissions
 }
 
 /*
@@ -18,7 +21,7 @@ function hstudent_menu() {
 	$items['search_users'] = array(
 		'title' => "Student Search",
 		'page callback' => '_hstudent_search_page',
-		'access callback' => '_hstudent_search_access'
+		'access arguments' => array('Search students')
 	);
 	$items['student_history'] = array(
 		'title' => "Student History",
@@ -49,7 +52,7 @@ function _hstudent_history_page() {
 		$username = func_get_arg(0);
 		return theme('hstudent_page',$username);
 	}
-	return "<h1>Student History</h1><p>Student Not Supplied</p>";
+	return "<p>Student Not Supplied</p>";
 }
 
 /*
@@ -104,8 +107,15 @@ function template_preprocess_hstudent_result(&$variables) {
 	
 	if($student_info){
 		$variables['student_info'] = $student_info;
-		$variables['fname'] = $student_info['basic']['name']['firstname'];
-		$variables['lname'] = $student_info['basic']['name']['lastname'];
+		$fname = $student_info['basic']['name']['firstname'];
+		$lname = $student_info['basic']['name']['lastname'];
+		$username = $variables['username'];
+		
+		if(_hstudent_can_view($student_info)) {
+			$variables['title'] = l($fname.' '.$lname.' ('.$username.')','student_history/'.$username);
+		} else {
+			$variables['title'] = $fname.' '.$lname.' ('.$username.')';
+		}
 		//DEBUG:
 		//drupal_set_message("t_p_h_r called, firstname=".$student_info['basic']['name']['firstname']);
 		
@@ -138,10 +148,14 @@ function template_preprocess_hstudent_result(&$variables) {
 }
 
 function template_preprocess_hstudent_page(&$variables) {
+	global $base_path;
 	template_preprocess_hstudent_result($variables);
 	if($variables['student_info']){
 		//do stuff
 		$student_info = $variables['student_info'];
+		if(!_hstudent_can_view($student_info)) {
+			drupal_redirect($base_path.'/student_search');
+		}
 		$variables['status'] = $student_info['continuation']['status'];
 		switch($variables['status']){
 			case 0: $variables['status_string'] = 'Continued';break;
@@ -165,9 +179,30 @@ function template_preprocess_hstudent_page(&$variables) {
 	}else{
 		drupal_set_message('Failed to load user');
 	}
+	//DEBUG
 	$variables['vardump'] = print_r($variables,true);
 }
-	
+
+function _hstudent_can_view($student_info) {
+	global $user;
+	if($student_info['basic']['active'] == 1 && user_access('View active students')) {
+		return true;
+	} elseif($student_info['basic']['active'] != 1 && user_access('View inactive students')) {
+		return true;
+	} else {
+		$user_info = hdata_user_load(array('uid' => $user->uid));
+		if(!$user_info) {
+			$user_info = hdata_faculty_load(array('uid' => $user->uid));
+		}
+		if($user_info) {
+			return user_access('View students in own college') && $student_info['basic']['active'] &&
+					($student_info['basic']['college'] == $user_info['basic']['college']);
+		} else {
+			//user not found
+			return false;
+		}
+	}
+}
 
 /*
  *Submit function for the search form. Puts search value into form storage
@@ -181,15 +216,6 @@ function hstudent_search_form_submit($form, &$form_state) {
  * Access callback for URL .../search_users/
  * Specifies access permissions for the search page
  */
-function _hstudent_search_access() {
-	return user_access('Search students');
-}
-
 function _hstudent_history_access($username) {
-	if(user_access('View all student history pages')) {
-		return true;
-	} else {
-		global $user;
-		return user_access('View own student history page') && $user->name == $username;
-	}
+	return user_access('View active students') || user_access('View inactive students') || user_access('View students in own college');
 }

@@ -45,6 +45,12 @@ function hdata_user_save($user){return _hdata_user_save($user);}
 //TODO: make this a system variable
 function hdata_user_cache_life(){return '1 month';}
 
+function hdata_faculty_load($userinfo, $reset=false){return null;}
+
+function hdata_faculty_save($user){return false;}
+
+function hdata_faculty_cache_life() {return 'whatever';}
+
 /* id should be uid if $draft is true */
 function hdata_cl_load($id,$draft=false){ return _hdata_cl_load($id,$draft); }
 /* $draft is what you want it to be saved as */
