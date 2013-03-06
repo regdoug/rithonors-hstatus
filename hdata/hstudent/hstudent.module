@@ -77,7 +77,7 @@ function hstudent_search_form($form_state) {
 		// '#suffix' => '</pre>',
 		// '#value' => print_r($form_state, TRUE)
 	// );
-	if(is_array($form_state['storage']['results'])) {
+	if(is_array($form_state['storage']['results']) && count($form_state['storage']['results']) > 0) {
 		foreach($form_state['storage']['results'] as $s) {
 			$form[$s] = array(
 				'#prefix' => '<div>',
