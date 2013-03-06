@@ -1023,5 +1023,9 @@ function _hdata_student_search($query) {
 		}
 	}
 
-	return $search_results;
+	if(count($search_results) > 0) {
+		return $search_results;
+	} else {
+		return false;
+	}
 }
