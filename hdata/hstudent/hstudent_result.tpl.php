@@ -1,5 +1,5 @@
 <h1>
-	<?php print l($fname.' '.$lname.' ('.$username.')','student_history/'.$username);?>
+	<?php print $title;?>
 </h1>
 <div><?php print $year;?></div>
 <div><?php print $major;?></div>
