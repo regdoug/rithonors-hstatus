@@ -42,7 +42,6 @@ function hnotesystem_menu()
 		'page callback' => 'drupal_get_form',
 		'page arguments' => array('hnotesystem_settings'),
 		'access arguments' => array('administer hnotesystem'),
-		'type' => MENU_NORMAL_ITEM,
 	);
 	
 	// All actions are under hnotesystem/form
@@ -65,7 +64,7 @@ function hnotesystem_settings()
 		'#type' => 'checkbox',
 		'#title' => t('Warn Before Deleting Note?'),
 		'#required' => true,
-		'#checked' => variable_get('hnotesystem_delete_warning',true),
+		'#default_value' => variable_get('hnotesystem_delete_warning',1),
 	);
 	$form['hnotesystem_delete_warning_text'] = array(
 		'#title' => t('Warning Text'),
