@@ -89,7 +89,7 @@ function hstudent_search_form($form_state) {
 		$form['results'] = array(
 			'#prefix' => '<div>',
 			'#value' => 'No results found',
-			'#suffix' => '</div>
+			'#suffix' => '</div>',
 		);
 	}
 	return $form;
