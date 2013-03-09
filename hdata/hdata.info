@@ -12,3 +12,5 @@ core = 6.x
 
 ; Unused.  The module depends on nothing but the core so far.
 ;dependencies[] = 
+
+version = 6.x-alpha2.1

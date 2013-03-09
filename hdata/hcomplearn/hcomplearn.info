@@ -16,3 +16,5 @@ dependencies[] = views
 dependencies[] = views_bulk_operations
 dependencies[] = colorbox
 dependencies[] = ctools
+
+version = 6.x-alpha2.1

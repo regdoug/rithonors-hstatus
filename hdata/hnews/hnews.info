@@ -14,3 +14,5 @@ core = 6.x
 dependencies[] = content
 dependencies[] = mimemail
 dependencies[] = hdata
+
+version = 6.x-alpha2.1

@@ -12,3 +12,5 @@ core = 6.x
 
 ; All modules in this package depend on hdata
 dependencies[] = hdata
+
+version = 6.x-alpha2.1

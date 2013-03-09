@@ -17,3 +17,5 @@ dependencies[] = date_popup
 dependencies[] = jquery_ui
 dependencies[] = hnews
 dependencies[] = hformtools
+
+version = 6.x-alpha2.1
