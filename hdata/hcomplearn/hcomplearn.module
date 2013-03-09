@@ -63,7 +63,7 @@ function hcomplearn_menu(){
         'page callback' => 'drupal_get_form',
         'page arguments' => array('hcomplearn_admin_settings'),
         'file' => 'hcomplearn.admin.inc',
-        'access arguments' => array('administer honors status'),
+        'access arguments' => array('administer complementary learning'),
     );
     
     return $items;

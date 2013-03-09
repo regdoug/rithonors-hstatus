@@ -15,7 +15,7 @@
  * to the "View" tab.
  */
 function hstatus_user_page($acct){
-    if((user_access('view all myStatus pages') || user_access('view myStatus'))
+    if((user_access('view all myStatus pages') || user_access('view myStatus')) 
             && hdata_user_is_active_student($acct->uid)){
         return theme('hstatus_mystatus',$acct);
     }else{

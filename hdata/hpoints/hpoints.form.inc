@@ -7,7 +7,7 @@
 /**
  * Determines whether the bulk form should be shown and selects the correct
  * form building function.
- *
+ * 
  * TODO: It might be better to move this logic to hpoints_menu
  */
 function hpoints_build_form(){
@@ -68,7 +68,7 @@ function hpoints_form_submit($form, &$form_state){
         $explanation = check_plain($form_state['values']['description']);
         $sub = array('username'=>$u->name,'type'=>$type,'explanation'=>$explanation);
         $sub = hdata_points_save($sub);
-
+        
         if(hpoints_type_needs_email($type)){
             $form_state['storage']['email'] = true;
             $form_state['storage']['submission'] = $sub;
@@ -81,7 +81,7 @@ function hpoints_form_bulk_submit($form, &$form_state){
     if(!isset($user->name)){
         $user = user_load(array('uid' => $user->uid));
     }
-
+    
     $submission_tmpl = array(
         'explanation'   => $form_state['values']['description'],
         'type'          => $form_state['values']['type'],
@@ -114,7 +114,7 @@ function hpoints_form_bulk_submit($form, &$form_state){
 function hpoints_form(&$form_state){
     global $user;
     $huser = hdata_user_load(array('uid'=>$user->uid,'name'=>$user->name));
-
+    
     $form = array();
     if(($msg = hpoints_submit_allowed($huser)) != 'ok'){
         $form['error'] = array( '#value' => t('%msg',array('%msg'=>$msg)));
@@ -126,7 +126,7 @@ function hpoints_form(&$form_state){
         '#prefix' => '<p>',
         '#suffix' => '</p>',
     );
-
+    
     if($form_state['storage']['email']){
         _hpoints_form_email($form,$huser);
     }else{
@@ -134,11 +134,11 @@ function hpoints_form(&$form_state){
     }
     return $form;
 }
-
+        
 
 function _hpoints_form(&$form,$huser){
     $submitwarning = '<p><strong>'.variable_get('hpoints_form_submitwarn',HPOINTS_SUBMIT_WARN).'</strong></p>';
-
+    
     $form['type'] = array(
         '#title' => t('Activity Type'),
         '#type' => 'select',

@@ -31,6 +31,12 @@ function hdata_user_save($user){return _hdata_user_save($user);}
 //TODO: make this a system variable
 function hdata_user_cache_life(){return '1 month';}
 
+function hdata_faculty_load($userinfo, $reset=false){return null;}
+
+function hdata_faculty_save($user){return false;}
+
+function hdata_faculty_cache_life() {return 'whatever';}
+
 /* id should be uid if $draft is true */
 function hdata_cl_load($id,$draft=false){ return _hdata_cl_load($id,$draft); }
 /* $draft is what you want it to be saved as */
@@ -61,6 +67,14 @@ function hdata_load_note($id){ return _hdata_load_note($id); }
 function hdata_save_note($note, $username){ return _hdata_save_note($note, $username); }
 /* Deletes a note.  True/false return value indicates success/failure */
 function hdata_note_del($id){ return _hdata_note_del($id); }
+
+/* loads point types from {h_points_menu} */
+function hdata_points_type_list(){ return _hdata_points_type_list(); }
+function hdata_points_type_save($type){ return _hdata_hpoints_type_save($type); }
+/* loads a point submission */
+function hdata_points_load($id){ return _hdata_points_load($id); }
+/* saves a point submission */
+function hdata_points_save($submission){ return _hdata_points_save($submission); }
 
 /* loads point types from {h_points_menu} */
 function hdata_points_type_list(){ return _hdata_points_type_list(); }
@@ -233,7 +247,6 @@ function _hdata_user_load_basic_peoplesoft($username){
 			-The tables have been changed
 			-"active" has been changed to "status"
 			-"department" has been changed to "dept"
-			-"program" has been removed
 	*/
     $q_basic =
     "SELECT
@@ -370,7 +383,7 @@ function _hdata_courses_load($username) {
 	$allcourses=array();
 	while (($row = db_fetch_array($rs))){
 		$allcourses[]=$row;
-
+		
 	}
     return $allcourses;
 }
@@ -962,5 +975,9 @@ function _hdata_student_search($query) {
 		}
 	}
 
-	return $search_results;
+	if(count($search_results) > 0) {
+		return $search_results;
+	} else {
+		return false;
+	}
 }

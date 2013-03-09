@@ -35,6 +35,10 @@ function hnews_cron(){
     // http://drupalcontrib.org/api/drupal/contributions!cck!content.module/function/content_database_info/6
     $sent = content_fields($sent_fieldname);
     $date = content_fields($date_fieldname);
+    //check that the fields exist
+    if(empty($sent['table']) or empty($date['table'])){
+        return;
+    }
     $date_info = content_database_info($date);
     $sent_info = content_database_info($sent);
     $sent_tbl = $sent_info['table'];

@@ -49,7 +49,7 @@ if($displaynone):
 </div>
 
 <h2>Continuation Status </h2>
- <p>Your continuation status is
+ <p>Your continuation status is 
 <?php
 //provide a background color for select statuses
 switch($status){
@@ -114,7 +114,7 @@ if(is_array($courses)){
 		<td>' .$value['term'] .'</td>
 		<td>' .$value['instructor'] .'</td>
 		<td>' .$value['grade'] .'</td>
-		<td>' .$value['credits'] .'</td></tr>';
+		<td>' .$value['credits'] .'</td></tr>';	
     }
 }
 ?>
@@ -166,12 +166,12 @@ if(is_array($courses)){
 			<td>Hours</td>
 			<td>Submit Date</td>
 			<td>Review Date</td>
-
+		
 		</tr>
 	</thead>
 	<tbody>
 	<?php
-	echo
+	echo 
 		'<tr><td>'.$sumissions['complearn']['id'] .'</td>
 		<td>'.$sumissions['complearn']['status'] .'</td>
 		<td>'.$sumissions['complearn']['hours'] .'</td>

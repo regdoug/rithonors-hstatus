@@ -1,4 +1,3 @@
-<h1>Student History</h1>
 <h2>Personal Information</h2>
 <section>
 <div style="display:inline-block; width:75%">
