@@ -76,15 +76,6 @@ function hdata_points_load($id){ return _hdata_points_load($id); }
 /* saves a point submission */
 function hdata_points_save($submission){ return _hdata_points_save($submission); }
 
-/* loads point types from {h_points_menu} */
-function hdata_points_type_list(){ return _hdata_points_type_list(); }
-function hdata_points_type_save($type){ return _hdata_hpoints_type_save($type); }
-/* loads a point submission */
-function hdata_points_load($id){ return _hdata_points_load($id); }
-/* saves a point submission */
-function hdata_points_save($submission){ return _hdata_points_save($submission); }
-
-
 /**
  * _hdata_user_load
  *
@@ -383,7 +374,7 @@ function _hdata_courses_load($username) {
 	$allcourses=array();
 	while (($row = db_fetch_array($rs))){
 		$allcourses[]=$row;
-		
+
 	}
     return $allcourses;
 }
