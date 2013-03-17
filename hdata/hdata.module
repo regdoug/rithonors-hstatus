@@ -8,14 +8,12 @@
  * I chose to put this in a separate module for two reasons.
  *  - It keeps the code cleaner in the other files.
  *  - It gives more flexibility if we should change the db structure.
- *
- * WARNING. THIS MODULE DOES NOT DO PERMISSION CHECKS!
  */
 
 /*
  * Public Functions
  *
- * All the implementation detail are sequestered into other functions in
+ * All the implementation details are sequestered into "private" functions in
  * this file for greater readability and to make it so that the whole
  * interface is visible at-a-glance.
  */
@@ -31,6 +29,7 @@ function hdata_user_save($user){return _hdata_user_save($user);}
 //TODO: make this a system variable
 function hdata_user_cache_life(){return '1 month';}
 
+/
 function hdata_faculty_load($userinfo, $reset=false){return null;}
 
 function hdata_faculty_save($user){return false;}
