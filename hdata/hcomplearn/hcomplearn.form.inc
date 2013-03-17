@@ -9,10 +9,15 @@
  */
 
 function hcomplearn_build_clform(){
-    if(hcomplearn_form_is_open()){
-        return drupal_get_form('hcomplearn_forms_cl',(func_num_args() > 0)?func_get_arg(0):'first');
+    $isopen = hcomplearn_form_is_open();
+    if($isopen['result']){
+        return drupal_get_form('hcomplearn_forms_cl',(func_num_args() > 0)?func_get_arg(0):'first',$isopen['close']);
     }else{
-        return "The form is not currently open.  Please check back at a later date.";
+        if(time()<$isopen['open']){
+            return t('The form will open for submissions on @date',array('@date'=>strftime('%B %e, %Y',$isopen['open'])));
+        }else{
+            return t('Sorry, the form stopped accepting submissions on @date',array('@date'=>strftime('%B %e, %Y',$isopen['close'])));
+        }
     }
 }
 
@@ -25,7 +30,7 @@ function hcomplearn_build_clform(){
  *  3. the activity count   ['count']
  */
 
-function hcomplearn_forms_cl(&$form_state,$page){
+function hcomplearn_forms_cl(&$form_state,$page,$closetime){
     if(isset($form_state['storage']['page'])
             && isset($form_state['storage']['data']['count'])){
         $data = $form_state['storage']['data'];
@@ -46,6 +51,9 @@ function hcomplearn_forms_cl(&$form_state,$page){
     }
 
     $form = array();
+    $form['closedate'] = array(
+        '#value' => t('This form will close on @date',array('@date'=>strftime('%B %e, %Y',$closetime))),
+    );
     $n = intval($page);
 
     //if $page is a string, $n will be 0

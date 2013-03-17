@@ -243,18 +243,23 @@ function hcomplearn_form_is_open(){
     if($open){
         $openstr = "{$open['year']}-{$open['month']}-{$open['day']} 00:00:00";
         $opentime = strtotime($openstr);
-        drupal_set_message("Form opens on $openstr ($opentime)");
+        //drupal_set_message("Form opens on $openstr ($opentime)");
     }else{
-        $open = 0;
+        $opentime = 0;
     }
     if($close){
         $closestr = "{$close['year']}-{$close['month']}-{$close['day']} 23:59:00";
         $closetime = strtotime($closestr);
-        drupal_set_message("Form closes on $closestr ($closetime)");
+        //drupal_set_message("Form closes on $closestr ($closetime)");
     }else{
-        $close = PHP_INT_MAX;
+        $closetime = PHP_INT_MAX;
     }
-    return (time() > $opentime) && (time() < $closetime);
+    $isopen = (time() > $opentime) && (time() < $closetime);
+    return array(
+        'result' => $isopen,
+        'open' => $opentime,
+        'close' => $closetime,
+    );
 }
 
 /*
