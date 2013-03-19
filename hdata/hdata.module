@@ -629,7 +629,7 @@ function _hdata_cl_load($id,$draft){
             return $submissions[$id];
         }
         $data = _hdata_cl_data_by_id($id);
-        $rs = db_query('SELECT id, uid, status, hours, types, submit_date, review_date, reviewer_uid
+        $rs = db_query('SELECT id, uid, status, hours, types, submit_date, review_date, reviewer_uid, reason
                         FROM {h_cl} WHERE id=%d',
                         $id);
         if($rs){
@@ -649,8 +649,8 @@ function _hdata_cl_save($sub,$draft){
     }else if(!$draft && !$sub['draft']){
         //saving a submission as a submission
         //only certain fields are supposed to be mutable
-        $q = "UPDATE {h_cl} SET status=%d, reviewed_date=%d, reviewer_uid=%d WHERE id=%d";
-        return (bool)db_query($q,$sub['status'],$sub['reviewed_date'],$sub['reviewer_uid'],$sub['id']);
+        $q = "UPDATE {h_cl} SET status=%d, review_date=%d, reviewer_uid=%d, reason='%s' WHERE id=%d";
+        return (bool)db_query($q,$sub['status'],$sub['review_date'],$sub['reviewer_uid'],$sub['reason'],$sub['id']);
     }else if(!$draft && $sub['draft']){
         //saving a draft as a submission
         //we need hcomplearn to do this effectively

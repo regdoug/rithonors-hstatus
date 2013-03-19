@@ -100,6 +100,20 @@ function hdata_update_6002 (){
 }
 
 /**
+ * Update 6003 adds a "reason" column to h_cl (for rejections)
+ */
+function hdata_update_6003 () {
+    $ret = array();
+    db_add_field($ret,'h_cl','reason',array(
+            'description' => t('Rejection reason (if needed)'),
+            'type' => 'varchar',
+            'length' => 140,
+            'default' => null,
+        ));
+    return $ret;
+}
+
+/**
  * Implements hook_schema
  *
  * Defines the database structure for the hdata module
@@ -183,6 +197,12 @@ $s['h_cl'] = array(
             //it is actually faster to change 0 to an integer than to
             //change null to an integer, therefore: default=0.
             'default' => 0,
+        ),
+        'reason' => array(
+            'description' => t('Rejection reason (if needed)'),
+            'type' => 'varchar',
+            'length' => 140,
+            'default' => null,
         ),
     ),
     'primary key' => array('id'),
