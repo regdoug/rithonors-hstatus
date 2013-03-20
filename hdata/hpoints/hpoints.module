@@ -251,7 +251,9 @@ function hpoints_approve_action_submit($form, &$form_state){
  * provided that the user has the appropriate permissions.
  */
 function hpoints_reject_action($submission){
+    $submission = (array) $submission;
     if(user_access('administer points submissions') || user_access('review points submissions')){
+        global $user;
         $submission['status'] = -1;
         $submission['reviewer'] = $user->uid;
         $submission['reviewed_time'] = time();
