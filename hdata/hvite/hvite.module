@@ -16,7 +16,7 @@ function hvite_menu()
 		'page arguments' => array(1),
 		'page callback' => 'hvite_createevent_page',
 		'access arguments' => array(1),
-		'access callback' => 'hvite_access',
+		'access callback' => 'hvite_access_make',
 	);
 	
 	/* Event list page */
@@ -26,7 +26,7 @@ function hvite_menu()
 		'page arguments' => array(1),
 		'page callback' => 'hvite_eventlist_page',
 		'access arguments' => array(1),
-		'access callback' => 'hvite_access',
+		'access callback' => 'hvite_access_make',
 	);
 	
 	/* Event RSVP page */
@@ -36,7 +36,7 @@ function hvite_menu()
 		'page arguments' => array(1),
 		'page callback' => 'hvite_eventrsvp_page',
 		'access arguments' => array(1),
-		'access callback' => 'hvite_access',
+		'access callback' => 'hvite_access_make',
 	);
 	
 	/* Event view page */
@@ -46,7 +46,7 @@ function hvite_menu()
 		'page arguments' => array(1),
 		'page callback' => 'hvite_eventview_page',
 		'access arguments' => array(1),
-		'access callback' => 'hvite_access',
+		'access callback' => 'hvite_access_make',
 	);
 	
 	/* Event edit page */
@@ -56,16 +56,18 @@ function hvite_menu()
 		'page arguments' => array(1),
 		'page callback' => 'hvite_eventedit_page',
 		'access arguments' => array(1),
-		'access callback' => 'hvite_access',
+		'access callback' => 'hvite_access_make',
 	);
 	
 	return $items;
 }
 
-/*
- * Form for creating an event
+/**
+ * Form for creating/editing an event
+ * If $edit is true then the form will be used for editing
+ * $id is the id of the event to edit
  */
-function hvite_createevent_form(&$form_state)
+function hvite_createevent_form(&$form_state, $edit, $id)
 {
 	/* Event details */
 	$form['details'] = array(
@@ -101,12 +103,14 @@ function hvite_createevent_form(&$form_state)
 		//'#description' => t('Event description.'),
 	);
 	
-	
 	/* User list */
-	$form['details']['users'] = array(
-		'#type' => 'hformtools_users',
-		'#title' => 'Select users to invite',
-	);
+	if (!$edit)
+	{
+		$form['details']['users'] = array(
+			'#type' => 'hformtools_users',
+			'#title' => 'Select users to invite',
+		);
+	}
 	
 	/* Start date and time */
 	$form['details']['startdate'] = array(
@@ -125,13 +129,35 @@ function hvite_createevent_form(&$form_state)
 	);
 	
 	/* Submit button */
-	$form['submit'] = array('#type' => 'submit', '#value' => t('Create event'));
-
+	if (!edit)
+	{
+		$form['submit'] = array('#type' => 'submit', '#value' => t('Create event'));
+	}
+	else
+	{
+		$form['submit'] = array('#type' => 'submit', '#value' => t('Submit event changes'));
+	}
+	
+	/* Hidden field to say if editing and id if editing */
+	$form['edit'] = array('#type' => 'hidden', '#value' => ($edit ? "true" : "false"));
+	
+	if ($edit)
+	{
+		$form['id'] = array('#type' => 'hidden', '#value' => t($id));
+	}
+	
 	return $form;
 }
 
 function hvite_createevent_form_validate($form, &$form_state)
 {
+	/* The edit field should be either true or false */
+	if ($form_state['values']['edit'] != "true" && $form_state['values']['edit'] != "false")
+	{
+		form_set_error('edit', t("There was an error with your request."));
+	}
+	
+	/* Check for other details */
 	if ($form_state['values']['details']['title'] == '')
 	{
 		form_set_error('title', t('You must enter a title.'));
@@ -162,27 +188,9 @@ function hvite_createevent_form_validate($form, &$form_state)
 	}
 }
 
-/*
-	mimemail arguments
-	string - from address
-	array of recipients or single string (probably)
-	string subject
-	string body
-	
-	function _hnews_send_mail($nid,$vid,$to)
-	
-	hformtools_users returns space delimited list of users
-*/
-
 function hvite_createevent_form_submit($form, &$form_state)
 {
 	global $user;
-	
-	$str = "Title: '" . $form_state['values']['details']['title'] . "'<br />";
-	$str .= "Location: '" . $form_state['values']['details']['location'] . "'<br />";
-	$str .= "Description: '" . $form_state['values']['details']['description'] . "'<br />";
-	$str .= "Start date: '" . $form_state['values']['details']['startdate'] . "' (" . strtotime($form_state['values']['details']['startdate']) . ")<br />";
-	$str .= "End date: '" . $form_state['values']['details']['enddate'] . "' (" . strtotime($form_state['values']['details']['enddate']) . ")<br />";
 	
 	/* Submit event */
 	$event["owner"] = $user->uid;
@@ -192,10 +200,28 @@ function hvite_createevent_form_submit($form, &$form_state)
 	$event["startdate"] = strtotime($form_state['values']['details']['startdate']);
 	$event["enddate"] = strtotime($form_state['values']['details']['enddate']);
 	
-	hvite_add_event($event);
-	
-	drupal_set_message(t('Event created.'));
-	drupal_set_message(t($str));
+	if ($form_state['values']['edit'] == "true")
+	{
+		if (hvite_edit_event($event, $form_state['values']['id']))
+		{
+			drupal_set_message(t('Event edited.'));
+		}
+		else
+		{
+			form_set_error(t('There was an error processing your request. Please try again later.'));
+		}
+	}
+	else if ($form_state['values']['edit'] == "false")
+	{
+		if (hvite_add_event($event))
+		{
+			drupal_set_message(t('Event added.'));
+		}
+		else
+		{
+			form_set_error(t('There was an error processing your request. Please try again later.'));
+		}
+	}
 }
 
 /**
@@ -203,12 +229,12 @@ function hvite_createevent_form_submit($form, &$form_state)
  */
 function hvite_createevent_page()
 {
-	return drupal_get_form('hvite_createevent_form');
+	return drupal_get_form('hvite_createevent_form', false, 0);
 }
 
 /**
  * Shortens a string to desired length and adds an ellipsis
- **/
+ */
 function shorten($str, $len)
 {
 	if ($len < 3) return "";
@@ -240,13 +266,14 @@ function hvite_eventlist_page()
 	
 	foreach ($events as $e)
 	{
-		$page .= sprintf("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href=\"{$base_url}/hvite/eventview?id=%d\">View</a></td><td><a href=\"#\">Edit</a></td></tr>",
+		$page .= sprintf("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href=\"{$base_url}/hvite/eventview?id=%d\">View</a></td><td><a href=\"{$base_url}/hvite/eventedit?id=%d\">Edit</a></td></tr>",
 			t($e["title"]),
 			t(date("m/d/y H:m:s", $e["startdate"])),
 			t(date("m/d/y H:m:s", $e["enddate"])),
 			t($e["location"]),
 			t(shorten($e["description"], 35)),
 			t(($e["old"]) ? "Old" : "New"),
+			$e["id"],
 			$e["id"]);
 	}
 	
@@ -290,7 +317,8 @@ function hvite_eventview_page()
  */
 function hvite_eventedit_page()
 {
-	return "EDIT";
+	/* Give the form */
+	return drupal_get_form('hvite_createevent_form', true, $_GET["id"]);
 }
 
 /**
@@ -398,6 +426,34 @@ function hvite_add_event($event)
 }
 
 /**
+ * Edits an event in the database
+ */
+function hvite_edit_event($event, $id)
+{
+	/* Check that the user owns this event */
+	if (($oldevent = hvite_get_event_details($id)) == false) return false;
+	else if ($oldevent["owner"] != $event["owner"]) return false;
+	
+	/* Update with new data */
+	$q = "UPDATE {hvite_events} SET
+	startdate=%d, enddate=%d, location='%s', title='%s', description='%s'
+	WHERE id=%d";
+	
+	$rs = db_query($q,
+		$event["startdate"], $event["enddate"],
+		$event["location"], $event["title"], $event["description"], $id);
+   
+	if($rs && db_affected_rows() == 1)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/**
  * Implements hook_perm
  * 
  * Just returns an array of strings to be used on the permissions page
@@ -408,9 +464,19 @@ function hvite_perm()
 }
 
 /*----------------Access Callbacks------------------*/
-function hvite_access($account)
+function hvite_access_make($account)
 {
     if (user_access('make hVite events'))
+	{
+        return TRUE;
+    }
+	
+	return FALSE;
+}
+
+function hvite_access_rsvp($account)
+{
+    if (user_access('RSVP to hVite events'))
 	{
         return TRUE;
     }
