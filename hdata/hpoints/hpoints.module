@@ -199,7 +199,7 @@ function hpoints_type_needs_email($typeid){
 function hpoints_points_load($id){
     $points = hdata_points_load($id);
     $types = hpoints_get_type_options();
-    $points['title'] = t('Honors Point @type Submission @id',
+    $points['title'] = t('@type Submission #@id',
             array('@id' => $points['id'], '@type' => $types[$points['type']]));
     return (object) $points;
 }
@@ -213,8 +213,8 @@ function hpoints_approve_action($submission, $context){
     if(user_access('administer points submissions') || user_access('review points submissions')){
         global $user;
         $submission['status'] = 1;
-        $submission['reviewer'] = $user->uid;
-        $submission['reviewed_time'] = time();
+        $submission['reviewer'] = $user->name;
+        $submission['reviewed_time'] = gmdate('Y-m-d H:i:s');
         $submission['credits'] = @$context['credits'];
         hdata_points_save($submission);
     }else{
@@ -250,15 +250,15 @@ function hpoints_approve_action_submit($form, &$form_state){
  * Performs a database update to reject a Complearning submission,
  * provided that the user has the appropriate permissions.
  */
-function hpoints_reject_action($submission){
+function hpoints_reject_action($submission,$context){
     $submission = (array) $submission;
     if(user_access('administer points submissions') || user_access('review points submissions')){
         global $user;
         $submission['status'] = -1;
-        $submission['reviewer'] = $user->uid;
-        $submission['reviewed_time'] = time();
+        $submission['reviewer'] = $user->name;
+        $submission['reviewed_time'] = gmdate('Y-m-d H:i:s');
         $submission['credits'] = 0;
-        $submission['reason'] = @$context['reason'];
+        $submission['reason'] = @$context['reject_reason'];
         hdata_points_save($submission);
     }else{
         drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
@@ -289,16 +289,16 @@ function hpoints_reject_action_submit($form, &$form_state){
 
 /*----------------Access Callbacks------------------*/
 
-/*
+/**
  * Allows access if the user has the right to submit points
  */
 function _hpoints_form_access(){
     return user_access('submit points') || user_access('bulk submit points');
 }
 
-/*
+/**
  * Allows access to the reviewing pages if the user has the
- * 'review complementary learning' permission or is the superuser (UID 1)
+ * 'review complementary learning' or 'administer points submissions' permission
  * 
  * Used for VBO
  */

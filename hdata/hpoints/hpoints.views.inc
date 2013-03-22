@@ -16,9 +16,9 @@ function hpoints_views_handlers(){
             'parent' => 'views_handler_field',
             'file' => 'hpoints_views_handler_field_type.inc',
         ),
-        'hpoints_views_handler_filter_cl_status' => array(
+        'hpoints_views_handler_filter_status' => array(
             'parent' => 'views_handler_filter_in_operator',
-            'file' => 'hpoints_views_handler_filter_cl_status.inc',
+            'file' => 'hpoints_views_handler_filter_status.inc',
         ),
     );
     return $retval;
@@ -113,7 +113,7 @@ function hpoints_views_data(){
                 'click sortable' => TRUE,
             ),
             'filter' => array(
-                'handler' => 'hpoints_views_handler_filter_cl_status',
+                'handler' => 'hpoints_views_handler_filter_status',
             ),
             'sort' => array(
                 'handler' => 'views_handler_sort',
