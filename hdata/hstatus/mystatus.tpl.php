@@ -49,6 +49,7 @@ if($displaynone):
 </div>
 
 <h2>Continuation Status </h2>
+
  <p>Your continuation status is 
 <?php
 //provide a background color for select statuses
@@ -74,6 +75,8 @@ if(isset($color)){
 <h2><?php t('Honor Status for @user',array('@user'=>$username)); ?></h2>
 
 <div id="student-information" style="display:inline-block;width:575px;">
+<h2>Student Information</h2>
+<div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
 <table>
     <thead>
         <tr><td>Full Name</td>
@@ -90,8 +93,10 @@ if(isset($color)){
         <td><?php print substr(strval($gpa),0,1) .'.'.substr(strval($gpa),1);?></td></tr>
     </tbody>
 </table>
+</div>
 
 <h2> Honors Points</h2>
+<div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
 <strong>Total Points: <?php print (int)$points_total; ?></strong>
 <h3> Honors Courses</h3>
 <table>
@@ -134,8 +139,8 @@ if(is_array($courses)){
 			<tbody>
 <?php
 
-if(is_array($courses)){
-    foreach($courses as $value)
+if(is_array($points)){
+    foreach($points as $value)
     {
 	echo '<tr>
 			<td>' .$value['explanation'] .'</td>
@@ -150,13 +155,13 @@ if(is_array($courses)){
 </tbody>
 </table>
 
-<!-- temporary -->
-<h3><a href="https://www-staging.rit.edu/academicaffairs/honors/">Point Request Form</a></h3>
+<h3><?php echo l("Points Submission Form", "hpoints/form"); ?></h3>
 
+</div>
 <h2>Comp Learning Submissions</h2>
-
+<div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
 <p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
-<p>For requirements, please see the <a href="http://www-staging.rit.edu/academicaffairs/honors/service-requirements">comp learning page</a>.</p>
+<p>For requirements, please see the <?php echo l("comp learning page", "service-requirements"); ?> </p>
 <h4>Submissions</h4>
 <table>
 	<thead>
@@ -181,6 +186,7 @@ if(is_array($courses)){
 		?>
 	</tbody>
 </table>
+</div>
 </div> <!-- End #student-information -->
 </section> <!-- End Main Section -->
 <h2>Questions?</h2>
@@ -190,15 +196,15 @@ if(is_array($courses)){
 honors@rit.edu</a></p>
 
 <h3>Comp Learning</h3>
-<p><a href="http://www-staging.rit.edu/academicaffairs/honors/service-requirements">info about comp learning requirements</a></p>
+<p><?php echo l( "info about comp learning requirements","service-requirements");?></p>
 <p>Email any questions to <a href="mailto:CompLearning@mail.honors.rit.edu">CompLearning@mail.honors.rit.edu</a></p>
 
 <h3>General Requirements</h3>
-<p><a href=http://www-staging.rit.edu/academicaffairs/honors/academic-requirements>info about honors requirements</a></p>
+<p><?php echo l("info about honors requirements", "academic-requirements");?></p>
 <p>Email any questions to <a href="mailto:Council@mail.honors.rit.edu">Council@mail.honors.rit.edu</a></p>
 
 <h3>Honors Courses</h3>
-<p><a href="http://www-staging.rit.edu/academicaffairs/honors/courseslist">A Listing of the currently offered honors courses</a></p>
+<p><?php echo l("A Listing of the currently offered honors courses", "courseslist")?></p>
 <pre>
 <?php print_r($huser); /*DEBUG*/ ?>
 </pre>

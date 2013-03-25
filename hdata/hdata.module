@@ -211,12 +211,11 @@ function _hdata_user_load($userinfo, $reset = false){
 			return false;
 		}
 	}
-
+	
     $u['continuation'] = _hdata_user_load_continuation($username);
     $u['points'] = _hdata_user_load_points($username);
     $u['submissions'] = _hdata_user_load_submissions($uid);
 	$u['courses']=_hdata_courses_load($username);
-
     cache_set("hdata_user:$username", $u, 'cache_honors',
         strtotime('+'.hdata_user_cache_life()));
     $husers[$username] = $u;  //update static variable for future calls
@@ -482,18 +481,35 @@ function _hdata_points_type_save($type) {
     }
 }
 
+
+		
 /*
  * Grabs most recent comp learning submission and indicates whether
  * a draft is in progress
  */
 function _hdata_user_load_submissions($uid){
-    $rs = db_query('SELECT id, status, hours, submit_date, review_date
-                    FROM {h_cl} WHERE uid=%d
-                    ORDER BY submit_date DESC LIMIT 1', $uid);
-    return array(
-        'complearn' =>  $rs?db_fetch_array($rs):false,
-        'cldraft' => (bool)_hdata_cldraft_load($uid,hdata_cl_draft_life()),
-    );
+    $rs = db_query("SELECT id
+                    FROM {h_cl} WHERE uid='%d'", $uid);
+    while($row = db_result($rs)){
+        $arry[] = _hdata_submissions_load($row);
+    };
+     return $array;
+}
+
+function _hdata_submissions_load($id){
+	$rs = db_query("SELECT id,
+				status, 
+				hours, 
+				submit_date, 
+				review_date
+				FROM {h_cl} WHERE uid='%d'", $uid);
+	if($rs){
+		return db_fetch_array($rs);
+	}
+	else{
+		return false;
+	}
+	
 }
 
 function _hdata_user_load_notes($username){
