@@ -100,6 +100,20 @@ function hdata_update_6002 (){
 }
 
 /**
+ * Update 6003 adds a "reason" column to h_cl (for rejections)
+ */
+function hdata_update_6003 () {
+    $ret = array();
+    db_add_field($ret,'h_cl','reason',array(
+            'description' => t('Rejection reason (if needed)'),
+            'type' => 'varchar',
+            'length' => 140,
+            'default' => null,
+        ));
+    return $ret;
+}
+
+/**
  * Implements hook_schema
  *
  * Defines the database structure for the hdata module
@@ -184,6 +198,12 @@ $s['h_cl'] = array(
             //change null to an integer, therefore: default=0.
             'default' => 0,
         ),
+        'reason' => array(
+            'description' => t('Rejection reason (if needed)'),
+            'type' => 'varchar',
+            'length' => 140,
+            'default' => null,
+        ),
     ),
     'primary key' => array('id'),
     'indexes' => array(
@@ -213,6 +233,9 @@ $s['h_cl_data'] = array(
     'primary key' => array('id'),
 );
 
+/*
+ * This was an idea once upon a time.  Then I realized that just using
+ * nodes was easier.  - RDP 2013-03-19
 $s['h_faculty'] = array(
     'description' => t('Table of Honors Faculty'),
     'fields' => array(
@@ -316,6 +339,7 @@ $s['h_faculty_types'] = array(
     ),
     'primary key' => array('id'),
 );
+*/
 
 //New Legacy Tables (for PeopleSoft)
 // ^^ haha, the phrase "New Legacy" looks funny (but it is right)
@@ -325,7 +349,6 @@ $s['h_students_peoplesoft'] = array(
         'id' => array(
             'description' => t('Drupal uid'),
             'type' => 'int',
-            'not null' => true,
         ),
         'username' => array(
             'description' => t('RIT DCE'),
@@ -473,7 +496,7 @@ $s['h_students_courses_peoplesoft'] = array(
         'course' => array(
             'description' => t('Course number'),
             'type' => 'varchar',
-            'length' => 9,
+            'length' => 12,
             'not null' => true,
         ),
         'name' => array(
@@ -539,32 +562,102 @@ $s['h_students'] = array(
             'description' => t('RIT DCE'),
             'type' => 'varchar',
             'not null' => true,
-            'length' => 7,
+            'length' => 20,
         ),
         'firstname' => array(
             'description' => t('First name'),
             'type' => 'varchar',
-            'length' => 20,
+            'length' => 50,
         ),
         'lastname' => array(
             'description' => t('Last name'),
             'type' => 'varchar',
-            'length' => 20,
+            'length' => 50,
         ),
         'college' => array(
-            'description' => t('College.  e.g. KGCOE, GCCIS'),
+            'description' => t('College.  e.g. E, J, G, V'),
             'type' => 'varchar',
-            'length' => 20,
+            'length' => 1,
+            'not null' => true,
         ),
         'department' => array(
-            'description' => t('Major'),
+            'description' => t('Department Code'),
             'type' => 'varchar',
-            'length' => 40,
+            'length' => 2,
+            'not null' => true,
         ),
         'program' => array(
-            'description' => t('e.g. BS, BS/MS, MS, PhD, etc.'),
+            'description' => t('One-letter Program Code'),
             'type' => 'varchar',
-            'length' => 40,
+            'length' => 1,
+            'not null' => true,
+        ),
+        'gender' => array(
+            'description' => t('gender'),
+            //The true database type is enum, but Drupal doesn't
+            //understand enums, so I'll pretend it is a char
+            'type' => 'char',
+            'length' => 1,
+        ),
+        'yearlevel' => array(
+            'description' => t('Year level by credits'),
+            'type' => 'int',
+            'size' => 'small',
+        ),
+        'yearexpectedgraduation' => array(
+            'description' => t('Unused'),
+            'type' => 'int',
+            'size' => 'small',
+        ),
+        'quarterexpectedgraduation' => array(
+            'description' => t('Unused'),
+            'type' => 'int',
+            'size' => 'small',
+        ),
+        'yearenteredrit' => array(
+            'description' => t('Year entered RIT (unknown for some LE students)'),
+            'type' => 'int',
+            'size' => 'small',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'quarterenteredrit' => array(
+            'description' => t('Quarter entered RIT (unknown for some LE students)'),
+            'type' => 'int',
+            'size' => 'small',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'yearenteredhonors' => array(
+            'description' => t('Year entered Honors'),
+            'type' => 'int',
+            'size' => 'small',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'quarterenteredhonors' => array(
+            'description' => t('Quarter entered Honors'),
+            'type' => 'int',
+            'size' => 'small',
+            'not null' => true,
+            'default' => 0,
+        ),
+        'yearlefthonors' => array(
+            'description' => t('Unused'),
+            'type' => 'int',
+            'size' => 'small',
+        ),
+        'quarterlefthonors' => array(
+            'description' => t('Unused'),
+            'type' => 'int',
+            'size' => 'small',
+        ),
+        'complearningsystem' => array(
+            'description' => t('0 => 12 point, 1 => 20 hours'),
+            'type' => 'int',
+            'size' => 'small',
+            'not null' => true,
+            'default' => 1,
         ),
         'active' => array(
             'description' => t('-2=left RIT, -1=withdrawn, 0=grad, 1=active, 2=prefrosh, 3=accepted late entry, 4=deferred'),
@@ -573,10 +666,18 @@ $s['h_students'] = array(
             'not null' => true,
             'default' => 1,
         ),
+        'lefthonors' => array(
+            'description' => t('When the student graduated or was withdrawn from Honors'),
+            'type' => 'varchar',
+            'length' => 5,
+        ),
+        'checkout' => array(
+            'description' => t('Registrar-reported expected graduation'),
+            'type' => 'varchar',
+            'length' => 5,
+        )
     ),
-    'indexes' => array(
-        'college' => array('college'),
-    ),
+    'indexes' => array(),
     'primary key' => array('username'),
 );
 $s['h_students_courses'] = array(
@@ -587,52 +688,64 @@ $s['h_students_courses'] = array(
             'type' => 'serial',
             'not null' => true,
         ),
+        'key' => array(
+            'description' => t('username,course,term'),
+            'type' => 'varchar',
+            'length' => 24,
+            'not null' => true,
+        ),
         'username' => array(
             'description' => t('RIT DCE'),
             'type' => 'varchar',
             'not null' => true,
-            'length' => 7,
+            'length' => 10,
         ),
         'course' => array(
             'description' => t('course number'),
             'type' => 'varchar',
             'not null' => true,
-            'length' => 14,
+            'length' => 9,
         ),
         'name' => array(
             'description' => t('couse name'),
-            'type' => 'varchar',
-            'length' => 50,
+            'type' => 'text',
+            'size' => 'tiny',
+            'not null' => true,
         ),
         'professor' => array(
             'description' => t('course instructor'),
-            'type' => 'varchar',
-            'length' => 30,
+            'type' => 'text',
+            'size' => 'tiny',
+            'not null' => true,
         ),
         'quarter' => array(
             'description' => t('term'),
             'type' => 'varchar',
-            'length' => 6,
+            'length' => 5,
+            'not null' => true,
         ),
         'grade' => array(
             'description' => t('final grade'),
             'type' => 'varchar',
             'length' => 1,
+            'not null' => true,
         ),
         'credits' => array(
-            'description' => t(''),
-            'type' => 'int',
-            'size' => 'tiny',
-            'unsigned' => true,
+            'description' => t('credits awarded'),
+            'type' => 'varchar',
+            'length' => 2,
+            'not null' => true,
         ),
         'honors' => array(
             'description' => t('whether or not this is an honors cours. Y or N'),
             'type' => 'varchar',
             'length' => 1,
+            'not null' => true,
         ),
     ),
     'indexes' => array(
-        'term' => array('quarter'),
+        'key' => array('key'),
+        'username' => array('username'),
     ),
     'primary key' => array('id'),
 );
@@ -643,14 +756,13 @@ $s['h_students_gpa'] = array(
             'description' => t('RIT DCE'),
             'type' => 'varchar',
             'not null' => true,
-            'length' => 7,
+            'length' => 10,
         ),
         'gpa' => array(
             'description' => t(''),
             'type' => 'int',
             'size' => 'small',
             'not null' => true,
-            'default' => 0,
         ),
     ),
     'primary key' => array('username'),
@@ -667,15 +779,12 @@ $s['h_students_points'] = array(
             'description' => t('RIT DCE'),
             'type' => 'varchar',
             'not null' => true,
-            'length' => 7,
+            'length' => 10,
         ),
         'pointID' => array(
-            'description' => t('Type of points awarded.').
-                t('1=Scholarship/Research, 3=Leadership Trip, ').
-                t('6=International Experiences, 7=Contract Course, ').
-                t('8=College Specific Enhancements, 9=Non-required coops and Internships'),
+            'description' => t('Type of points awarded. Described in h_points_menu'),
             'type' => 'int',
-            'size' => 'tiny',
+            'length' => 10,
             'not null' => true,
             'default' => 1,
             'unsigned' => true,
@@ -683,7 +792,7 @@ $s['h_students_points'] = array(
         'explanation' => array(
             'description' => t('What was done to receive points'),
             'type' => 'text',
-            'size' => 'small',
+            'not null' => true,
         ),
         'submitted' => array(
             'description' => t('Time of submission.'),
@@ -693,8 +802,7 @@ $s['h_students_points'] = array(
         'submittedBy' => array(
             'description' => t('Name of submitter'),
             'type' => 'varchar',
-            'not null' => true,
-            'length' => 40,
+            'length' => 10,
         ),
         'approved' => array(
             'description' => t('pending, approved, rejected'),
@@ -702,23 +810,19 @@ $s['h_students_points'] = array(
             'size' => 'tiny',
             'not null' => true,
             'default' => 0,
-            'unsigned' => true,
         ),
         'approvedBy' => array(
             'description' => t('Name of reviewer'),
             'type' => 'varchar',
-            'not null' => true,
-            'length' => 40,
+            'length' => 10,
         ),
         'approvedTime' => array(
             'description' => t(''),
             'type' => 'datetime',
-            'not null' => true,
         ),
         'declinedReason' => array(
             'description' => t('reason declined, if declined'),
             'type' => 'text',
-            'size' => 'small',
         ),
         'numPoints' => array(
             'description' => t('Number of points awarded'),
@@ -728,8 +832,7 @@ $s['h_students_points'] = array(
         ),
     ),
     'indexes' => array(
-        'approved' => array('approved'),
-        'date' => array('submittedTime'),
+        'username' => array('username'),
     ),
     'primary key' => array('id'),
 );
@@ -745,13 +848,13 @@ $s['h_students_waivers'] = array(
             'description' => t('RIT DCE'),
             'type' => 'varchar',
             'not null' => true,
-            'length' => 7,
+            'length' => 10,
         ),
         'description' => array(
             'description' => t('why the points were waived'),
             'type' => 'text',
+            'size' => 'tiny',
             'not null' => true,
-            'size' => 'small',
         ),
         'date' => array(
             'description' => t(''),
@@ -760,13 +863,13 @@ $s['h_students_waivers'] = array(
         ),
         'credits' => array(
             'description' => t('Number of points waived'),
-            'type' => 'int',
-            'size' => 'tiny',
+            'type' => 'varchar',
+            'length' => 2,
             'not null' => true,
         ),
     ),
     'indexes' => array(
-        'date' => array('date'),
+        'username' => array('username'),
     ),
     'primary key' => array('id'),
 );
@@ -778,12 +881,6 @@ $s['h_complearning'] = array(
             'type' => 'serial',
             'not null' => true,
         ),
-        'dce' => array(
-            'description' => t('RIT DCE'),
-            'type' => 'text',
-            'not null' => true,
-            'size' => 'tiny',
-        ),
         'title' => array(
             'description' => t('No one is really sure why there is a title'),
             'type' => 'varchar',
@@ -793,37 +890,47 @@ $s['h_complearning'] = array(
             'description' => t('The time commitment'),
             'type' => 'text',
             'not null' => true,
-            'size' => 'medium',
         ),
         'description' => array(
             'description' => t(''),
             'type' => 'text',
             'not null' => true,
-            'size' => 'medium',
         ),
         'reflection' => array(
             'description' => t(''),
             'type' => 'text',
-            'size' => 'medium',
+            'not null' => true,
         ),
         'contact' => array(
             'description' => t(''),
             'type' => 'text',
             'not null' => true,
-            'size' => 'medium',
         ),
         'comments' => array(
             'description' => t(''),
             'type' => 'text',
-            'size' => 'medium',
+            'not null' => true,
+        ),
+        'dce' => array(
+            'description' => t('RIT DCE'),
+            'type' => 'text',
+            'not null' => true,
         ),
         'submitted_date' => array(
             'description' => t(''),
             'type' => 'datetime',
+            'not null' => true,
         ),
         'submitted_time' => array(
             'description' => t(''),
             'type' => 'datetime',
+            'not null' => true,
+        ),
+        'submitted_ip' => array(
+            'description' => t('IP of submitter'),
+            'type' => 'varchar',
+            'length' => 15,
+            'not null' => true,
         ),
         'submitted_by' => array(
             'description' => t('DCE of submitter'),
@@ -835,27 +942,23 @@ $s['h_complearning'] = array(
             'description' => t('status. 1=approved, 0=denied, -1=deleted, -2=pending'),
             'type' => 'int',
             'size' => 'tiny',
-            'not null' => true,
-            'default' => -2,
         ),
         'reviewed_date' => array(
             'description' => t(''),
             'type' => 'datetime',
+            'not null' => true,
         ),
         'reviewed_by' => array(
-            'description' => t('Name of reviewer'),
+            'description' => t('DCE of reviewer'),
             'type' => 'varchar',
-            'length' => 40,
+            'length' => 7,
+            'not null' => true,
         ),
         'reason' => array(
             'description' => t('reason declined or approved'),
             'type' => 'text',
-            'size' => 'small',
+            'not null' => true,
         ),
-    ),
-    'indexes' => array(
-        'time' => array('submitted_date', 'submitted_time'),
-        'approval' => array('reviewed'),
     ),
     'primary key' => array('id'),
 );
@@ -919,7 +1022,7 @@ $s['h_notes'] = array(
     'description' => t('I don\'t really know what this is...'),
     'fields' => array(
         'id' => array(
-            'description' => t(''),
+            'description' => t('primary key'),
             'type' => 'serial',
             'not null' => true,
         ),
@@ -930,32 +1033,42 @@ $s['h_notes'] = array(
             'length' => 7,
         ),
         'note' => array(
-            'description' => t(''),
-            'type' => 'varchar',
-            'length' => 250,
+            'description' => t('contents'),
+            'type' => 'text',
+            'not null' => true,
         ),
         'posted_by' => array(
-            'description' => t(''),
+            'description' => t('RIT username of poster'),
             'type' => 'varchar',
-            'length' => 40,
+            'length' => 7,
+            'not null' => true,
         ),
         'date' => array(
+            'description' => t('date posted'),
             'type' => 'datetime',
+            'not null' => true,
         ),
         'note_origin' => array(
             'description' => t('1=college, 0=institute'),
             'type' => 'int',
             'size' => 'tiny',
+            'not null' => true,
+            'default' => 0,
         ),
         'cont_id' => array(
-            'description' => t(''),
-            'type' => 'int',
+            'description' => t('continuation year'),
+            'type' => 'varchar',
+            'length' => 4,
         ),
         'title' => array(
             'description' => t(''),
-            'type' => 'varchar',
-            'length' => 40,
+            'type' => 'text',
+            'not null' => true,
         ),
+    ),
+    'indexes' => array(
+        'Posted_by' => array('posted_by'),
+        'dce' => array('dce'),
     ),
     'primary key' => array('id'),
 );

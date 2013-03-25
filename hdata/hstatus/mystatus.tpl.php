@@ -205,6 +205,9 @@ honors@rit.edu</a></p>
 
 <h3>Honors Courses</h3>
 <p><?php echo l("A Listing of the currently offered honors courses", "courseslist")?></p>
+<p><?php echo l("Academic Requirements", "academic-requirements")?></p>
+<p>Email any questions to <a href="mailto:Council@mail.honors.rit.edu">Council@mail.honors.rit.edu</a></p>
+
 <pre>
 <?php print_r($huser); /*DEBUG*/ ?>
 </pre>
