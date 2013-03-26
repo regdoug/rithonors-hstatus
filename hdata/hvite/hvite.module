@@ -281,6 +281,30 @@ function hvite_eventlist_page()
 	return $page;
 }
 
+
+/**
+ * Form (just a button really) for sending invitations to users
+ */
+function hvite_invite_form(&$form_state, $eventId)
+{
+	$form['submit'] = array('#type' => 'submit', '#value' => t('Email invited users'));
+	$form['id'] = array('#type' => 'hidden', '#value' => t($eventId));
+	
+	return $form;
+}
+
+function hvite_invite_form_validate($form, &$form_state)
+{
+}
+
+function hvite_invite_form_submit($form, &$form_state)
+{
+	$eventId = $form_state["values"]["id"];
+	
+	// TODO send emails
+	drupal_set_message(t('Invitations sent.'));
+}
+
 /**
  * Generates the single event view page
  */
@@ -289,6 +313,11 @@ function hvite_eventview_page()
 	global $user;
 	
 	$eventid = intval($_GET["id"]);
+	
+	if (!isset($eventid))
+	{
+		return drupal_not_found();
+	}
 	
 	if (($e = hvite_get_event_details($eventid)) != false)
 	{
@@ -299,6 +328,7 @@ function hvite_eventview_page()
 			$page .= "<h3>Date/time: " . t(date("m/d/y H:m:s", $e["startdate"])) . " to " . t(date("m/d/y H:m:s", $e["enddate"])) . "</h3></p>";
 			
 			$page .= "<p>" . t($e["description"]) . "</p>";
+			$page .= "<p>" . drupal_get_form('hvite_invite_form', $eventid) . "</p>";
 			return $page;
 		}
 		else
