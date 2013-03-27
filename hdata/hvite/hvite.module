@@ -230,8 +230,9 @@ function hvite_createevent_form_submit($form, &$form_state)
 	}
 	else if ($form_state['values']['edit'] == "false")
 	{
-		if (hvite_add_event($event))
+		if (hvite_add_event($event, $form_state['values']['details']['users']))
 		{
+			/* Add users to RSVP database */
 			drupal_set_message(t('Event added.'));
 		}
 		else
@@ -560,19 +561,26 @@ function hvite_get_event_details($eventId)
 
 /**
  * Adds an event to the database
+ * $userList should be space-delimited
  */
-function hvite_add_event($event)
+function hvite_add_event($event, $userList)
 {
 	$q = "INSERT INTO {hvite_events}
 	(owner, startdate, enddate, location, title, description)
 	VALUES(%d, %d, %d, '%s', '%s', '%s')";
+	$q2 = "SELECT id FROM {hvite_events} ORDER BY id DESC LIMIT 1"; /* This will return the newest event id */
 	
 	$rs = db_query($q,
 		$event["owner"], $event["startdate"], $event["enddate"],
 		$event["location"], $event["title"], $event["description"]);
-   
-	if($rs && db_affected_rows() == 1)
+	$rs2 = db_query($q2);
+	
+	if ($rs && $rs2)
 	{
+		/* Add users to RSVP database */
+		$row = db_fetch_array($rs2);
+		hvite_add_invited_users($row["id"], $userList);
+		
 		return true;
 	}
 	else
@@ -620,11 +628,29 @@ function hvite_add_invited_users($eventId, $userList)
 	$intId = intval($eventId);
 	
 	/* Add all invited to query */
-	foreach (explode(t($userList), " ") as $dce)
+	$dces = explode(" ", t(trim($userList)));
+	
+	$count = count($dces);
+	$i = 0;
+	
+	foreach ($dces as $dce)
 	{
-		$q .= "(" . $intId . ", " . $dce . "), ";
+		$i++;
+		
+		/* Add (eventId, dce) value */
+		$q .= "(" . $intId . ", '" . $dce . "')";
+		
+		if ($i == $count)
+		{
+			$q .= ";";
+		}
+		else
+		{
+			$q .= ",";	
+		}
 	}
 	
+	/* Run the query */
 	$rs = db_query($q);
 	
 	if($rs)
@@ -645,7 +671,7 @@ function hvite_user_rsvp($eventId, $userDCE)
 	/* Update with new data */
 	$q = "UPDATE {hvite_rsvp} SET
 	has_rsvp=1
-	WHERE event_id=%d AND user_dce=%d";
+	WHERE event_id=%d AND user_dce='%s'";
 	
 	$rs = db_query($q, $eventId, $userDCE);
 	
@@ -693,10 +719,63 @@ function hvite_user_get_rsvp($eventId, $userDCE)
 }
 
 /**
+ * Returns an array of all users invited to an event
+ */
+function hvite_get_invited_users($eventId)
+{
+	$q =
+	"SELECT
+		user_dce
+	FROM {hvite_rsvp}
+	WHERE event_id = %d";
+	
+	$rs = db_query($q, $eventId);
+	
+	$list = array();
+	
+	while ($row = db_fetch_array($rs))
+	{
+		$list[] = $row["user_dce"];
+	}
+	
+	return $list;
+}
+
+/**
  * Sends email invitations to invited users
  */
 function hvite_send_invitations($eventId)
 {
+	global $base_url;
+	$email_suffix = "@rit.edu";
+	
+	$debug = "Invited: ";
+	
+	/* Get the event details */
+	if (($event = hvite_get_event_details($eventId)) == false) return false;
+	
+	/* Make an array containing the email addresses of all recipients */
+	$recipients = array();
+	
+	foreach (hvite_get_invited_users($eventId) as $dce)
+	{
+		$recipients[] = $dce . $email_suffix;
+	}
+	
+	$debug .= print_r($recipients, true);
+	
+	/* Make body of email */
+	$url = "{$base_url}/hvite/eventrsvp?id={$event["id"]}";
+	
+	$body = $event["description"];
+	$body .= "<br /><br />";
+	$body .= "RSVP to this event here: <a href='{$url}'>{$url}</a>";
+	
+	/* Send emails */
+	$email = mimemail('honors@rit.edu', $recipients, $event["title"], $body);
+	
+	drupal_set_message(t($debug));
+	return true;
 }
 
 /**
