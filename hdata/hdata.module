@@ -74,6 +74,9 @@ function hdata_student_search($query) {
 	return _hdata_student_search($query);
 }
 
+/* Gets basic information: uid (if applicable), full name, and type (student/faculty/none) about a user */
+function hdata_user_basic_info($userinfo){ return _hdata_user_basic_info($userinfo); }
+
 /*Loads all the notes for the user specified. An empty array means no
  * notes.  FALSE means an error occured (possibly no such user). */
 function hdata_load_notes($username){ return _hdata_user_load_notes($username); }
@@ -890,6 +893,7 @@ function _hdata_student_list_legacy($college,$active){
     }
     return $arry;
 }
+
 /**
  * This function will provide a username list of faculty based on the
  * 'college' and 'type' criteria supplied.  Type refers to the faculty
@@ -1009,6 +1013,49 @@ function _hdata_isactivestudent($userinfo){
     }else{
         return false;
     }
+}
+
+function _hdata_user_basic_info($userinfo){
+    if(is_numeric($userinfo)){
+        $userinfo = array('uid' => $userinfo);
+    }elseif(is_string($userinfo)){
+        $userinfo = array('name' => $userinfo);
+    }elseif(empty($userinfo['name']) && empty($userinfo['uid'])){
+        return false;
+    }
+    if(empty($userinfo['name'])){
+        $userObj = user_load($userinfo);
+        $userinfo['name'] = $userObj->name;
+    }
+    //DEBUG:
+    drupal_set_message('basic_info: uid='.$userinfo['uid'].' name='.$userinfo['name']);
+    $return['username'] = $userinfo['name'];
+    $return['uid'] = @$userinfo['uid'];
+    
+    $check_student = "SELECT firstname, lastname FROM {h_students_peoplesoft} WHERE username='%s'
+	    UNION SELECT firstname, lastname FROM {h_students} WHERE username='%s'";
+    $rs = db_query($check_student,$userinfo['name'],$userinfo['name']);
+    if($rs && ($row = db_fetch_array($rs))){
+	$return['name'] = $row['firstname'].' '.$row['lastname'];
+	$return['type'] = 'student';
+    //DEBUG:
+	drupal_set_message($return['name'].' is a student');
+	return $return;
+    }else{
+	$check_faculty = hdata_faculty_load($userinfo);
+	if($check_faculty){
+	    $return['name'] = $check_faculty['name']['first'].' '.$check_faculty['name']['last'];
+	    $return['type'] = 'faculty';
+    //DEBUG:
+	    drupal_set_message($return['name'].' is a faculty member');
+	    return $return;
+	}
+    }
+    $return['type'] = 'none';
+    $return['name'] = '';
+    //DEBUG:
+    drupal_set_message($return['username'].' was not found');
+    return $return;
 }
 
 /*

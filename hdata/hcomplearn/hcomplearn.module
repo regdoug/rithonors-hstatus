@@ -22,6 +22,8 @@ function hcomplearn_minhours(){return 20;}
 /*--------------Defaults-------------*/
 define('HCOMPLEARN_SUBMIT_MSG','If you are satisfied with your submission, you may submit the form now by clicking the button below.');
 define('HCOMPLEARN_SUBMIT_WARN','Be aware that submitting this form will prevent you from making further submissions until this submission has been reviewed.');
+define('HCOMPLEARN_ACCEPT_EMAIL','Dear @name,<br><br>Your complearing submission has been accepted.<br><br>Sincerely,<br>The Honors Program');
+define('HCOMPLEARN_REJECT_EMAIL','Dear @name,<br><br>Your complearing submission has been rejected for the following reason: @reason<br><br>Sincerely,<br>The Honors Program');
 
 /**
  * Implements hook_menu
@@ -181,11 +183,19 @@ function hcomplearn_approve_cl_action($submission,$context){
         $submission['status'] = 1;
         $submission['review_date'] = time();
         $submission['reviewer_uid'] = $user->uid;
-        hdata_cl_save($submission);
+        if(hdata_cl_save($submission)){
+            $basicinfo = hdata_user_basic_info($user->name);
+            mimemail('honors@rit.edu',$user->name.'@rit.edu','Complementary Learning Submission Accepted',
+                    t(variable_get('hcomplearn_accept_email',HCOMPLEARN_ACCEPT_EMAIL),
+                    array('@name'=>$basicinfo['name'])));
+            return true;
+        }else{
+            drupal_set_message(t('Error saving complearning submission'),'error');
+        }
     }else{
         drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
     }
-    //TODO: send email
+    return false;
 }
 /**
  * Performs a database update to reject a Complearning submission,
@@ -200,11 +210,19 @@ function hcomplearn_reject_cl_action($submission,$context){
         $submission['reason'] = $context['reject_reason'];
         $submission['review_date'] = time();
         $submission['reviewer_uid'] = $user->uid;
-        hdata_cl_save($submission);
+        if(hdata_cl_save($submission)){
+            $basicinfo = hdata_user_basic_info($user->name);
+            mimemail('honors@rit.edu',$user->name.'@rit.edu','Complementary Learning Submission Rejected',
+                    t(variable_get('hcomplearn_reject_email',HCOMPLEARN_REJECT_EMAIL),
+                    array('@name'=>$basicinfo['name'],'@reason'=>$submission['reason'])));
+            return true;
+        }else{
+            drupal_set_message(t('Error saving complearning submission'),'error');
+        }
     }else{
         drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
     }
-    //TODO: send email
+    return false;
 }
 
 /**
