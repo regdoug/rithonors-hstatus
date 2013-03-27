@@ -350,13 +350,19 @@ function hvite_eventview_page()
 	
 	if (($e = hvite_get_event_details($eventId)) != false)
 	{
+		/* Make sure this is the user's event */
 		if ($e["owner"] == $user->uid)
 		{
+			/* Get the amount of people who have RSVPed and the total */
+			$numrsvp = hvite_get_num_rsvp($eventId);
+			$numtotal = hvite_get_total_invited($eventId);
+			
 			$page = "<h1>" . t($e["title"]) . "</h1>";
 			$page .= "<p><h3>Location: " . t($e["location"]) . "</h3>";
 			$page .= "<h3>Date/time: " . t(date("m/d/y H:m:s", $e["startdate"])) . " to " . t(date("m/d/y H:m:s", $e["enddate"])) . "</h3></p>";
 			
 			$page .= "<p>" . t($e["description"]) . "</p>";
+			$page .= "<p>{$numrsvp} of {$numtotal} people invited have RSVPed to this event.</p>";
 			$page .= "<p>" . drupal_get_form('hvite_invite_form', $eventId) . "</p>";
 			return $page;
 		}
@@ -548,7 +554,7 @@ function hvite_get_event_details($eventId)
 	
 	$time = time();
 	
-	if (isset($row) && db_affected_rows() == 1)
+	if ($row && db_affected_rows() == 1)
 	{
 		$row["old"] = $time > $row["enddate"];
 		return $row;
@@ -701,7 +707,7 @@ function hvite_user_get_rsvp($eventId, $userDCE)
 	$rs = db_query($q, $eventId, $userDCE);
 	$row = db_fetch_array($rs);
 	
-	if (isset($row) && db_affected_rows() == 1)
+	if ($row && db_affected_rows() == 1)
 	{
 		if ($row["has_rsvp"] == 0)
 		{
@@ -776,6 +782,42 @@ function hvite_send_invitations($eventId)
 	
 	drupal_set_message(t($debug));
 	return true;
+}
+
+/**
+ * Returns the total number of people who have RSVPed to an event
+ */
+function hvite_get_num_rsvp($eventId)
+{
+	$q = "SELECT COUNT(*) FROM {hvite_rsvp} WHERE event_id=%d AND has_rsvp=1";
+	
+	$rs = db_query($q, $eventId);
+	$row = db_fetch_array($rs);
+	
+	if ($row)
+	{
+		return $row["COUNT(*)"];
+	}
+	
+	return 0;
+}
+
+/**
+ * Returns the total number of people who have been invited to an event
+ */
+function hvite_get_total_invited($eventId)
+{
+	$q = "SELECT COUNT(*) FROM {hvite_rsvp} WHERE event_id=%d";
+	
+	$rs = db_query($q, $eventId);
+	$row = db_fetch_array($rs);
+	
+	if ($row)
+	{
+		return $row["COUNT(*)"];
+	}
+	
+	return 0;
 }
 
 /**
