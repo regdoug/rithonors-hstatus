@@ -12,31 +12,71 @@ function hvite_menu()
 	/* Event creation page */
 	$items['hvite/createevent'] = array(
 		'type' => MENU_CALLBACK,
-		'title' => 'hVite Event Creation Test Form',
+		'title' => 'Create an Event',
 		'page arguments' => array(1),
 		'page callback' => 'hvite_createevent_page',
 		'access arguments' => array(1),
-		'access callback' => 'hvite_access',
+		'access callback' => 'hvite_access_make',
 	);
 	
 	/* Event list page */
 	$items['hvite/eventlist'] = array(
 		'type' => MENU_CALLBACK,
-		'title' => 'hVite Event List Test Form',
+		'title' => 'My Events',
 		'page arguments' => array(1),
 		'page callback' => 'hvite_eventlist_page',
 		'access arguments' => array(1),
-		'access callback' => 'hvite_access',
+		'access callback' => 'hvite_access_make',
+	);
+	
+	/* Event RSVP page */
+	$items['hvite/eventrsvp'] = array(
+		'type' => MENU_CALLBACK,
+		'title' => '',
+		'page arguments' => array(1),
+		'page callback' => 'hvite_eventrsvp_page',
+		'access arguments' => array(1),
+		'access callback' => 'hvite_access_make',
+	);
+	
+	/* Event view page */
+	$items['hvite/eventview'] = array(
+		'type' => MENU_CALLBACK,
+		'title' => '',
+		'page arguments' => array(1),
+		'page callback' => 'hvite_eventview_page',
+		'access arguments' => array(1),
+		'access callback' => 'hvite_access_make',
+	);
+	
+	/* Event edit page */
+	$items['hvite/eventedit'] = array(
+		'type' => MENU_CALLBACK,
+		'title' => '',
+		'page arguments' => array(1),
+		'page callback' => 'hvite_eventedit_page',
+		'access arguments' => array(1),
+		'access callback' => 'hvite_access_make',
 	);
 	
 	return $items;
 }
 
-/*
- * Form for creating an event
+/**
+ * Form for creating/editing an event
+ * If $edit is true then the form will be used for editing
+ * $id is the id of the event to edit
  */
-function hvite_createevent_form(&$form_state)
+function hvite_createevent_form(&$form_state, $edit, $id)
 {
+	$dateTimeFormat = "m/d/Y h:i";
+	
+	/* Get the event's details if editing */
+	if ($edit)
+	{
+		$event = hvite_get_event_details($id);
+	}
+	
 	/* Event details */
 	$form['details'] = array(
 		'#type' => 'fieldset',
@@ -51,6 +91,7 @@ function hvite_createevent_form(&$form_state)
 		'#cols' => 60,
 		'#rows' => 5,
 		'#description' => t('Max: 100 characters'),
+		'#default_value' => t($event['title']),
 	);
 	
 	/* Location */
@@ -60,6 +101,7 @@ function hvite_createevent_form(&$form_state)
 		'#cols' => 60,
 		'#rows' => 5,
 		'#description' => t('Max: 100 characters'),
+		'#default_value' => t($event['location']),
 	);
 	
 	/* Description */
@@ -69,39 +111,68 @@ function hvite_createevent_form(&$form_state)
 		'#cols' => 60,
 		'#rows' => 5,
 		//'#description' => t('Event description.'),
+		'#default_value' => t($event['description']),
 	);
-	
 	
 	/* User list */
-	$form['details']['users'] = array(
-		'#type' => 'hformtools_users',
-		'#title' => 'Select users to invite',
-	);
+	if (!$edit)
+	{
+		$form['details']['users'] = array(
+			'#type' => 'hformtools_users',
+			'#title' => 'Select users to invite',
+		);
+	}
 	
 	/* Start date and time */
 	$form['details']['startdate'] = array(
-		'#type' => 'date_popup', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+		'#type' => 'date_popup',
 		'#title' => t('Start date and time'),
-		'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-		'#date_year_range' => '-3:+3', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+		'#date_label_position' => 'within',
+		'#date_year_range' => '-3:+3',
+		'#date_format' => $dateTimeFormat,
+		'#default_value' => date($dateTimeFormat, $event['startdate']), // TODO this doesn't seem to work as a default value
 	);
 	
 	/* End date and time */
 	$form['details']['enddate'] = array(
-		'#type' => 'date_popup', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
+		'#type' => 'date_popup',
 		'#title' => t('End date and time'),
-		'#date_label_position' => 'within', // See other available attributes and what they do in date_api_elements.inc
-		'#date_year_range' => '-3:+3', // Optional, used to set the year range (back 3 years and forward 3 years is the default).
+		'#date_label_position' => 'within',
+		'#date_year_range' => '-3:+3',
+		'#date_format' => $dateTimeFormat,
+		'#default_value' => date($dateTimeFormat, $event['enddate']), // TODO this doesn't seem to work as a default value
 	);
 	
 	/* Submit button */
-	$form['submit'] = array('#type' => 'submit', '#value' => t('Create event'));
-
+	if (!$edit)
+	{
+		$form['submit'] = array('#type' => 'submit', '#value' => t('Create event'));
+	}
+	else
+	{
+		$form['submit'] = array('#type' => 'submit', '#value' => t('Submit event changes'));
+	}
+	
+	/* Hidden field to say if editing and id if editing */
+	$form['edit'] = array('#type' => 'hidden', '#value' => ($edit ? "true" : "false"));
+	
+	if ($edit)
+	{
+		$form['id'] = array('#type' => 'hidden', '#value' => t($id));
+	}
+	
 	return $form;
 }
 
 function hvite_createevent_form_validate($form, &$form_state)
 {
+	/* The edit field should be either true or false */
+	if ($form_state['values']['edit'] != "true" && $form_state['values']['edit'] != "false")
+	{
+		form_set_error('edit', t("There was an error with your request."));
+	}
+	
+	/* Check for other details */
 	if ($form_state['values']['details']['title'] == '')
 	{
 		form_set_error('title', t('You must enter a title.'));
@@ -122,30 +193,53 @@ function hvite_createevent_form_validate($form, &$form_state)
 	{
 		form_set_error('enddate', t('You must select an end date.'));
 	}
+	
+	$startTimestamp = strtotime($form_state['values']['details']['startdate']);
+	$endTimestamp = strtotime($form_state['values']['details']['enddate']);
+	
+	if ($startTimestamp > $endTimestamp)
+	{
+		form_set_error('enddate', t('Your event cannot end before it begins.'));
+	}
 }
-
-/*
-	mimemail arguments
-	string - from address
-	array of recipients or single string (probably)
-	string subject
-	string body
-	
-	function _hnews_send_mail($nid,$vid,$to)
-	
-	form elemenent type hformtools_users
-	returns space delimited list of users
-*/
 
 function hvite_createevent_form_submit($form, &$form_state)
 {
-	$str = "Title: '" . $form_state['values']['details']['title'] . "'<br />";
-	$str .= "Location: '" . $form_state['values']['details']['location'] . "'<br />";
-	$str .= "Description: '" . $form_state['values']['details']['description'] . "'<br />";
-	$str .= "Start date: '" . $form_state['values']['details']['startdate'] . "' (" . strtotime($form_state['values']['details']['startdate']) . ")<br />";
-	$str .= "End date: '" . $form_state['values']['details']['enddate'] . "' (" . strtotime($form_state['values']['details']['enddate']) . ")<br />";
-	drupal_set_message(t('Event created.'));
-	drupal_set_message(t($str));
+	global $user;
+	
+	$form_state['redirect'] = 'hvite/eventlist';
+	
+	/* Submit event */
+	$event["owner"] = $user->uid;
+	$event["title"] = $form_state['values']['details']['title'];
+	$event["location"] = $form_state['values']['details']['location'];
+	$event["description"] = $form_state['values']['details']['description'];
+	$event["startdate"] = strtotime($form_state['values']['details']['startdate']);
+	$event["enddate"] = strtotime($form_state['values']['details']['enddate']);
+	
+	if ($form_state['values']['edit'] == "true")
+	{
+		if (hvite_edit_event($event, $form_state['values']['id']))
+		{
+			drupal_set_message(t('Event edited.'));
+		}
+		else
+		{
+			drupal_set_message(t('There was an error processing your request. Please try again later.'));
+		}
+	}
+	else if ($form_state['values']['edit'] == "false")
+	{
+		if (hvite_add_event($event, $form_state['values']['details']['users']))
+		{
+			/* Add users to RSVP database */
+			drupal_set_message(t('Event added.'));
+		}
+		else
+		{
+			form_set_error(t('There was an error processing your request. Please try again later.'));
+		}
+	}
 }
 
 /**
@@ -153,7 +247,24 @@ function hvite_createevent_form_submit($form, &$form_state)
  */
 function hvite_createevent_page()
 {
-	return drupal_get_form('hvite_createevent_form');
+	return drupal_get_form('hvite_createevent_form', false, 0);
+}
+
+/**
+ * Shortens a string to desired length and adds an ellipsis
+ */
+function shorten($str, $len)
+{
+	if ($len < 3) return "";
+	
+	if (strlen($str) > $len)
+	{
+		return substr($str, 0, $len - 3) . "...";
+	}
+	else
+	{
+		return $str;
+	}
 }
 
 /**
@@ -161,9 +272,552 @@ function hvite_createevent_page()
  */
 function hvite_eventlist_page()
 {
-	//QUESTION:  why a form?  why not a regular page?
-	//return drupal_get_form('hvite_eventlist_form');
-	return '<p>Under Development</p>';
+	global $user;
+	global $base_url;
+	
+	/* Get the user's events */
+	$events = hvite_get_user_events($user->uid);
+	
+	/* Make a table of the user's events */
+	$page = "<table>";
+	$page .= "<th>Title</th><th>Start date</th><th>End date</th><th>Location</th><th>Description</th><th>Status</th>";
+	
+	foreach ($events as $e)
+	{
+		$page .= sprintf("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href=\"{$base_url}/hvite/eventview?id=%d\">View</a></td><td><a href=\"{$base_url}/hvite/eventedit?id=%d\">Edit</a></td></tr>",
+			t($e["title"]),
+			t(date("m/d/y H:m:s", $e["startdate"])),
+			t(date("m/d/y H:m:s", $e["enddate"])),
+			t($e["location"]),
+			t(shorten($e["description"], 35)),
+			t(($e["old"]) ? "Old" : "New"),
+			$e["id"],
+			$e["id"]);
+	}
+	
+	$page .= "</table>";
+	$page .= "<form><input type=\"button\" value=\"Create Event\" onClick=\"window.location='{$base_url}/hvite/createevent'\" /></form>";
+	return $page;
+}
+
+
+/**
+ * Form (just a button really) for sending invitations to users
+ */
+function hvite_invite_form(&$form_state, $eventId)
+{
+	$form['submit'] = array('#type' => 'submit', '#value' => t('Email invited users'));
+	$form['id'] = array('#type' => 'hidden', '#value' => t($eventId));
+	
+	return $form;
+}
+
+function hvite_invite_form_validate($form, &$form_state)
+{
+}
+
+function hvite_invite_form_submit($form, &$form_state)
+{
+	$eventId = $form_state["values"]["id"];
+	
+	/* Send emails */
+	if (hvite_send_invitations($eventId))
+	{
+		drupal_set_message(t('Invitations sent.'));
+	}
+	else
+	{
+		drupal_set_message(t('There was an error processing your request. Please try again later.'));
+	}
+	
+	/* Redirect user back to list upon successful submission */
+	$form_state["redirect"] = "hvite/eventlist";
+}
+
+/**
+ * Generates the single event view page
+ */
+function hvite_eventview_page()
+{
+	global $user;
+	
+	$eventId = intval($_GET["id"]);
+	
+	if (!isset($eventId))
+	{
+		return drupal_not_found();
+	}
+	
+	if (($e = hvite_get_event_details($eventId)) != false)
+	{
+		/* Make sure this is the user's event */
+		if ($e["owner"] == $user->uid)
+		{
+			/* Get the amount of people who have RSVPed and the total */
+			$numrsvp = hvite_get_num_rsvp($eventId);
+			$numtotal = hvite_get_total_invited($eventId);
+			
+			$page = "<h1>" . t($e["title"]) . "</h1>";
+			$page .= "<p><h3>Location: " . t($e["location"]) . "</h3>";
+			$page .= "<h3>Date/time: " . t(date("m/d/y H:m:s", $e["startdate"])) . " to " . t(date("m/d/y H:m:s", $e["enddate"])) . "</h3></p>";
+			
+			$page .= "<p>" . t($e["description"]) . "</p>";
+			$page .= "<p>{$numrsvp} of {$numtotal} people invited have RSVPed to this event.</p>";
+			$page .= "<p>" . drupal_get_form('hvite_invite_form', $eventId) . "</p>";
+			return $page;
+		}
+		else
+		{
+			return drupal_access_denied();
+		}
+	}
+	else
+	{
+		return drupal_not_found();
+	}
+}
+
+/**
+ * Generates the single event edit page
+ */
+function hvite_eventedit_page()
+{
+	global $user;
+	
+	$eventId = intval($_GET["id"]);
+	
+	if (!isset($eventId))
+	{
+		return drupal_not_found();
+	}
+	
+	if (($e = hvite_get_event_details($eventId)) != false)
+	{
+		if ($e["owner"] == $user->uid)
+		{
+			$page = "<h1>" . t($e["title"]) . "</h1>";
+			$page .= "<p>" . drupal_get_form('hvite_createevent_form', true, $eventId) . "</p>";
+			return $page;
+		}
+		else
+		{
+			return drupal_access_denied();
+		}
+	}
+	else
+	{
+		return drupal_not_found();
+	}
+	
+	return $page;
+}
+
+/**
+ * Form for RSVPing to an event
+ */
+function hvite_rsvp_form(&$form_state, $eventId)
+{
+	$form['submit'] = array('#type' => 'submit', '#value' => t('RSVP to this event'));
+	$form['id'] = array('#type' => 'hidden', '#value' => t($eventId));
+	
+	return $form;
+}
+
+function hvite_rsvp_form_validate($form, &$form_state)
+{
+}
+
+function hvite_rsvp_form_submit($form, &$form_state)
+{
+	global $user;
+	
+	$eventId = $form_state["values"]["id"];
+	
+	if (hvite_user_rsvp($eventId, $user->name))
+	{
+		drupal_set_message(t('RSVP was successful.'));
+	}
+	else
+	{
+		drupal_set_message(t('There was an error processing your request. Please try again later.'));
+	}
+	
+	$form_state["redirect"] = array('hvite/eventrsvp', "id={$eventId}");
+}
+
+/**
+ * Generates the single event RSVP page
+ */
+function hvite_eventrsvp_page()
+{
+	global $user;
+	
+	$eventId = intval($_GET["id"]);
+	
+	if (!isset($eventId))
+	{
+		return drupal_not_found();
+	}
+	
+	if (($e = hvite_get_event_details($eventId)) != false)
+	{
+		/* Check if the user has RSVPed */
+		$rsvp = hvite_user_get_rsvp($eventId, $user->name);
+		
+		/* Display the page */
+		$page = "<h1>" . t($e["title"]) . "</h1>";
+		$page .= "<p><h3>Location: " . t($e["location"]) . "</h3>";
+		$page .= "<h3>Date/time: " . t(date("m/d/y H:m:s", $e["startdate"])) . " to " . t(date("m/d/y H:m:s", $e["enddate"])) . "</h3></p>";
+		
+		$page .= "<p>" . t($e["description"]) . "</p>";
+		
+		if ($rsvp == 0)
+		{
+			$page .= "<p>" . drupal_get_form('hvite_rsvp_form', $eventId) . "</p>";
+		}
+		else if ($rsvp == 1)
+		{
+			$page .= "<p>You have already RSVPed to this event.</p>";
+		}
+		else if ($rsvp == -1)
+		{
+			$page .= "<p>You have not been invited to this event.</p>";
+		}
+		
+		return $page;
+	}
+	else
+	{
+		return drupal_not_found();
+	}
+}
+
+/**
+ * Returns a list of all of the users' events in the form of an associative array
+ */
+function hvite_get_user_events($uid)
+{
+	$q =
+	"SELECT
+		id id,
+		owner owner,
+		startdate startdate,
+		enddate enddate,
+		location location,
+		title title,
+		description description
+	FROM {hvite_events}
+	WHERE owner = %d
+	ORDER BY enddate DESC";
+	
+	$rs = db_query($q, $uid);
+	
+	$time = time();
+	
+	while ($row = db_fetch_array($rs))
+	{
+		$row["old"] = $time > $row["enddate"];
+		
+		$arry[] = $row;
+	}
+
+	if (isset($arry))
+	{
+		return $arry;
+	}
+	else
+	{
+		return array();
+	}
+}
+
+/**
+ * Returns the details of a specific event in the form of an associative array
+ */
+function hvite_get_event_details($eventId)
+{
+	$q =
+	"SELECT
+		id id,
+		owner owner,
+		startdate startdate,
+		enddate enddate,
+		location location,
+		title title,
+		description description
+	FROM {hvite_events}
+	WHERE id = %d
+	LIMIT 1";
+	
+	$rs = db_query($q, $eventId);
+	$row = db_fetch_array($rs);
+	
+	$time = time();
+	
+	if ($row && db_affected_rows() == 1)
+	{
+		$row["old"] = $time > $row["enddate"];
+		return $row;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/**
+ * Adds an event to the database
+ * $userList should be space-delimited
+ */
+function hvite_add_event($event, $userList)
+{
+	$q = "INSERT INTO {hvite_events}
+	(owner, startdate, enddate, location, title, description)
+	VALUES(%d, %d, %d, '%s', '%s', '%s')";
+	$q2 = "SELECT id FROM {hvite_events} ORDER BY id DESC LIMIT 1"; /* This will return the newest event id */
+	
+	$rs = db_query($q,
+		$event["owner"], $event["startdate"], $event["enddate"],
+		$event["location"], $event["title"], $event["description"]);
+	$rs2 = db_query($q2);
+	
+	if ($rs && $rs2)
+	{
+		/* Add users to RSVP database */
+		$row = db_fetch_array($rs2);
+		hvite_add_invited_users($row["id"], $userList);
+		
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/**
+ * Edits an event in the database
+ */
+function hvite_edit_event($event, $id)
+{
+	/* Check that the user owns this event */
+	if (!($oldevent = hvite_get_event_details($id)) || ($oldevent["owner"] != $event["owner"])) return false;
+	
+	/* Update with new data */
+	$q = "UPDATE {hvite_events} SET
+	startdate=%d,enddate=%d,location='%s',title='%s',description='%s'
+	WHERE id=%d";
+	
+	$rs = db_query($q,
+		$event["startdate"], $event["enddate"],
+		$event["location"], $event["title"], $event["description"], $id);
+   
+	if($rs && db_affected_rows() == 1)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/**
+ * Adds users to an event.
+ * $userList must be space-delimited
+ */
+function hvite_add_invited_users($eventId, $userList)
+{
+	$q = "INSERT INTO {hvite_rsvp}
+	(event_id, user_dce) VALUES ";
+	
+	$intId = intval($eventId);
+	
+	/* Add all invited to query */
+	$dces = explode(" ", t(trim($userList)));
+	
+	$count = count($dces);
+	$i = 0;
+	
+	foreach ($dces as $dce)
+	{
+		$i++;
+		
+		/* Add (eventId, dce) value */
+		$q .= "(" . $intId . ", '" . $dce . "')";
+		
+		if ($i == $count)
+		{
+			$q .= ";";
+		}
+		else
+		{
+			$q .= ",";	
+		}
+	}
+	
+	/* Run the query */
+	$rs = db_query($q);
+	
+	if($rs)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/**
+ * RSVPs a user for a given event
+ */
+function hvite_user_rsvp($eventId, $userDCE)
+{
+	/* Update with new data */
+	$q = "UPDATE {hvite_rsvp} SET
+	has_rsvp=1
+	WHERE event_id=%d AND user_dce='%s'";
+	
+	$rs = db_query($q, $eventId, $userDCE);
+	
+	if($rs && db_affected_rows() == 1)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/**
+ * Checks if a user has/has not/cannot RSVP to an event
+ * Will return 0 if a user has not RSVPed, 1 if they have, or -1 if they are not invited
+ */
+function hvite_user_get_rsvp($eventId, $userDCE)
+{
+	$q =
+	"SELECT
+		has_rsvp
+	FROM {hvite_rsvp}
+	WHERE event_id = %d AND user_dce='%s'
+	LIMIT 1";
+	
+	$rs = db_query($q, $eventId, $userDCE);
+	$row = db_fetch_array($rs);
+	
+	if ($row && db_affected_rows() == 1)
+	{
+		if ($row["has_rsvp"] == 0)
+		{
+			return 0;
+		}
+		else
+		{
+			return 1;
+		}
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+/**
+ * Returns an array of all users invited to an event
+ */
+function hvite_get_invited_users($eventId)
+{
+	$q =
+	"SELECT
+		user_dce
+	FROM {hvite_rsvp}
+	WHERE event_id = %d";
+	
+	$rs = db_query($q, $eventId);
+	
+	$list = array();
+	
+	while ($row = db_fetch_array($rs))
+	{
+		$list[] = $row["user_dce"];
+	}
+	
+	return $list;
+}
+
+/**
+ * Sends email invitations to invited users
+ */
+function hvite_send_invitations($eventId)
+{
+	global $base_url;
+	$email_suffix = "@rit.edu";
+	
+	$debug = "Invited: ";
+	
+	/* Get the event details */
+	if (($event = hvite_get_event_details($eventId)) == false) return false;
+	
+	/* Make an array containing the email addresses of all recipients */
+	$recipients = array();
+	
+	foreach (hvite_get_invited_users($eventId) as $dce)
+	{
+		$recipients[] = $dce . $email_suffix;
+	}
+	
+	$debug .= print_r($recipients, true);
+	
+	/* Make body of email */
+	$url = "{$base_url}/hvite/eventrsvp?id={$event["id"]}";
+	
+	$body = $event["description"];
+	$body .= "<br /><br />";
+	$body .= "RSVP to this event here: <a href='{$url}'>{$url}</a>";
+	
+	/* Send emails */
+	$email = mimemail('honors@rit.edu', $recipients, $event["title"], $body);
+	
+	drupal_set_message(t($debug));
+	return true;
+}
+
+/**
+ * Returns the total number of people who have RSVPed to an event
+ */
+function hvite_get_num_rsvp($eventId)
+{
+	$q = "SELECT COUNT(*) FROM {hvite_rsvp} WHERE event_id=%d AND has_rsvp=1";
+	
+	$rs = db_query($q, $eventId);
+	$row = db_fetch_array($rs);
+	
+	if ($row)
+	{
+		return $row["COUNT(*)"];
+	}
+	
+	return 0;
+}
+
+/**
+ * Returns the total number of people who have been invited to an event
+ */
+function hvite_get_total_invited($eventId)
+{
+	$q = "SELECT COUNT(*) FROM {hvite_rsvp} WHERE event_id=%d";
+	
+	$rs = db_query($q, $eventId);
+	$row = db_fetch_array($rs);
+	
+	if ($row)
+	{
+		return $row["COUNT(*)"];
+	}
+	
+	return 0;
 }
 
 /**
@@ -171,14 +825,25 @@ function hvite_eventlist_page()
  * 
  * Just returns an array of strings to be used on the permissions page
  */
-function hvite_perm(){
-    return array('make hVite events', 'RSVP to hVite events');
+function hvite_perm()
+{
+	return array('make hVite events', 'RSVP to hVite events');
 }
 
 /*----------------Access Callbacks------------------*/
-function hvite_access($account)
+function hvite_access_make($account)
 {
     if (user_access('make hVite events'))
+	{
+        return TRUE;
+    }
+	
+	return FALSE;
+}
+
+function hvite_access_rsvp($account)
+{
+    if (user_access('RSVP to hVite events'))
 	{
         return TRUE;
     }
