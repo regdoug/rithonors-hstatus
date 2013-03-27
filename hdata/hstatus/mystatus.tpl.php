@@ -178,7 +178,7 @@ if(is_array($points)){
 	<?php
 	echo 
 		'<tr><td>'.$sumissions['complearn']['id'] .'</td>
-		<td>'.$sumissions['complearn']['status'] .'</td>
+		<td>'.hcomplearn_status_string($sumissions['complearn']['status']) .'</td>
 		<td>'.$sumissions['complearn']['hours'] .'</td>
 		<td>'.$sumissions['complearn']['submit_date'] .'</td>
 		<td>'.$sumissions['complearn']['review_date'] .'</td>
