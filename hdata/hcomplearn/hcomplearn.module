@@ -272,6 +272,18 @@ function hcomplearn_get_type_options(){
 function _hcomplearn_default_type_options(){
     return "other | Other";
 }
+
+/**
+ * Helper function to translate status number into string
+ */
+function hcomplearn_status_string($value){
+    switch ($value) {
+        case 0: return 'Pending';
+        case 1: return 'Approved';
+        case 2: return 'Rejected';
+        default: return strval($value);
+    }
+}
 /**
  * Helper function for whitelist/blacklist
  */
