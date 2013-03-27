@@ -223,12 +223,11 @@ function _hdata_user_load($userinfo, $reset = false){
 			return false;
 		}
 	}
-
+	
     $u['continuation'] = _hdata_user_load_continuation($username);
     $u['points'] = _hdata_user_load_points($username);
-    $u['submissions'] = _hdata_user_load_submissions($uid,$username);
+    $u['submissions'] = _hdata_user_load_submissions($uid);
 	$u['courses']=_hdata_courses_load($username);
-
     cache_set("hdata_user:$username", $u, 'cache_honors',
         strtotime('+'.hdata_user_cache_life()));
     $husers[$username] = $u;  //update static variable for future calls
@@ -505,33 +504,37 @@ function _hdata_points_type_save($type) {
     }
 }
 
+
+		
 /*
  * Grabs all comp learning submissions and indicates whether
  * a draft is in progress
  */
-function _hdata_user_load_submissions($uid,$username){
-    $rs = db_query("SELECT id, reviewed as status, submitted_date as submit_date, reviewed_date as review_date
-		    FROM {h_complearning} WHERE dce='%s'
-		    ORDER BY submitted_date ASC",$username);
-    while($rs && ($row = db_fetch_array($rs))){
-	$row['legacy'] = true;
-	$row['hours'] = 0;
-	$row['submit_date'] = strtotime($row['submit_date']);
-	$row['review_date'] = strtotime($row['review_date']);
-	$complearn[] = $row;
-    }
-    $rs = db_query('SELECT id, status, hours, submit_date, review_date
-                    FROM {h_cl} WHERE uid=%d
-                    ORDER BY submit_date ASC', $uid);
-    while($rs && ($row = db_fetch_array($rs))){
-	$row['legacy'] = false;
-	$complearn[] = $row;
-    }
-    return array(
-        'complearn' =>  $rs?$complearn:false,
-        'cldraft' => (bool)_hdata_cldraft_load($uid,hdata_cl_draft_life()),
-    );
+
+function _hdata_user_load_submissions($uid){
+    $rs = db_query("SELECT id
+                    FROM {h_cl} WHERE uid='%d'", $uid);
+    while($row = db_result($rs)){
+        $arry[] = _hdata_submissions_load($row);
+    };
+     return $array;
 }
+
+function _hdata_submissions_load($id){
+	$rs = db_query("SELECT id,
+				status, 
+				hours, 
+				submit_date, 
+				review_date
+				FROM {h_cl} WHERE uid='%d'", $uid);
+	if($rs){
+		return db_fetch_array($rs);
+	}
+	else{
+		return false;
+	}
+	
+
 
 function _hdata_user_load_notes($username){
     //Make sure that username is composed of 3 letters and 4 numbers

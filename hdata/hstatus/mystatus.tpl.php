@@ -161,14 +161,12 @@ if(is_array($points)){
 <h2>Comp Learning Submissions</h2>
 <div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
 <p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
-<?php if($submissions['complearning']['cldraft']): ?>
-<p>You have an unsubmitted (draft) complearning submission</p>
-<?php endif; ?>
 <p>For requirements, please see the <?php echo l("comp learning page", "service-requirements"); ?> </p>
 <h4>Submissions</h4>
 <table>
 	<thead>
 		<tr>
+			<td>ID</td>
 			<td>Status</td>
 			<td>Hours</td>
 			<td>Submit Date</td>
@@ -178,14 +176,13 @@ if(is_array($points)){
 	</thead>
 	<tbody>
 	<?php
-	foreach($submissions['complearn'] as $cl){
-	    echo 
-		'<td>'.$cl['status'] .'</td>
-		<td>'.$cl['hours'] .'</td>
-		<td>'.$cl['submit_date'] .'</td>
-		<td>'.$cl['review_date'] .'</td>
+	echo 
+		'<tr><td>'.$sumissions['complearn']['id'] .'</td>
+		<td>'.hcomplearn_status_string($sumissions['complearn']['status']) .'</td>
+		<td>'.$sumissions['complearn']['hours'] .'</td>
+		<td>'.$sumissions['complearn']['submit_date'] .'</td>
+		<td>'.$sumissions['complearn']['review_date'] .'</td>
 		</tr>';
-	}
 		?>
 	</tbody>
 </table>
