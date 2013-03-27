@@ -7,11 +7,12 @@
  * page.
  */
 
-/*--------------Defaults-------------*/
+/*-------------------Defaults--------------------*/
 define('HPOINTS_SUBMIT_MSG','Please describe the activity that you believe should earn you points.');
 define('HPOINTS_SUBMIT_WARN','Submissions will be reviewed and you will recieve an email when a decision is made.');
 define('HPOINTS_EMAIL_MSG','This type of submission requires a reference.');
 
+/*----------------Implemented Hooks--------------*/
 /**
  * Implements hook_menu
  *
@@ -58,31 +59,6 @@ function hpoints_menu(){
 }
 
 /**
- * hpoints_cl_submission is an AJAX callback function to generate
- * HTML from complearning submission data.
- *
- * The design intent of this function was that it would be used to
- * return HTML to an AJAX lightbox embedded in a general complearning
- * reviewing page.  As such, it does not display general information
- * such as username, total hours, or time submitted.  It merely gets the
- * submission data and themes it with the theme hook "hpoints_cl_activity"
- */
-function hpoints_submission($sid){
-    $points = hdata_points_load($sid);
-    $data = $points['data'];
-    if($data){
-        $output = theme('hpoints_display',$data);
-    }else{
-        $output = '<h1>Not Found</h1>';
-    }
-
-    //AJAX functions should echo the output and return null to prevent
-    //the theme system from kicking in.
-    echo $output;
-    return null;
-}
-
-/**
  * Implements hook_perm
  *
  * Just returns an array of strings to be used on the permissions page
@@ -126,50 +102,69 @@ function hpoints_action_info(){
         'hpoints_approve_action' => array(
             'description' => t('Approve Points Submission'),
             'type' => 'hpoints',
-            'configurable' => FALSE,
+            'configurable' => true,
         ),
         'hpoints_reject_action' => array(
             'description' => t('Reject Points Submission'),
             'type' => 'hpoints',
-            'configurable' => FALSE,
+            'configurable' => true,
         ),
-    /* Example action -- taken from Drupal
-      'user_block_ip_action' => array(
-      'description' => t('Ban IP address of current user'),
-      'type' => 'user',
-      'configurable' => FALSE,
-      'hooks' => array(
-        'nodeapi' => array('presave', 'delete', 'insert', 'update', 'view'),
-        'comment' => array('view', 'insert', 'update', 'delete'),
-        'user' => array('logout'),
-      )
-    ),*/
   );
 }
 
 /**
- * Performs a database update to approve a Complearning submission,
- * provided that the user has the appropriate permissions.
+ * Implements hook_views_bulk_operations_object_info
+ * 
+ * This hook tells Views Bulk Operations (VBO) that bulk operations
+ * are supported for the 'hpoints' type and how to access the table.
  */
-function hpoints_approve_action($submission){
-    if(user_access('administer points submissions') || user_access('review points submissions')){
-        $submission['status'] = 1;
-        hdata_points_save($submission);
-    }else{
-        drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
-    }
+function hpoints_views_bulk_operations_object_info(){
+    return array(
+        'hpoints' => array(
+            'type' => 'hpoints',
+            'base_table' => 'h_students_points',
+            'load' => 'hpoints_points_load',
+            'oid' => 'id',
+            'title' => 'title',
+            'access' => '_hpoints_review_access',
+        ),
+    );
 }
+
 /**
- * Performs a database update to reject a Complearning submission,
- * provided that the user has the appropriate permissions.
+ * Implements hook_views_api
+ * 
+ * This tells Views that hcomplearn has a views.inc file.
  */
-function hpoints_reject_action($submission){
-    if(user_access('administer points submissions') || user_access('review points submissions')){
-        $submission['status'] = -1;
-        hdata_points_save($submission);
+function hpoints_views_api(){
+    return array('api'=>2);
+}
+
+/*----------------Public Functions---------------*/
+
+/**
+ * hpoints_cl_submission is an AJAX callback function to generate
+ * HTML from complearning submission data.
+ *
+ * The design intent of this function was that it would be used to
+ * return HTML to an AJAX lightbox embedded in a general complearning
+ * reviewing page.  As such, it does not display general information
+ * such as username, total hours, or time submitted.  It merely gets the
+ * submission data and themes it with the theme hook "hpoints_cl_activity"
+ */
+function hpoints_submission($sid){
+    $points = hdata_points_load($sid);
+    $data = $points['data'];
+    if($data){
+        $output = theme('hpoints_display',$data);
     }else{
-        drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
+        $output = '<h1>Not Found</h1>';
     }
+
+    //AJAX functions should echo the output and return null to prevent
+    //the theme system from kicking in.
+    echo $output;
+    return null;
 }
 
 /**
@@ -195,36 +190,104 @@ function hpoints_type_needs_email($typeid){
     return $list[$typeid]['send_email'] == 1;
 }
 
-/*
- * Implements hook_views_bulk_operations_object_info
- * 
- * This hook tells Views Bulk Operations (VBO) that bulk operations
- * are supported for the 'complearning' type and how to access the table.
+/*----------------VBO Functions------------------*/
+
+/**
+ * Wraps hdata_points_load to return an object with a title, as required
+ * for VBO load functions
  */
-function hpoints_views_bulk_operations_object_info(){
+function hpoints_points_load($id){
+    $points = hdata_points_load($id);
+    $types = hpoints_get_type_options();
+    $points['title'] = t('@type Submission #@id',
+            array('@id' => $points['id'], '@type' => $types[$points['type']]));
+    return (object) $points;
+}
+
+/**
+ * Performs a database update to approve a Complearning submission,
+ * provided that the user has the appropriate permissions.
+ */
+function hpoints_approve_action($submission, $context){
+    $submission = (array) $submission;
+    if(user_access('administer points submissions') || user_access('review points submissions')){
+        global $user;
+        $submission['status'] = 1;
+        $submission['reviewer'] = $user->name;
+        $submission['reviewed_time'] = gmdate('Y-m-d H:i:s');
+        $submission['credits'] = @$context['credits'];
+        hdata_points_save($submission);
+    }else{
+        drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
+    }
+}
+
+/**
+ * Provides a form for entering number of points
+ */
+function hpoints_approve_action_form(){
     return array(
-        'hpoints' => array(
-            'type' => 'hpoints',
-            'base_table' => 'h_students_points',
-            'load' => 'hdata_points_load',
-            'oid' => 'id',
-            'title' => 'id',
-            'access' => '_hpoints_review_access',
+        'credits' => array(
+            '#type' => 'hformtools_html5_number',
+            '#title' => 'Credits',
+            '#description' => t('How many points should be awarded?'),
+            '#length' => 15,
+            '#min' => 0,
+            '#max' => 10,
         ),
     );
 }
 
 /**
- * Implements hook_views_api
- * 
- * This tells Views that hcomplearn has a views.inc file.
+ * Submission function for approval form.  Assumption is made that VBO
+ * will always be the caller
  */
-function hpoints_views_api(){
-    return array('api'=>2);
+function hpoints_approve_action_submit($form, &$form_state){
+    return array('credits' => $form_state['values']['credits']);
+}
+
+/**
+ * Performs a database update to reject a Complearning submission,
+ * provided that the user has the appropriate permissions.
+ */
+function hpoints_reject_action($submission,$context){
+    $submission = (array) $submission;
+    if(user_access('administer points submissions') || user_access('review points submissions')){
+        global $user;
+        $submission['status'] = -1;
+        $submission['reviewer'] = $user->name;
+        $submission['reviewed_time'] = gmdate('Y-m-d H:i:s');
+        $submission['credits'] = 0;
+        $submission['reason'] = @$context['reject_reason'];
+        hdata_points_save($submission);
+    }else{
+        drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
+    }
+}
+
+/**
+ * Provides a form for entering rejection reason
+ */
+function hpoints_reject_action_form(){
+    return array(
+        'reject_reason' => array(
+            '#title' => 'Reason',
+            '#description' => t('Why was this submission rejected?'),
+            '#type' => 'textarea',
+            '#rows' => 2,
+        ),
+    );
+}
+
+/**
+ * Submission function for rejection form.  Assumption is made that VBO
+ * will always be the caller
+ */
+function hpoints_reject_action_submit($form, &$form_state){
+    return array('reject_reason' => $form_state['values']['reject_reason']);
 }
 
 /*----------------Access Callbacks------------------*/
-
 
 /**
  * Allows access if the user has the right to submit points
@@ -235,7 +298,7 @@ function _hpoints_form_access(){
 
 /**
  * Allows access to the reviewing pages if the user has the
- * 'review complementary learning' permission or is the superuser (UID 1)
+ * 'review complementary learning' or 'administer points submissions' permission
  * 
  * Used for VBO
  */

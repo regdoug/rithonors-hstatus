@@ -8,30 +8,28 @@ function hpoints_admin_settings(){
     //TODO: create a "real" form instead of a system settings form
     //    for the type options: make it a separate tab.
     // !! we could use ctools AJAX!  We've already gots deps on it.
-    $form['hpoints_form_type_options'] = array(
-        '#type' => 'textarea',
-        '#title' => t('Submission Types'),
-        '#description' => t('Students will be allowed to chose from these types when submitting points.  Format is "integer_id | Human Readable Name [ | Email Advisor(Y/N) ]"'),
-        '#default_value' => variable_get('hpoints_form_type_options',_hpoints_default_type_options()),
-        '#element_validate' => array('hpoints_admin_settings_form_type_options_validate'),
-        '#required' => true,
-    );
     $form['submitmessages'] = array(
         '#type' => 'fieldset',
         '#title' => 'Submission Messages',
-        '#description' => t('The following messages will be shown on the final page of the submission form.'),
+        '#description' => t('The following messages will be shown on the submission form.'),
     );
     $form['submitmessages']['hpoints_form_submitmsg'] = array(
         '#type' => 'textarea',
         '#title' => 'Message',
         '#description' => t('This text will appear at the top of the points form.'),
-        '#default_value' => variable_get('hpoints_form_submitmsg',HCOMPLEARN_SUBMIT_MSG),
+        '#default_value' => variable_get('hpoints_form_submitmsg',HPOINTS_SUBMIT_MSG),
     );
     $form['submitmessages']['hpoints_form_submitwarn'] = array(
         '#type' => 'textarea',
         '#title' => 'Warning',
-        '#description' => t('This text will appear just before the submit button.'),
-        '#default_value' => variable_get('hpoints_form_submitwarn',HCOMPLEARN_SUBMIT_WARN),
+        '#description' => t('This text will appear just before the submit button on the points form.'),
+        '#default_value' => variable_get('hpoints_form_submitwarn',HPOINTS_SUBMIT_WARN),
+    );
+    $form['submitmessages']['hpoints_form_emailmsg'] = array(
+        '#type' => 'textarea',
+        '#title' => 'Message',
+        '#description' => t('This text will appear at the top of the reference information form.'),
+        '#default_value' => variable_get('hpoints_email_msg',HPOINTS_EMAIL_MSG),
     );
         
     return system_settings_form($form);

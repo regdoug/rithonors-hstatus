@@ -13,5 +13,7 @@ core = 6.x
 ; Dependencies
 dependencies[] = hdata
 dependencies[] = date
+dependencies[] = date_popup
+dependencies[] = jquery_ui
 dependencies[] = hnews
 dependencies[] = hformtools

@@ -23,67 +23,34 @@
  * $year - user's year level
  * $courses - array of courses taken
  *    - each element is an array with keys 'num','name','term','grade','points','instructor'
+ * $points username, explanation,
+ *  	pointID as type,
+ * 		submitted as submitted_time,
+		submittedBy as submitted_by,
+		approved as status,
+		approvedBy as reviewer,
+		approvedTime as reviewed_time,
+		declinedReason as reason,
+		numPoints as credits
  * 
  * TODO
  * -figure out how "other points" will work
  * -figure out how complearning submissions will work
  */
  
+
 if($displaynone):
 ?>
 <h2>You are not in the Honors Database</h2>
 <?php else: ?>
 
-<h2><?php t('Honor Status for @user',array('@user'=>$username)); ?></h2>
-<table>
-    <thead>
-        <tr><td>Full Name</td>
-        <td>College</td>
-        <td>Department</td>
-        <td></td>
-        <td>GPA</td></tr>
-    </thead>
-    <tbody>
-        <tr><td><?php print $name;?></td>
-        <td><?php print $college;?></td>
-        <td><?php print $department;?></td>
-        <td><?php print $program;?></td>
-        <td><?php print $gpa;?></td></tr>
-    </tbody>
-</table>
+<div style="float:right;">
+<img src="<?php print base_path()."facebook/portraits/$username.jpg";?>" width=150 height=200 alt="<?php print $username; ?>" />
+</div>
 
-<h2> Honors Points</h2>
-<strong>Total Points: <?php print (int)$points_total; ?></strong>
-<h3> Honors Courses</h3>
-<?php
-$num_elm=count($courses);
-$html_table='<table>
-			<thead>
-				<tr><td>Course Name</td>
-				<td>Number</td>
-				<td>Term Taken</td>
-				<td>Instructor</td>
-				<td>Grade</td>
-				<td>Points</td>
-				</tr>
-			</thead>
-			<tbody>';
-foreach($courses as $value)
-{
-	$html_table .='<tr><td>'.$value['name']. '</td>
-					<td>' .$value['num'] .'</td>
-					<td>' .$value['term'] .'</td>
-					<td>' .$value['instructor'] .'</td>
-					<td>' .$value['grade'] .'</td>
-					<td>' .$value['credits'] .'</td></tr>';	
-}
-$html_table.='</tbody></table>';
-echo $html_table;
-?>
+<h2>Continuation Status </h2>
 
-<p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
-
-<p>Your continuation status is 
+ <p>Your continuation status is 
 <?php
 //provide a background color for select statuses
 switch($status){
@@ -102,6 +69,148 @@ if(isset($color)){
 
 <?php if(isset($color)){ print '</span>'; }/*print closing tag.*/ ?>
 </p>
+
+<section>
+
+<h2><?php t('Honor Status for @user',array('@user'=>$username)); ?></h2>
+
+<div id="student-information" style="display:inline-block;width:575px;">
+<h2>Student Information</h2>
+<div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
+<table>
+    <thead>
+        <tr><td>Full Name</td>
+        <td>College</td>
+        <td>Department</td>
+        <td></td>
+        <td>GPA</td></tr>
+    </thead>
+    <tbody>
+        <tr><td><?php print $name;?></td>
+        <td><?php print $college;?></td>
+        <td><?php print $department;?></td>
+        <td><?php print $program;?></td>
+        <td><?php print substr(strval($gpa),0,1) .'.'.substr(strval($gpa),1);?></td></tr>
+    </tbody>
+</table>
+</div>
+
+<h2> Honors Points</h2>
+<div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
+<strong>Total Points: <?php print (int)$points_total; ?></strong>
+<h3> Honors Courses</h3>
+<table>
+    <thead>
+	<tr><td>Course Name</td>
+	<td>Number</td>
+	<td>Term Taken</td>
+	<td>Instructor</td>
+	<td>Grade</td>
+	<td>Points</td>
+	</tr>
+    </thead>
+    <tbody>
+<?php
+if(is_array($courses)){
+    foreach($courses as $value)
+    {
+	echo '<tr><td>'.$value['name']. '</td>
+		<td>' .$value['num'] .'</td>
+		<td>' .$value['term'] .'</td>
+		<td>' .$value['instructor'] .'</td>
+		<td>' .$value['grade'] .'</td>
+		<td>' .$value['credits'] .'</td></tr>';	
+    }
+}
+?>
+    </tbody>
+</table>
+
+<h3>Other Activities</h3>
+<table>
+			<thead>
+				<tr>
+					<td>Explanation</td>
+					<td>Status</td>
+					<td>Points</td>
+					<td>Date Submitted</td>
+				</tr>
+			</thead>
+			<tbody>
+<?php
+
+if(is_array($points)){
+    foreach($points as $value)
+    {
+	echo '<tr>
+			<td>' .$value['explanation'] .'</td>
+			<td>' .$value['status'] .'</td>
+			<td>' .$value['credits'] .'</td>
+			<td>' .$value['submitted_time'] .'</td>
+		  </tr>';
+    }
+}
+
+?>
+</tbody>
+</table>
+
+<h3><?php echo l("Points Submission Form", "hpoints/form"); ?></h3>
+
+</div>
+<h2>Comp Learning Submissions</h2>
+<div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
+<p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
+<?php if($submissions['complearning']['cldraft']): ?>
+<p>You have an unsubmitted (draft) complearning submission</p>
+<?php endif; ?>
+<p>For requirements, please see the <?php echo l("comp learning page", "service-requirements"); ?> </p>
+<h4>Submissions</h4>
+<table>
+	<thead>
+		<tr>
+			<td>Status</td>
+			<td>Hours</td>
+			<td>Submit Date</td>
+			<td>Review Date</td>
+		
+		</tr>
+	</thead>
+	<tbody>
+	<?php
+	foreach($submissions['complearn'] as $cl){
+	    echo 
+		'<td>'.$cl['status'] .'</td>
+		<td>'.$cl['hours'] .'</td>
+		<td>'.$cl['submit_date'] .'</td>
+		<td>'.$cl['review_date'] .'</td>
+		</tr>';
+	}
+		?>
+	</tbody>
+</table>
+</div>
+</div> <!-- End #student-information -->
+</section> <!-- End Main Section -->
+<h2>Questions?</h2>
+
+<h3>Continuation Review</h3>
+<p>Email any questions to <a href="mailto:honors@rit.edu">
+honors@rit.edu</a></p>
+
+<h3>Comp Learning</h3>
+<p><?php echo l( "info about comp learning requirements","service-requirements");?></p>
+<p>Email any questions to <a href="mailto:CompLearning@mail.honors.rit.edu">CompLearning@mail.honors.rit.edu</a></p>
+
+<h3>General Requirements</h3>
+<p><?php echo l("info about honors requirements", "academic-requirements");?></p>
+<p>Email any questions to <a href="mailto:Council@mail.honors.rit.edu">Council@mail.honors.rit.edu</a></p>
+
+<h3>Honors Courses</h3>
+<p><?php echo l("A Listing of the currently offered honors courses", "courseslist")?></p>
+<p><?php echo l("Academic Requirements", "academic-requirements")?></p>
+<p>Email any questions to <a href="mailto:Council@mail.honors.rit.edu">Council@mail.honors.rit.edu</a></p>
+
 <pre>
 <?php print_r($huser); /*DEBUG*/ ?>
 </pre>

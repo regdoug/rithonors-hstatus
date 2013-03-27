@@ -10,10 +10,17 @@
 /**
  * Function defined by hstatus_menu to generate the page.
  *
- * All it does is start drupal's theme system
+ * If user has permission to view the MyStatus page, generate the MyStatus
+ * page through the Drupal theme system.  Otherwise, redirect the user
+ * to the "View" tab.
  */
-function hstatus_user_page($user){
-    return theme('hstatus_mystatus',$user);
+function hstatus_user_page($acct){
+    if((user_access('view all myStatus pages') || user_access('view myStatus')) 
+            && hdata_user_is_active_student($acct->uid)){
+        return theme('hstatus_mystatus',$acct);
+    }else{
+        return drupal_goto("user/{$acct->uid}/view");
+    }
 }
 
 /**
@@ -36,7 +43,7 @@ function template_preprocess_hstatus_mystatus(&$variables){
         }*/
 
         //gets a user object
-        $huser = hdata_user_load(array('name'=>$username));
+        $huser = hdata_user_load(array('name'=>$username),true);
         $variables['huser'] = $huser;
         // $huser will be false if the load failed.
         if($huser){
@@ -58,7 +65,9 @@ function template_preprocess_hstatus_mystatus(&$variables){
 
             $points = $huser['points']['total'];
 
-            $cl = $huser['continuation']['cl'];
+            //the last entry in submissions is the most recent.
+            $numsubs = count($huser['submissions']['complearn']);
+            $cl = $huser['submissions']['complearn'][$numsubs-1]['status'];
             switch($cl){
                 case 0: $cl_str = 'Pending'; break;
                 case 1: $cl_str = 'Approved'; break;
@@ -82,7 +91,10 @@ function template_preprocess_hstatus_mystatus(&$variables){
             $variables['college'] = $huser['basic']['college'];
             $variables['department'] = $huser['basic']['department'];
             $variables['program'] = $huser['basic']['program'];
+            //TODO: create theme functions for courses, points and submissions
             $variables['courses']= $huser['courses'];
+            $variables['points']=$huser['points'];
+            $variables['submissions']=$huser['submissions'];
 
         }else{ //the load failed.
             //signal that the display should be nothing

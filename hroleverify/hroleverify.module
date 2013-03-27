@@ -16,8 +16,8 @@ function hroleverify_block( $op = 'list', $delta = 0, $edit = array() ) {
             $u = user_load($user->uid);
             if( !in_array("Honors",$u->roles) && !in_array("Faculty",$u->roles)) {
                 $block['subject']='In Honors?';
-                $block['content']="Your access permissions do not identify you as an Honors student. If " . 
-                        "you are an Honors student, please click <a href='".$base_url."/verify_role/'</a>here</a>" . 
+                $block['content']="Your access permissions do not identify you as a member of the Honors Program. If " . 
+                        "you are an Honors student or faculty member, please click <a href='".$base_url."/verify_role/'</a>here</a>" . 
                         " to fix your permissions.";
             }
         }
@@ -75,42 +75,44 @@ function _hroleverify_addrole() {
     global $base_url;
     
     if(!$user->name){
-	$user = user_load($user);
+		$user = user_load($user);
     }
     
     if(_hroleverify_ishonors($user->name)) {
-	$role = 'Honors';
+		$role = 'Honors';
         $rid = _hroleverify_rid($role);
-	if($rid < 0){
-	    drupal_set_message("Your system seems to be misconfigured...",'error');
-	    drupal_goto($base_url);
-	    return;
-	}
+		if($rid < 0){
+		    drupal_set_message("Your system seems to be misconfigured...",'error');
+		    drupal_goto($base_url);
+		    return;
+		}
         $user->roles[$rid] = $role;
 	
         watchdog('haddrole','Adding role "%role" to user @name',array('@name' => $user->name,'%role'=>$role));
         
         user_save($user, array('roles'=>$user->roles));
 	
-	//save the UID to the h_students_peoplesoft table
-	db_query("UPDATE {h_students_peoplesoft} SET id=%d WHERE username='%s'",$user->uid,$user->name);
+		//save the UID to the h_students_peoplesoft table
+		db_query("UPDATE {h_students_peoplesoft} SET id=%d WHERE username='%s'",$user->uid,$user->name);
+		drupal_set_message('The role "Honors" has been successfully added to your profile');
     }
     elseif(_hroleverify_isfaculty($user->name)) {
-	$role = 'Faculty';
+		$role = 'Faculty';
         $rid = _hroleverify_rid($role);
-	if($rid < 0){
-	    drupal_set_message("Your system seems to be misconfigured...",'error');
-	    drupal_goto($base_url);
-	    return;
-	}
+		if($rid < 0){
+		    drupal_set_message("Your system seems to be misconfigured...",'error');
+		    drupal_goto($base_url);
+		    return;
+		}
         $user->roles[$rid] = $role;
         
         watchdog('haddrole','Adding role "%role" to user @name',array('@name' => $user->name,'%role'=>$role));
         
         user_save($user, array('roles'=>$user->roles));
 	
-	//save the UID to the h_students_peoplesoft table
-	db_query("UPDATE {h_faculty} SET uid=%d WHERE username='%s'",$user->uid,$user->name);
+		//save the UID to the h_faculty table
+		db_query("UPDATE {h_faculty} SET uid=%d WHERE username='%s'",$user->uid,$user->name);
+		drupal_set_message('The role "Faculty" was successfully added to your profile');
     }
     
     drupal_goto($base_url);
