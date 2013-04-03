@@ -13,5 +13,3 @@ class hcomplearn_views_handler_field_status extends views_handler_field {
         return false;
     }
 }
-        
-hcomplearn_views_handler_field_status::render(0)
