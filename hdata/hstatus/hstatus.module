@@ -104,5 +104,20 @@ function hstatus_theme($existing, $type, $theme, $path){
             //arguments passed to the 'theme' function and the preprocessor
             'arguments' => array('user' => NULL),
         ),
+        'hstatus_complearn_table' => array(
+            'template' => 'mystatus_complearn',
+            'file' => 'hstatus.pages.inc',
+            'arguments' => array('submissions' => null),
+        ),
+        'hstatus_courses_table' => array(
+            'template' => 'mystatus_courses',
+            'file' => 'hstatus.pages.inc',
+            'arguments' => array('courses' => null),
+        ),
+        'hstatus_points_table' => array(
+            'template' => 'mystatus_points',
+            'file' => 'hstatus.pages.inc',
+            'arguments' => array('submissions' => null),
+        ),
     );
 }
