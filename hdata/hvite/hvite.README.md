@@ -1,6 +1,8 @@
 hVite
 =======
 
+__This module is not yet operational__
+
 Purpose
 -------
 hVite is the Honors Invitation System rewritten for Drupal

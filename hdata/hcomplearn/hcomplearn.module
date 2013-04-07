@@ -22,6 +22,8 @@ function hcomplearn_minhours(){return 20;}
 /*--------------Defaults-------------*/
 define('HCOMPLEARN_SUBMIT_MSG','If you are satisfied with your submission, you may submit the form now by clicking the button below.');
 define('HCOMPLEARN_SUBMIT_WARN','Be aware that submitting this form will prevent you from making further submissions until this submission has been reviewed.');
+define('HCOMPLEARN_ACCEPT_EMAIL','Dear @name,<br><br>Your complearing submission has been accepted.<br><br>Sincerely,<br>The Honors Program');
+define('HCOMPLEARN_REJECT_EMAIL','Dear @name,<br><br>Your complearing submission has been rejected for the following reason: @reason<br><br>Sincerely,<br>The Honors Program');
 
 /**
  * Implements hook_menu
@@ -131,7 +133,7 @@ function hcomplearn_action_info(){
         'hcomplearn_reject_cl_action' => array(
             'description' => t('Reject Comp Learning Submission'),
             'type' => 'complearning',
-            'configurable' => FALSE,
+            'configurable' => true,
         ),
     /* Example action -- taken from Drupal
       'user_block_ip_action' => array(
@@ -174,25 +176,78 @@ function theme_hcomplearn_cl_activities($submission){
  * Performs a database update to approve a Complearning submission,
  * provided that the user has the appropriate permissions.
  */
-function hcomplearn_approve_cl_action($submission){
+function hcomplearn_approve_cl_action($submission,$context){
+    $submission = (array) $submission;
     if(user_access('review complementary learning')){
-        $id = $submission['id'];
-        db_query('UPDATE {h_cl} SET status=1 WHERE id=%d',$id);
+        global $user;
+        $submission['status'] = 1;
+        $submission['review_date'] = time();
+        $submission['reviewer_uid'] = $user->uid;
+        if(hdata_cl_save($submission)){
+            $basicinfo = hdata_user_basic_info($user->name);
+            mimemail('honors@rit.edu',$user->name.'@rit.edu','Complementary Learning Submission Accepted',
+                    t(variable_get('hcomplearn_accept_email',HCOMPLEARN_ACCEPT_EMAIL),
+                    array('@name'=>$basicinfo['name'])));
+            return true;
+        }else{
+            drupal_set_message(t('Error saving complearning submission'),'error');
+        }
     }else{
         drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
     }
+    return false;
 }
 /**
  * Performs a database update to reject a Complearning submission,
  * provided that the user has the appropriate permissions.
  */
-function hcomplearn_reject_cl_action($submission){
+function hcomplearn_reject_cl_action($submission,$context){
+    $submission = (array) $submission;
+    //drupal_set_message('sub '.print_r($submission,true));
     if(user_access('review complementary learning')){
-        $id = $submission['id'];
-        db_query('UPDATE {h_cl} SET status=2 WHERE id=%d',$id);
+        global $user;
+        $submission['status'] = 2;
+        $submission['reason'] = $context['reject_reason'];
+        $submission['review_date'] = time();
+        $submission['reviewer_uid'] = $user->uid;
+        if(hdata_cl_save($submission)){
+            $basicinfo = hdata_user_basic_info($user->name);
+            mimemail('honors@rit.edu',$user->name.'@rit.edu','Complementary Learning Submission Rejected',
+                    t(variable_get('hcomplearn_reject_email',HCOMPLEARN_REJECT_EMAIL),
+                    array('@name'=>$basicinfo['name'],'@reason'=>$submission['reason'])));
+            return true;
+        }else{
+            drupal_set_message(t('Error saving complearning submission'),'error');
+        }
     }else{
         drupal_set_message(t('You do not have sufficient priviledges to perform this action.'),'warning');
     }
+    return false;
+}
+
+/**
+ * Gets a message to go along with the rejection of comp learning, both to
+ * store and to send to the user.
+ */
+//TODO: these accept/reject VBO interfaces will probably be the same
+// for hcomplearn, hpoints, (the future) happlications, etc.  They
+// probably should end up being merged.
+function hcomplearn_reject_cl_action_form($context){
+    return array(
+        'reject_reason' => array(
+            '#title' => 'Reason',
+            '#description' => t('Why was this submission rejected?'),
+            '#type' => 'textarea',
+            '#rows' => 2,
+        ),
+    );
+}
+
+/**
+ * Processes the result of the reject reason form for VBO
+ */
+function hcomplearn_reject_cl_action_submit($form, &$form_state){
+    return array('reject_reason' => $form_state['values']['reject_reason']);
 }
 
 /**
@@ -216,6 +271,21 @@ function hcomplearn_get_type_options(){
 }
 function _hcomplearn_default_type_options(){
     return "other | Other";
+}
+
+/**
+ * Helper function to translate status number into string
+ */
+function hcomplearn_status_string($value){
+    switch ($value) {
+        //negative values are only for legacy system
+        case -2: return 'Moved to 12 Point';
+        case -1: return 'Deleted';
+        case 0: return 'Pending';
+        case 1: return 'Approved';
+        case 2: return 'Rejected';
+        default: return strval($value);
+    }
 }
 /**
  * Helper function for whitelist/blacklist
@@ -243,18 +313,23 @@ function hcomplearn_form_is_open(){
     if($open){
         $openstr = "{$open['year']}-{$open['month']}-{$open['day']} 00:00:00";
         $opentime = strtotime($openstr);
-        drupal_set_message("Form opens on $openstr ($opentime)");
+        //drupal_set_message("Form opens on $openstr ($opentime)");
     }else{
-        $open = 0;
+        $opentime = 0;
     }
     if($close){
         $closestr = "{$close['year']}-{$close['month']}-{$close['day']} 23:59:00";
         $closetime = strtotime($closestr);
-        drupal_set_message("Form closes on $closestr ($closetime)");
+        //drupal_set_message("Form closes on $closestr ($closetime)");
     }else{
-        $close = PHP_INT_MAX;
+        $closetime = PHP_INT_MAX;
     }
-    return (time() > $opentime) && (time() < $closetime);
+    $isopen = (time() > $opentime) && (time() < $closetime);
+    return array(
+        'result' => $isopen,
+        'open' => $opentime,
+        'close' => $closetime,
+    );
 }
 
 /*
@@ -268,12 +343,21 @@ function hcomplearn_views_bulk_operations_object_info(){
         'complearning' => array(
             'type' => 'complearning',
             'base_table' => 'h_cl',
-            'load' => 'hdata_cl_load',
+            'load' => 'hcomplearn_submission_load',
             'oid' => 'id',
-            'title' => 'id',
+            'title' => 'title',
             'access' => '_hcomplearn_cl_review_access',
         ),
     );
+}
+
+function hcomplearn_submission_load($id){
+    drupal_set_message('loading sub id '.$id);
+    $sub = hdata_cl_load($id);
+    //the object_info['title'] key is used by VBO to render the submission.
+    // in hcomplearn_views_bulk_operations_object_info, we specified 'title'
+    $sub['title'] = t('Complearning Submission @id',array('@id'=>$sub['id']));;
+    return (object) $sub;
 }
 
 /**

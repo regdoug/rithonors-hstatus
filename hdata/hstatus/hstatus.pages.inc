@@ -65,7 +65,9 @@ function template_preprocess_hstatus_mystatus(&$variables){
 
             $points = $huser['points']['total'];
 
-            $cl = $huser['continuation']['cl'];
+            //the last entry in submissions is the most recent.
+            $numsubs = count($huser['submissions']['complearn']);
+            $cl = $huser['submissions']['complearn'][$numsubs-1]['status'];
             switch($cl){
                 case 0: $cl_str = 'Pending'; break;
                 case 1: $cl_str = 'Approved'; break;
@@ -89,7 +91,10 @@ function template_preprocess_hstatus_mystatus(&$variables){
             $variables['college'] = $huser['basic']['college'];
             $variables['department'] = $huser['basic']['department'];
             $variables['program'] = $huser['basic']['program'];
+            //TODO: create theme functions for courses, points and submissions
             $variables['courses']= $huser['courses'];
+            $variables['points']=$huser['points'];
+            $variables['submissions']=$huser['submissions'];
 
         }else{ //the load failed.
             //signal that the display should be nothing

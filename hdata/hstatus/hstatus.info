@@ -12,5 +12,7 @@ core = 6.x
 
 ; All modules in this package depend on hdata
 dependencies[] = hdata
+dependencies[] = hcomplearn
+dependencies[] = colorbox
 
-version = 6.x-alpha2.1
+version = 6.x-alpha3

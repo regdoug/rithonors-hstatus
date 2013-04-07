@@ -49,6 +49,23 @@ function hcomplearn_admin_settings(){
         '#description' => t('The warning is to tell the student that they may only recieve one chance to submit.'),
         '#default_value' => variable_get('hcomplearn_form_submitwarn',HCOMPLEARN_SUBMIT_WARN),
     );
+    $form['reviewmessages'] = array(
+        '#type' => 'fieldset',
+        '#title' => 'Review Messages',
+        '#description' => t('The following emails will be sent following review of the submission.'),
+    );
+    $form['reviewmessages']['hcomplearn_accept_email'] = array(
+        '#type' => 'textarea',
+        '#title' => 'Message',
+        '#description' => t('How do you want to notify students that their submission was approved? (@name will be replaced with the student\'s name)'),
+        '#default_value' => variable_get('hcomplearn_accept_email',HCOMPLEARN_ACCEPT_EMAIL),
+    );
+    $form['reviewmessages']['hcomplearn_reject_email'] = array(
+        '#type' => 'textarea',
+        '#title' => 'Message',
+        '#description' => t('How do you want to notify students that their submission was rejected? (@name will be replaced with the student\'s name and @reason will be replaced with the reason for rejection.)'),
+        '#default_value' => variable_get('hcomplearn_reject_email',HCOMPLEARN_REJECT_EMAIL),
+    );
         
     return system_settings_form($form);
 }

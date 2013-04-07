@@ -7,15 +7,9 @@
 class hcomplearn_views_handler_field_status extends views_handler_field {
     function render($values) {
         $value = intval($values->{$this->field_alias});
-        switch ($value) {
-            case 0: return 'Pending';
-            case 1: return 'Approved';
-            case 2: return 'Rejected';
-            default: return strval($value);
-        }
+        return hcomplearn_status_string($value);
     }
     function allow_advanced_render() {
         return false;
     }
 }
-        

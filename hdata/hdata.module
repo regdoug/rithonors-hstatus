@@ -20,21 +20,23 @@
 
 /* Returns a user array. $userinfo = array('uid => 0, 'name => '') */
 function hdata_user_load($userinfo,$reset=false){ return _hdata_user_load($userinfo,$reset); }
-/* Quick function to determine if the user is an active student */
+/** Quick function to determine if the user is an active student */
 function hdata_user_is_active_student($userinfo){ return _hdata_isactivestudent($userinfo); }
-/* Saves the basic and continuation elements.  $user is a modified
+/** Saves the basic and continuation elements.  $user is a modified
  * object from hdata_user_load */
 function hdata_user_save($user){return _hdata_user_save($user);}
-/* Used internally, but userful(?) externally for info */
+/** Used internally, but userful(?) externally for info */
 //TODO: make this a system variable
 function hdata_user_cache_life(){return '1 month';}
 
-/
+/** Loads a faculty member from the CCK fields of the 'contact' node type */
 function hdata_faculty_load($userinfo, $reset=false){return null;}
-
-function hdata_faculty_save($user){return false;}
-
-function hdata_faculty_cache_life() {return 'whatever';}
+/** Saves a faculty member.  As of now, it does nothing b/c CCK is tough to work with */
+//D7: this won't work until D7
+function hdata_faculty_save($faculty){return false;}
+/** Used internally, but userful(?) externally for info */
+//TODO: make this a system variable
+function hdata_faculty_cache_life() {return '1 month';}
 
 /* id should be uid if $draft is true */
 function hdata_cl_load($id,$draft=false){ return _hdata_cl_load($id,$draft); }
@@ -55,6 +57,9 @@ terms or a string with search terms separated by spaces */
 function hdata_student_search($query) {
 	return _hdata_student_search($query);
 }
+
+/* Gets basic information: uid (if applicable), full name, and type (student/faculty/none) about a user */
+function hdata_user_basic_info($userinfo){ return _hdata_user_basic_info($userinfo); }
 
 /*Loads all the notes for the user specified. An empty array means no
  * notes.  FALSE means an error occured (possibly no such user). */
@@ -170,7 +175,7 @@ function _hdata_user_load($userinfo, $reset = false){
 
     $u['continuation'] = _hdata_user_load_continuation($username);
     $u['points'] = _hdata_user_load_points($username);
-    $u['submissions'] = _hdata_user_load_submissions($uid);
+    $u['submissions'] = _hdata_user_load_submissions($uid,$username);
 	$u['courses']=_hdata_courses_load($username);
 
     cache_set("hdata_user:$username", $u, 'cache_honors',
@@ -450,15 +455,29 @@ function _hdata_points_type_save($type) {
 }
 
 /*
- * Grabs most recent comp learning submission and indicates whether
+ * Grabs all comp learning submissions and indicates whether
  * a draft is in progress
  */
-function _hdata_user_load_submissions($uid){
+function _hdata_user_load_submissions($uid,$username){
+    $rs = db_query("SELECT id, reviewed as status, submitted_date as submit_date, reviewed_date as review_date
+		    FROM {h_complearning} WHERE dce='%s'
+		    ORDER BY submitted_date ASC",$username);
+    while($rs && ($row = db_fetch_array($rs))){
+	$row['legacy'] = true;
+	$row['hours'] = 0;
+	$row['submit_date'] = strtotime($row['submit_date']);
+	$row['review_date'] = strtotime($row['review_date']);
+	$complearn[] = $row;
+    }
     $rs = db_query('SELECT id, status, hours, submit_date, review_date
                     FROM {h_cl} WHERE uid=%d
-                    ORDER BY submit_date DESC LIMIT 1', $uid);
+                    ORDER BY submit_date ASC', $uid);
+    while($rs && ($row = db_fetch_array($rs))){
+	$row['legacy'] = false;
+	$complearn[] = $row;
+    }
     return array(
-        'complearn' =>  $rs?db_fetch_array($rs):false,
+        'complearn' =>  $rs?$complearn:false,
         'cldraft' => (bool)_hdata_cldraft_load($uid,hdata_cl_draft_life()),
     );
 }
@@ -558,7 +577,7 @@ function _hdata_cl_load($id,$draft){
             return $submissions[$id];
         }
         $data = _hdata_cl_data_by_id($id);
-        $rs = db_query('SELECT id, uid, status, hours, types, submit_date, review_date, reviewer_uid
+        $rs = db_query('SELECT id, uid, status, hours, types, submit_date, review_date, reviewer_uid, reason
                         FROM {h_cl} WHERE id=%d',
                         $id);
         if($rs){
@@ -578,8 +597,8 @@ function _hdata_cl_save($sub,$draft){
     }else if(!$draft && !$sub['draft']){
         //saving a submission as a submission
         //only certain fields are supposed to be mutable
-        $q = "UPDATE {h_cl} SET status=%d, reviewed_date=%d, reviewer_uid=%d WHERE id=%d";
-        return (bool)db_query($q,$sub['status'],$sub['reviewed_date'],$sub['reviewer_uid'],$sub['id']);
+        $q = "UPDATE {h_cl} SET status=%d, review_date=%d, reviewer_uid=%d, reason='%s' WHERE id=%d";
+        return (bool)db_query($q,$sub['status'],$sub['review_date'],$sub['reviewer_uid'],$sub['reason'],$sub['id']);
     }else if(!$draft && $sub['draft']){
         //saving a draft as a submission
         //we need hcomplearn to do this effectively
@@ -812,6 +831,7 @@ function _hdata_student_list_legacy($college,$active){
     }
     return $arry;
 }
+
 /**
  * This function will provide a username list of faculty based on the
  * 'college' and 'type' criteria supplied.  Type refers to the faculty
@@ -839,6 +859,73 @@ function _hdata_faculty_list($college,$type=-1){
     return $arry;
 }
 
+function _hdata_faculty_load($userinfo){
+    //check argument type
+    if(is_numeric($userinfo)){
+        $userinfo = array('uid' => $userinfo);
+    }elseif(is_string($userinfo)){
+        $userinfo = array('name' => $userinfo);
+    }elseif(empty($userinfo['name']) && empty($userinfo['uid'])){
+        return false;
+    }
+    //get username
+    if(empty($userinfo['name'])){
+	$usr = user_load($userinfo);
+	$username = $usr->name;
+    }else{
+	$username = $userinfo['name'];
+    }
+    //check caches
+    static $hfaculty;
+    if(!$reset && isset($hfaculty[$username])){
+        //fetch from
+        return $hfaculty[$username];
+    }
+
+    if(!$reset && ($cache = cache_get("hdata_faculty:$username",'cache_honors'))) {
+        if(!empty($cache->data) && 
+		$cache->created > (time() - strtotime(hdata_faculty_cache_life())) ){
+            // get from long term cache
+            $hfaculty[$username] = $cache->data;
+            return $hfaculty[$username];
+        }
+    }
+    //look through the CCK username field to find the nid and vid of the node
+    //TODO: make setting for name of fields involved
+    //D7: will need to be revamped
+    $field = content_fields('field_username');
+    $field_info = content_database_info($to_field);
+    $field_tbl = $to_info['table'];
+    $field_column = $to_info['columns']['value']['column'];
+    $field_result = db_query("SELECT nid,vid FROM {%s} WHERE %s='%s'",$to_tbl,$to_column,$username);
+    if(($nodeinfo = db_fetch_array($field_result))){
+	//load the contact
+	$node = node_load($nodeinfo);
+	//build the faculty array
+	$faculty = array(
+	    'username' 	=>  $username,
+	    'name' => array(
+		'first' 	=> $node['field_fname'][0]['value'],
+		'middle'	=> $node['field_mname'][0]['value'],
+		'last'   	=> $node['field_lname'][0]['value'],
+	    ),
+	    'position' 	=> $node['field_role'][0]['value'],
+	    'title' 	=> $node['field_title'][0]['value'],
+	    'office'	=> $node['field_building'][0]['value'].' '.$node['field_office_num'][0]['value'],
+	    'college'	=> $node['field_college'][0]['value'],
+	    'phone'	=> $node['field_phone'][0]['value'],
+	);
+	//store in cache
+	$hfaculty[$username] = $faculty;
+	cache_set("hdata_faculty:$username", $faculty, 'cache_honors',
+		strtotime('+'.hdata_user_cache_life()));
+	return $faculty;
+    }else{
+	return false;
+    }
+}
+//function _hdata_faculty_save($facultymember){}
+
 /**
  * Simply checks to see if a student is active in the Honors program.
  */
@@ -864,6 +951,41 @@ function _hdata_isactivestudent($userinfo){
     }else{
         return false;
     }
+}
+
+function _hdata_user_basic_info($userinfo){
+    if(is_numeric($userinfo)){
+        $userinfo = array('uid' => $userinfo);
+    }elseif(is_string($userinfo)){
+        $userinfo = array('name' => $userinfo);
+    }elseif(empty($userinfo['name']) && empty($userinfo['uid'])){
+        return false;
+    }
+    if(empty($userinfo['name'])){
+        $userObj = user_load($userinfo);
+        $userinfo['name'] = $userObj->name;
+    }
+    $return['username'] = $userinfo['name'];
+    $return['uid'] = @$userinfo['uid'];
+    
+    $check_student = "SELECT firstname, lastname FROM {h_students_peoplesoft} WHERE username='%s'
+	    UNION SELECT firstname, lastname FROM {h_students} WHERE username='%s'";
+    $rs = db_query($check_student,$userinfo['name'],$userinfo['name']);
+    if($rs && ($row = db_fetch_array($rs))){
+	$return['name'] = $row['firstname'].' '.$row['lastname'];
+	$return['type'] = 'student';
+	return $return;
+    }else{
+	$check_faculty = hdata_faculty_load($userinfo);
+	if($check_faculty){
+	    $return['name'] = $check_faculty['name']['first'].' '.$check_faculty['name']['last'];
+	    $return['type'] = 'faculty';
+	    return $return;
+	}
+    }
+    $return['type'] = 'none';
+    $return['name'] = '';
+    return $return;
 }
 
 /*
