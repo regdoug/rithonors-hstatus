@@ -278,6 +278,9 @@ function _hcomplearn_default_type_options(){
  */
 function hcomplearn_status_string($value){
     switch ($value) {
+        //negative values are only for legacy system
+        case -2: return 'Moved to 12 Point';
+        case -1: return 'Deleted';
         case 0: return 'Pending';
         case 1: return 'Approved';
         case 2: return 'Rejected';
