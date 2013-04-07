@@ -99,61 +99,10 @@ if(isset($color)){
 <div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
 <strong>Total Points: <?php print (int)$points_total; ?></strong>
 <h3> Honors Courses</h3>
-<table>
-    <thead>
-	<tr><td>Course Name</td>
-	<td>Number</td>
-	<td>Term Taken</td>
-	<td>Instructor</td>
-	<td>Grade</td>
-	<td>Points</td>
-	</tr>
-    </thead>
-    <tbody>
-<?php
-if(is_array($courses)){
-    foreach($courses as $value)
-    {
-	echo '<tr><td>'.$value['name']. '</td>
-		<td>' .$value['num'] .'</td>
-		<td>' .$value['term'] .'</td>
-		<td>' .$value['instructor'] .'</td>
-		<td>' .$value['grade'] .'</td>
-		<td>' .$value['credits'] .'</td></tr>';	
-    }
-}
-?>
-    </tbody>
-</table>
+<?php print theme('hstatus_courses_table',$courses); ?>
 
 <h3>Other Activities</h3>
-<table>
-			<thead>
-				<tr>
-					<td>Explanation</td>
-					<td>Status</td>
-					<td>Points</td>
-					<td>Date Submitted</td>
-				</tr>
-			</thead>
-			<tbody>
-<?php
-
-if(is_array($points)){
-    foreach($points as $value)
-    {
-	echo '<tr>
-			<td>' .$value['explanation'] .'</td>
-			<td>' .$value['status'] .'</td>
-			<td>' .$value['credits'] .'</td>
-			<td>' .$value['submitted_time'] .'</td>
-		  </tr>';
-    }
-}
-
-?>
-</tbody>
-</table>
+<?php echo theme('hstatus_points_table',$points); ?>
 
 <h3><?php echo l("Points Submission Form", "hpoints/form"); ?></h3>
 
@@ -163,49 +112,8 @@ if(is_array($points)){
 <p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
 <p>For requirements, please see the <?php echo l("comp learning page", "service-requirements"); ?> </p>
 <h4>Submissions</h4>
-<table>
-	<thead>
-		<tr>
-			<td>ID</td>
-			<td>Status</td>
-			<td>Hours</td>
-			<td>Submit Date</td>
-			<td>Review Date</td>
-		
-		</tr>
-	</thead>
-	<tbody>
-	<?php
-	foreach($submissions['complearn'] as $cl){
-		if ($cl['legacy']){
-			$idstring=$cl['id'];
-		}
-		else{
-			$idstring=l($cl['id'], "hcomplearn/submission/{$cl['id']}", array('attributes'=>array('class'=>'colorbox-load')));
-		}
-		if ($cl['submit_date']==0){
-			$sub_date="";
-		}
-		else{
-			$sub_date=strftime("%x %I:%M:%S %p",$cl['submit_date']);
-		}
-		if ($cl['review_date']==0){
-			$rev_date="";
-		}
-		else{
-			$rev_date=strftime("%x %I:%M:%S %p",$cl['review_date']);
-		}
-		echo 
-			'<tr><td>'.$idstring .'</td>
-			<td>'.hcomplearn_status_string($cl['status']) .'</td>
-			<td>'.$cl['hours'] .'</td>
-			<td>'.$sub_date .'</td>
-			<td>'.$rev_date .'</td>
-			</tr>';
-	}
-		?>
-	</tbody>
-</table>
+<?php echo theme('hstatus_complearn_table',$submissions['complearn']); ?>
+
 </div>
 </div> <!-- End #student-information -->
 </section> <!-- End Main Section -->
