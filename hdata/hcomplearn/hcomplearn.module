@@ -187,7 +187,7 @@ function hcomplearn_approve_cl_action($submission,$context){
             $basicinfo = hdata_user_basic_info($user->name);
             mimemail('honors@rit.edu',$user->name.'@rit.edu','Complementary Learning Submission Accepted',
                     t(variable_get('hcomplearn_accept_email',HCOMPLEARN_ACCEPT_EMAIL),
-                    array('@name'=>$basicinfo['name'])));
+                    array('@name'=>$basicinfo['name'],'@submission' => theme('hcomplearn_cl_activities',$submission))));
             return true;
         }else{
             drupal_set_message(t('Error saving complearning submission'),'error');
@@ -214,7 +214,8 @@ function hcomplearn_reject_cl_action($submission,$context){
             $basicinfo = hdata_user_basic_info($user->name);
             mimemail('honors@rit.edu',$user->name.'@rit.edu','Complementary Learning Submission Rejected',
                     t(variable_get('hcomplearn_reject_email',HCOMPLEARN_REJECT_EMAIL),
-                    array('@name'=>$basicinfo['name'],'@reason'=>$submission['reason'])));
+                    array('@name'=>$basicinfo['name'],'@reason'=>$submission['reason'], 
+                    '@submission' => theme('hcomplearn_cl_activities',$submission))));
             return true;
         }else{
             drupal_set_message(t('Error saving complearning submission'),'error');

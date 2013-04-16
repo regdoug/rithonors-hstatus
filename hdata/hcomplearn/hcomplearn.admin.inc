@@ -57,13 +57,13 @@ function hcomplearn_admin_settings(){
     $form['reviewmessages']['hcomplearn_accept_email'] = array(
         '#type' => 'textarea',
         '#title' => 'Message',
-        '#description' => t('How do you want to notify students that their submission was approved? (@name will be replaced with the student\'s name)'),
+        '#description' => t('How do you want to notify students that their submission was approved? (@name will be replaced with the student\'s name, @submission will be replaced with submission)'),
         '#default_value' => variable_get('hcomplearn_accept_email',HCOMPLEARN_ACCEPT_EMAIL),
     );
     $form['reviewmessages']['hcomplearn_reject_email'] = array(
         '#type' => 'textarea',
         '#title' => 'Message',
-        '#description' => t('How do you want to notify students that their submission was rejected? (@name will be replaced with the student\'s name and @reason will be replaced with the reason for rejection.)'),
+        '#description' => t('How do you want to notify students that their submission was rejected? (@name will be replaced with the student\'s name, @submission will be replaced with submission and @reason will be replaced with the reason for rejection.)'),
         '#default_value' => variable_get('hcomplearn_reject_email',HCOMPLEARN_REJECT_EMAIL),
     );
         
