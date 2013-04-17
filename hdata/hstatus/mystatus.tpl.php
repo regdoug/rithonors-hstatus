@@ -99,61 +99,10 @@ if(isset($color)){
 <div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
 <strong>Total Points: <?php print (int)$points_total; ?></strong>
 <h3> Honors Courses</h3>
-<table>
-    <thead>
-	<tr><td>Course Name</td>
-	<td>Number</td>
-	<td>Term Taken</td>
-	<td>Instructor</td>
-	<td>Grade</td>
-	<td>Points</td>
-	</tr>
-    </thead>
-    <tbody>
-<?php
-if(is_array($courses)){
-    foreach($courses as $value)
-    {
-	echo '<tr><td>'.$value['name']. '</td>
-		<td>' .$value['num'] .'</td>
-		<td>' .$value['term'] .'</td>
-		<td>' .$value['instructor'] .'</td>
-		<td>' .$value['grade'] .'</td>
-		<td>' .$value['credits'] .'</td></tr>';	
-    }
-}
-?>
-    </tbody>
-</table>
+<?php print theme('hstatus_courses_table',$courses); ?>
 
 <h3>Other Activities</h3>
-<table>
-			<thead>
-				<tr>
-					<td>Explanation</td>
-					<td>Status</td>
-					<td>Points</td>
-					<td>Date Submitted</td>
-				</tr>
-			</thead>
-			<tbody>
-<?php
-
-if(is_array($points)){
-    foreach($points as $value)
-    {
-	echo '<tr>
-			<td>' .$value['explanation'] .'</td>
-			<td>' .$value['status'] .'</td>
-			<td>' .$value['credits'] .'</td>
-			<td>' .$value['submitted_time'] .'</td>
-		  </tr>';
-    }
-}
-
-?>
-</tbody>
-</table>
+<?php echo theme('hstatus_points_table',$points); ?>
 
 <h3><?php echo l("Points Submission Form", "hpoints/form"); ?></h3>
 
@@ -161,34 +110,10 @@ if(is_array($points)){
 <h2>Comp Learning Submissions</h2>
 <div class="paragraph" style="border-left: 2px solid #a4883b; padding-left: 10px">
 <p>Your complearning has been <strong><?php print $complearning_status_string; ?></strong></p>
-<?php if($submissions['complearning']['cldraft']): ?>
-<p>You have an unsubmitted (draft) complearning submission</p>
-<?php endif; ?>
 <p>For requirements, please see the <?php echo l("comp learning page", "service-requirements"); ?> </p>
 <h4>Submissions</h4>
-<table>
-	<thead>
-		<tr>
-			<td>Status</td>
-			<td>Hours</td>
-			<td>Submit Date</td>
-			<td>Review Date</td>
-		
-		</tr>
-	</thead>
-	<tbody>
-	<?php
-	foreach($submissions['complearn'] as $cl){
-	    echo 
-		'<td>'.$cl['status'] .'</td>
-		<td>'.$cl['hours'] .'</td>
-		<td>'.$cl['submit_date'] .'</td>
-		<td>'.$cl['review_date'] .'</td>
-		</tr>';
-	}
-		?>
-	</tbody>
-</table>
+<?php echo theme('hstatus_complearn_table',$submissions['complearn']); ?>
+
 </div>
 </div> <!-- End #student-information -->
 </section> <!-- End Main Section -->

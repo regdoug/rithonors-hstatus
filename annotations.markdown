@@ -8,30 +8,51 @@ Annotations
 Binary file .git/objects/2d/e1bb1aec8e76aba9b5d7f2962caecbc7ac6c46 matches
 ```
 
+hdata/hstudent/hstudent.module
+--
+
+```
+  12	:	//TODO: users with no View permissions will not get links on the search page
+  13	:	//TODO: checking active/inactive permissions
+  14	-}
+  15	-
+  16	-/*
+--
+ 125	:		//DEBUG:
+ 126	-		//drupal_set_message("t_p_h_r called, firstname=".$student_info['basic']['name']['firstname']);
+ 127	-		
+ 128	-		if($student_info['basic']['legacy']){
+--
+ 152	:	//DEBUG:
+ 153	-	// drupal_set_message("leaving t_p_h_r: vars=".print_r($variables, TRUE));
+ 154	-}
+ 155	-
+```
+
 hdata/hnews/hnews.module
 --
 
 ```
- 175	:    //TODO: (Maybe) make a way for users to opt out of certain types of mailings.
- 176	-    array_walk($recipients,'_hnews_to_email');
- 177	-    
- 178	-    //load the node and send it
+ 179	:    //TODO: (Maybe) make a way for users to opt out of certain types of mailings.
+ 180	-    array_walk($recipients,'_hnews_to_email');
+ 181	-    
+ 182	-    //load the node and send it
 --
- 193	:    //TODO: (Maybe) add a way to have users input a preferred email address
- 194	:    //NOTE: This is probably a must for faculty... not so much students.
- 195	-    $element .= '@rit.edu';
- 196	-}
- 197	-
+ 197	:    //TODO: (Maybe) add a way to have users input a preferred email address
+ 198	:    //NOTE: This is probably a must for faculty... not so much students.
+ 199	-    $element .= '@rit.edu';
+ 200	-}
+ 201	-
 ```
 
 hdata/hpoints/hpoints.module
 --
 
 ```
-  47	:    //TODO: needs two pages (as tabs) one for types
-  48	-    $items['admin/settings/hpoints'] = array(
-  49	-        'title' => 'hPoints Settings',
-  50	-        'description' => 'Adjust the points form settings.',
+  48	:    //TODO: needs two pages (as tabs) one for types
+  49	-    $items['admin/settings/hpoints'] = array(
+  50	-        'title' => 'hPoints Settings',
+  51	-        'description' => 'Adjust the points form settings.',
 ```
 
 hdata/hpoints/hpoints.form.inc
@@ -62,7 +83,7 @@ hdata/hpoints/hpoints.admin.inc
    8	:    //TODO: create a "real" form instead of a system settings form
    9	-    //    for the type options: make it a separate tab.
   10	-    // !! we could use ctools AJAX!  We've already gots deps on it.
-  11	-    $form['hpoints_form_type_options'] = array(
+  11	-    $form['submitmessages'] = array(
 ```
 
 hdata/hpoints/hpoints.views.inc
@@ -75,14 +96,14 @@ hdata/hpoints/hpoints.views.inc
   54	-            'help' => t('The user to whom these points belong.'),
 ```
 
-hdata/hvite/hvite.module
+hdata/hcomplearn/hcomplearn.module
 --
 
 ```
- 164	:	//QUESTION:  why a form?  why not a regular page?
- 165	-	//return drupal_get_form('hvite_eventlist_form');
- 166	-	return '<p>Under Development</p>';
- 167	-}
+ 232	://TODO: these accept/reject VBO interfaces will probably be the same
+ 233	-// for hcomplearn, hpoints, (the future) happlications, etc.  They
+ 234	-// probably should end up being merged.
+ 235	-function hcomplearn_reject_cl_action_form($context){
 ```
 
 hdata/hcomplearn/hcomplearn.form.inc
@@ -102,17 +123,47 @@ hdata/hdata.module
   45	://TODO: make this a system variable
   46	-function hdata_user_cache_life(){return '1 month';}
   47	-
-  48	-/* id should be uid if $draft is true */
+  48	-/** Loads a faculty member from the CCK fields of the 'contact' node type */
 --
-  88	://DEBUG: Remove before beta testing
-  89	-function hdata_menu(){
-  90	-    return array(
-  91	-        'testhdata' => array(
+  54	://TODO: make this a system variable
+  55	-function hdata_faculty_cache_life() {return '1 month';}
+  56	-
+  57	-/* id should be uid if $draft is true */
 --
- 438	:    //OPTION:  cache??
- 439	-    $rs = db_query("SELECT id, title, description,sorting as weight, enabled, send_email
- 440	-            FROM {h_points_menu} WHERE %d OR enabled=1",$enabled?0:1);
- 441	-    $list = array();
+ 105	://DEBUG: Remove before beta testing
+ 106	-function hdata_menu(){
+ 107	-    return array(
+ 108	-        'testhdata' => array(
+--
+ 469	:    //OPTION:  cache??
+ 470	-    $rs = db_query("SELECT id, title, description,sorting as weight, enabled, send_email
+ 471	-            FROM {h_points_menu} WHERE %d OR enabled=1",$enabled?0:1);
+ 472	-    $list = array();
+--
+ 953	:    //TODO: make setting for name of fields involved
+ 954	-    //D7: will need to be revamped
+ 955	-    $field = content_fields('field_username');
+ 956	-    $field_info = content_database_info($to_field);
+--
+1027	:    //DEBUG:
+1028	-    drupal_set_message('basic_info: uid='.$userinfo['uid'].' name='.$userinfo['name']);
+1029	-    $return['username'] = $userinfo['name'];
+1030	-    $return['uid'] = @$userinfo['uid'];
+--
+1038	:    //DEBUG:
+1039	-	drupal_set_message($return['name'].' is a student');
+1040	-	return $return;
+1041	-    }else{
+--
+1046	:    //DEBUG:
+1047	-	    drupal_set_message($return['name'].' is a faculty member');
+1048	-	    return $return;
+1049	-	}
+--
+1053	:    //DEBUG:
+1054	-    drupal_set_message($return['username'].' was not found');
+1055	-    return $return;
+1056	-}
 ```
 
 hdata/hformtools/hformtools.module
@@ -139,51 +190,61 @@ hdata/hnotesystem/hnotesystem.module
   24	-{
   25	-	switch($path) {
 --
- 105	:			//TODO: create theme functions
- 106	-		}
- 107	-	}
- 108	-	else
+ 104	:			//TODO: create theme functions
+ 105	-		}
+ 106	-	}
+ 107	-	else
 --
- 123	:	//NOTE: see how to create links below
- 124	-	$content = l('Create Note','hnotesystem/form/create').'<br />';
- 125	-	$content .= l('Edit Note','hnotesystem/form/edit').'<br />';
- 126	-	$content .= l('Delete Note','hnotesystem/form/delete').'<br />';
+ 122	:	//NOTE: see how to create links below
+ 123	-	$content = l('Create Note','hnotesystem/form/create').'<br />';
+ 124	-	$content .= l('Edit Note','hnotesystem/form/edit').'<br />';
+ 125	-	$content .= l('Delete Note','hnotesystem/form/delete').'<br />';
 --
- 134	://QUESTION: Why would $idOrName ever be a name?
- 135	-function _hnotesystem_gen_form($type, $idOrName)
- 136	-{
- 137	-	global $user;
+ 133	://QUESTION: Why would $idOrName ever be a name?
+ 134	-function _hnotesystem_gen_form($type, $idOrName)
+ 135	-{
+ 136	-	global $user;
 --
- 142	:	//QUESTION:  I'm not quite sure what this accomplishes.  Odds are the
- 143	-	//  user will have no clue what the id is.
- 144	-	//
- 145	-	//  I've just blocked the form from generating if the param type is wrong.
+ 141	:	//QUESTION:  I'm not quite sure what this accomplishes.  Odds are the
+ 142	-	//  user will have no clue what the id is.
+ 143	-	//
+ 144	-	//  I've just blocked the form from generating if the param type is wrong.
 --
- 158	:			//COMMENT: Nothing to put here after deleting a note!
- 159	:			//QUESTION:  Why not have an "Are you sure" message?
- 160	-			$form['confirm_msg'] = array(
- 161	-				'#value' => t('Are you sure you want to delete Note @id "@title"',
- 162	-						array('@id'=>$idOrName,'@title'=>$note['title'])),
+ 157	:			//COMMENT: Nothing to put here after deleting a note!
+ 158	:			//QUESTION:  Why not have an "Are you sure" message?
+ 159	-			$form['confirm_msg'] = array(
+ 160	-				'#value' => t('Are you sure you want to delete Note @id "@title"',
+ 161	-						array('@id'=>$idOrName,'@title'=>$note['title'])),
 --
- 204	:			//Q: Should these fields be auto-generated?
- 205	:			//ANS: yes, probably
- 206	-			$form['date'] = array(
- 207	-				'#type' => 'date',
- 208	-				'#title' => t('Date'),
+ 203	:			//Q: Should these fields be auto-generated?
+ 204	:			//ANS: yes, probably
+ 205	-			$form['date'] = array(
+ 206	-				'#type' => 'date',
+ 207	-				'#title' => t('Date'),
 --
- 220	:		//Q: What is cont_id?
- 221	:		//ANS: the school year in which the note was created
- 222	-		
- 223	-	}
- 224	-	
+ 219	:		//Q: What is cont_id?
+ 220	:		//ANS: the school year in which the note was created
+ 221	-		
+ 222	-	}
+ 223	-	
 --
- 264	:	//NOTE: always use $form_state['values'].  It has been checked to
- 265	-	//  ensure that hacking attempts are squelched.
- 266	-	$note = _hnotesystem_form_to_note($form_state['values']);
- 267	-	// $note['id'] is left blank so a new note is created.
+ 263	:	//NOTE: always use $form_state['values'].  It has been checked to
+ 264	-	//  ensure that hacking attempts are squelched.
+ 265	-	$note = _hnotesystem_form_to_note($form_state['values']);
+ 266	-	// $note['id'] is left blank so a new note is created.
 --
- 275	://NOTE: form_state['storage'] is really inteded for multi-page forms
- 276	-function hnotesystem_edit_note_form(&$form_state, $param = "")
- 277	-{
- 278	-	return _hnotesystem_gen_form("edit", $param);
+ 274	://NOTE: form_state['storage'] is really inteded for multi-page forms
+ 275	-function hnotesystem_edit_note_form(&$form_state, $param = "")
+ 276	-{
+ 277	-	return _hnotesystem_gen_form("edit", $param);
+```
+
+hdata/hstatus/hstatus.pages.inc
+--
+
+```
+  94	:            //TODO: create theme functions for courses, points and submissions
+  95	-            $variables['courses']= $huser['courses'];
+  96	-            $variables['points']=$huser['points'];
+  97	-            $variables['submissions']=$huser['submissions'];
 ```

@@ -43,7 +43,13 @@ function hnotesystem_menu()
 		'page arguments' => array('hnotesystem_settings'),
 		'access arguments' => array('administer hnotesystem'),
 	);
-	
+	//Q: should this be a NORMAL_ITEM?
+	$items['hnotesystem/view'] = array(
+		'title' => t('View Note'),
+		'page callback' => 'hnotesystem_display',
+		'type' => MENU_NORMAL_ITEM,
+		'access arguments' => array('access hnotesystem'),
+	);
 	// All actions are under hnotesystem/form
 	$items['hnotesystem/form'] = array(
 		'title' => t('hNoteSystem Form'), 
@@ -52,7 +58,25 @@ function hnotesystem_menu()
 		'access arguments' => array('access hnotesystem'),
 	
 	);
+	
+	//TODO: make a test page maybe?
+	
 	return $items;
+}
+
+/**
+ * Theme functions to display notes
+ */
+function hnotesystem_theme(){
+	return array(
+		'hnotesystem_note' => array(
+			'arguments' => array( 'note' => null, 'format' => 'long', 'student_name' => null ),
+			'template' => 'hnotesystem_note',
+		),
+		'hnotesystem_note_list' => array(
+			'arguments' => array( 'notes' => array(), 'format' => 'long', 'student_name' => null ),
+		),
+	);
 }
 
 /**
@@ -84,6 +108,34 @@ function hnotesystem_settings()
 /**
 * Custom functions
 */
+
+/**
+ * Displays a single note or list of a single user's notes in the "long"
+ * note format.  Used to render the page hnotesystem/view/%.
+ */
+function hnotesystem_display($id){
+	//TODO: set title to customized title if data is sucessfully loaded.
+	if(is_numeric($id)){
+		$note = hdata_load_note($id);
+		if($note){
+			drupal_set_title(t('@title | Notes',array('@title'=>$note['title'])));
+			return theme('hnotesystem_note',$note,'long');
+		}
+	}else{
+		$notes = hdata_load_notes($id);
+		if($notes){
+			$owner = hdata_user_basic_info($id);
+			$name = ($owner['name'])?$owner['name']:$id;
+			//we don't want to override the student name with $id, so 
+			//set it null if we don't find it.
+			$student_name = ($owner['name'])?$owner['name']:null;
+			drupal_set_title(t('Notes for @name',array('@name'=>$name)));
+			return theme('hnotesystem_note_list', $notes, 'long', $student_name);
+		}
+	}
+	drupal_set_title(t('Failed to Locate Note(s)'));
+	return theme('hnotesystem_note',$id,false);
+}
 
 /**
 * This will display the form to create/edit/delete a note.
@@ -312,5 +364,67 @@ function _hnotesystem_del($id)
 		drupal_set_message(t('Note @id has been deleted.',array('@id'=>$id)));
 	}else{
 		drupal_set_message(t('Delete function failed'));
+	}
+}
+
+// Theme functions
+
+/**
+ * Preprocessor for hnotesystem_note theme hook
+ */
+function template_preprocess_hnotesystem_note(&$variables){
+	if($variables['note']){
+		switch($variables['format']){
+			case 'short': _tpl_hnotesystem_note_short($variables);
+			case 'long': _tpl_hnotesystem_note_long($variables); break;
+			default: $variables['format'] = false;
+		}
+	}else{
+		$variables['format'] = false;
+	}
+}
+
+/**
+ * Theme function for hnotesystem_note_list theme hook
+ */
+function theme_hnotesystem_note_list($notes = array(), $format = 'long'){
+	$html = '';
+	if(count($notes) < 1){
+		return $html;
+	}else if(count($notes) == 1){
+		return theme('hnotesystem_note', $notes[0], $format);
+	}
+	
+	if($format == 'short'){ 
+		$html .= '<ul>';
+		$starttag = '<li>'; $endtag = '</li>';
+	}else if($format == 'long'){
+		$starttag = '<p>'; $endtag = '</p>';
+	}
+	
+	foreach($notes as $note){
+		$html .= $starttag . theme('hnotesystem_note', $note, $format) . $endtag;
+	}
+	
+	if($format == 'short'){ $html .= '</ul>'; }
+	
+	return $html;
+}
+	
+
+function _tpl_hnotesystem_note_short(&$variables){
+	$variables['title'] = $variables['note']['title'];
+	$variables['id'] = $id = $variables['note']['id'];
+	$variables['editlink'] = "hnotesystem/form/edit/$id";
+	$variables['deletelink'] = "hnotesystem/form/edit/$id";
+	$variables['viewlink'] = "hnotesystem/view/$id";
+}
+
+function _tpl_hnotesystem_note_long(&$variables){
+	if(!$variables['student_name']){
+		$basicinfo = hdata_user_basic_info($variables['note']['username']);
+		if($basicinfo['name']){
+			$variables['student_name'] = $basicinfo['name'];
+		}
 	}
 }
