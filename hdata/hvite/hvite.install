@@ -1,0 +1,87 @@
+<?php
+
+
+function hvite_install()
+{
+    drupal_install_schema("hvite");
+}
+
+function hvite_uninstall()
+{
+    drupal_uninstall_schema("hvite");
+}
+
+function hvite_schema()
+{
+	/* hVite event table. Contains information for all events */
+	$s['hvite_events'] = array(
+		'description' => t('hVite Events'),
+		'fields' => array(
+			'id' => array(
+				'description' => t('ID of event (auto increment)'),
+				'type' => 'serial',
+				'not null' => true,
+			),
+			'owner' => array(
+				'description' => t('Drupal ID of owner/creator of event'),
+				'type' => 'int',
+				'not null' => true,
+			),
+			'startdate' => array(
+				'description' => t('Timestamp of the start date/time for event'),
+				'type' => 'int',
+				'not null' => true,
+			),
+			'enddate' => array(
+				'description' => t('Timestamp of the end date/time for event'),
+				'type' => 'int',
+				'not null' => true,
+			),
+			'location' => array(
+				'description' => t('Location of the event'),
+				'type' => 'varchar',
+				'length' => 100,
+				'not null' => true,
+			),
+			'title' => array(
+				'description' => t('Title of the event'),
+				'type' => 'varchar',
+				'length' => 100,
+				'not null' => true,
+			),
+			'description' => array(
+				'description' => t('Description of the event'),
+				'type' => 'text',
+				'not null' => true,
+			),
+		),
+		'primary key' => array('id'),
+	);
+	
+	/* hVite RSVP table. Contains information regarding who has RSVPed */
+	$s['hvite_rsvp'] = array(
+		'description' => t('hVite RSVP data'),
+		'fields' => array(
+			'event_id' => array(
+				'description' => t('ID of event that was RSVPed to'),
+				'type' => 'int',
+				'not null' => true,
+			),
+			'user_dce' => array(
+				'description' => t('DCE of the user who RSVPed to the event'),
+				'type' => 'varchar',
+				'length' => 7,
+				'not null' => true,
+			),
+			'has_rsvp' => array(
+				'description' => t('RSVP status of the user'),
+				'type' => 'int',
+				'size' => tiny,
+				'default' => '0',
+			),
+		),
+		'primary key' => array('event_id'),
+	);
+	
+	return $s;
+}
