@@ -76,7 +76,7 @@ function hvite_schema()
 			'has_rsvp' => array(
 				'description' => t('RSVP status of the user'),
 				'type' => 'int',
-				'length' => 4,
+				'size' => tiny,
 				'default' => '0',
 			),
 		),
